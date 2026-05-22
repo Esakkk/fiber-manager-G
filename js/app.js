@@ -69,16 +69,58 @@ async function loadUserInfo() {
             if (data.user) {
                 const userDisplay = document.getElementById('userDisplayName');
                 if (userDisplay) {
-                    userDisplay.textContent = data.user.full_name;
+                    userDisplay.textContent = data.user.full_name + ' (' + data.user.role.toUpperCase() + ')';
                 }
                 window.currentUser = data.user;
+                
+                // Sembunyikan tombol tambah untuk viewer
+                const actionButtons = document.getElementById('actionButtons');
+                if (actionButtons && data.user.role === 'viewer') {
+                    actionButtons.style.display = 'none';
+                }
+                
+                // Tampilkan tombol manajemen user untuk admin
+                const btnUserManagement = document.getElementById('btnUserManagement');
+                if (btnUserManagement && data.user.role === 'admin') {
+                    btnUserManagement.style.display = 'inline-block';
+                }
             }
         }
     } catch (error) {
         console.error('Failed to load user info:', error);
     }
 }
-
+async function loadUserInfo() {
+    try {
+        const response = await fetch(`${API_BASE}/auth.php?action=me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.user) {
+                const userDisplay = document.getElementById('userDisplayName');
+                if (userDisplay) {
+                    userDisplay.textContent = data.user.full_name + ' (' + data.user.role.toUpperCase() + ')';
+                }
+                window.currentUser = data.user;
+                
+                // Tampilkan tombol manajemen user untuk admin
+                const btnUserManagement = document.getElementById('btnUserManagement');
+                if (btnUserManagement && data.user.role === 'admin') {
+                    btnUserManagement.style.display = 'inline-block';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load user info:', error);
+    }
+}
 // Logout function
 async function logout() {
     if (!confirm('Apakah Anda yakin ingin logout?')) return;
@@ -157,12 +199,14 @@ async function showAddODPDialog() {
     document.getElementById('modalTitle').textContent = 'Tambah ODP';
     document.getElementById('odpForm').reset();
     document.getElementById('odpId').value = '';
+    document.getElementById('odcPortGroup').style.display = 'none';
     
     await populateSourceDropdown();
     generatePortStatusInputs();
     
     document.getElementById('odpModal').classList.add('show');
 }
+
 
 // Show add ODC dialog
 function showAddODCDialog() {
@@ -172,8 +216,8 @@ function showAddODCDialog() {
     document.getElementById('odcModal').classList.add('show');
 }
 
-// Populate source dropdown - hanya ODC
-async function populateSourceDropdown() {
+// Update populateSourceDropdown
+async function populateSourceDropdown(selectedSourceId = null, selectedPort = null) {
     const sourceSelect = document.getElementById('odpSource');
     sourceSelect.innerHTML = '<option value="">Pilih ODC sumber...</option>';
     
@@ -181,10 +225,74 @@ async function populateSourceDropdown() {
         const option = document.createElement('option');
         option.value = odc.id;
         option.dataset.type = 'odc';
-        option.textContent = `${odc.name} (ODC)`;
+        const used = odc.used_ports || 0;
+        const available = odc.capacity - used;
+        option.textContent = `${odc.name} (ODC - ${used}/${odc.capacity} port, ${available} tersedia)`;
+        if (selectedSourceId && selectedSourceId == odc.id) {
+            option.selected = true;
+        }
         sourceSelect.appendChild(option);
     });
+    
+    // Load ports jika ada selectedSourceId
+    if (selectedSourceId) {
+        await loadODCPortsForEdit(selectedSourceId, selectedPort);
+    }
 }
+async function loadODCPortsForEdit(odcId, selectedPort = null) {
+    const portGroup = document.getElementById('odcPortGroup');
+    const portSelect = document.getElementById('odpPortInODC');
+    
+    if (!odcId) {
+        portGroup.style.display = 'none';
+        return;
+    }
+    
+    portGroup.style.display = 'block';
+    portSelect.innerHTML = '<option value="">Loading port...</option>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/odc.php?id=${odcId}&ports=true`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const ports = await response.json();
+            portSelect.innerHTML = '<option value="">Pilih port...</option>';
+            
+            ports.forEach(port => {
+                const option = document.createElement('option');
+                option.value = port.port_number;
+                
+                let statusText = '';
+                let disabled = false;
+                
+                if (port.status === 'used' && port.port_number != selectedPort) {
+                    statusText = `❌ Terpakai oleh ${port.odp_name || 'ODP'}`;
+                    disabled = true;
+                } else if (port.status === 'used' && port.port_number == selectedPort) {
+                    statusText = `🔗 Terhubung (ODP ini)`;
+                    disabled = false;
+                } else {
+                    statusText = '✅ Tersedia';
+                }
+                
+                option.textContent = `Port ${port.port_number} - ${statusText}`;
+                option.disabled = disabled;
+                
+                if (selectedPort == port.port_number) {
+                    option.selected = true;
+                }
+                
+                portSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading ports:', error);
+        portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
+    }
+}
+
 
 // Generate port status inputs
 function generatePortStatusInputs(existingPorts = null) {
@@ -368,11 +476,12 @@ async function fetchWithAuth(url, options = {}) {
     }
 }
 
-// Save ODP
+// Update fungsi saveODP
 async function saveODP() {
     const id = document.getElementById('odpId').value;
     const sourceSelect = document.getElementById('odpSource');
     const selectedOption = sourceSelect.selectedOptions[0];
+    const portInODC = document.getElementById('odpPortInODC').value;
     const coordString = document.getElementById('odpCoordinates').value.trim();
     
     const coords = parseCoordinates(coordString);
@@ -385,6 +494,7 @@ async function saveODP() {
         name: document.getElementById('odpName').value,
         source_id: sourceSelect.value || null,
         source_type: selectedOption ? selectedOption.dataset.type : null,
+        port_number_in_odc: portInODC || null,
         lat: coords.lat,
         lng: coords.lng,
         location: document.getElementById('odpLocation').value,
@@ -392,8 +502,19 @@ async function saveODP() {
         description: document.getElementById('odpDescription').value
     };
     
+    if (!data.name) {
+        alert('Nama ODP harus diisi');
+        return;
+    }
+    
     if (!data.location) {
         alert('Alamat lokasi harus diisi');
+        return;
+    }
+    
+    // Validasi: jika pilih ODC, wajib pilih port
+    if (data.source_type === 'odc' && data.source_id && !data.port_number_in_odc) {
+        alert('Silakan pilih port ODC yang akan digunakan!');
         return;
     }
     
@@ -408,13 +529,20 @@ async function saveODP() {
         
         if (!response) return;
         
+        const result = await response.json();
+        
         if (response.ok) {
+            // Upload foto jika ada
+            const deviceId = id || result.id;
+            if (deviceId) {
+                await uploadPhotos(deviceId, 'odp');
+            }
+            
             closeModal('odpModal');
             await loadDevices();
             alert('ODP berhasil disimpan');
         } else {
-            const error = await response.json();
-            alert('Gagal menyimpan ODP: ' + (error.error || 'Unknown error'));
+            alert('Gagal menyimpan ODP: ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error:', error);
@@ -466,12 +594,237 @@ async function saveODC() {
             const error = await response.json();
             alert('Gagal menyimpan ODC: ' + (error.error || 'Unknown error'));
         }
+        if (response.ok) {
+        const result = await response.json();
+        const deviceId = id || result.id;
+        
+        // Upload foto jika ada
+        if (deviceId) {
+            const photos = await uploadPhotos(deviceId, 'odc');
+        }
+        
+        closeModal('odcModal');
+        await loadDevices();
+        alert('ODC berhasil disimpan');
+        }
     } catch (error) {
         console.error('Error:', error);
         alert('Gagal menyimpan ODC. Periksa koneksi ke server.');
     }
 }
+// =============================================
+// UPLOAD FOTO FUNCTIONS
+// =============================================
 
+// Preview foto ODP
+function previewODPPhotos() {
+    const files = document.getElementById('odpPhotos').files;
+    const preview = document.getElementById('odpPhotoPreview');
+    const existingCount = preview.querySelectorAll('.photo-item').length;
+    
+    if (existingCount + files.length > 5) {
+        alert('Maksimal 5 foto!');
+        document.getElementById('odpPhotos').value = '';
+        return;
+    }
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validasi tipe
+        if (!file.type.startsWith('image/')) {
+            alert(`File ${file.name} bukan gambar!`);
+            continue;
+        }
+        
+        // Validasi ukuran
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`File ${file.name} terlalu besar (max 5MB)!`);
+            continue;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-item new-photo';
+            div.dataset.fileIndex = i;
+            div.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="delete-photo" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Preview foto ODC
+function previewODCPhotos() {
+    const files = document.getElementById('odcPhotos').files;
+    const preview = document.getElementById('odcPhotoPreview');
+    const existingCount = preview.querySelectorAll('.photo-item').length;
+    
+    if (existingCount + files.length > 5) {
+        alert('Maksimal 5 foto!');
+        document.getElementById('odcPhotos').value = '';
+        return;
+    }
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        if (!file.type.startsWith('image/')) {
+            alert(`File ${file.name} bukan gambar!`);
+            continue;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`File ${file.name} terlalu besar (max 5MB)!`);
+            continue;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-item new-photo';
+            div.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="delete-photo" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Upload foto ke server
+async function uploadPhotos(deviceId, type) {
+    const fileInput = document.getElementById(type === 'odc' ? 'odcPhotos' : 'odpPhotos');
+    const files = fileInput.files;
+    
+    if (files.length === 0) return [];
+    
+    // Cek jumlah foto existing + new
+    const preview = document.getElementById(type === 'odc' ? 'odcPhotoPreview' : 'odpPhotoPreview');
+    const existingPhotos = preview.querySelectorAll('.photo-item:not(.new-photo)');
+    const newPhotos = preview.querySelectorAll('.photo-item.new-photo');
+    
+    if (existingPhotos.length + newPhotos.length > 5) {
+        alert('Maksimal 5 foto!');
+        return [];
+    }
+    
+    const formData = new FormData();
+    formData.append('type', type);
+    formData.append('device_id', deviceId);
+    
+    for (let i = 0; i < files.length; i++) {
+        formData.append('photos[]', files[i]);
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/upload.php`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData // Jangan set Content-Type, biarkan browser yang set multipart
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            return result.photos || [];
+        } else {
+            alert(result.error || 'Gagal upload foto');
+            return [];
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Gagal upload foto');
+        return [];
+    }
+}
+
+// Hapus foto dari server
+async function deletePhoto(photoId, type, deviceId) {
+    if (!confirm('Hapus foto ini?')) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/upload.php`, {
+            method: 'DELETE',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo_id: photoId, type: type })
+        });
+        
+        if (response.ok) {
+            // Refresh tampilan
+            await loadDevices();
+            const device = type === 'odc' ? 
+                devices.odc.find(d => d.id == deviceId) : 
+                devices.odp.find(d => d.id == deviceId);
+            if (device) {
+                showDeviceInfo(device);
+            }
+        }
+    } catch (error) {
+        console.error('Delete photo error:', error);
+    }
+}
+
+// Tampilkan foto di info panel
+function renderPhotoGallery(device, type) {
+    if (!device.photos || device.photos.length === 0) {
+        return '';
+    }
+    
+    let html = '<hr><h4>📷 Foto (' + device.photos.length + '/5)</h4><div class="photo-gallery">';
+    
+    device.photos.forEach(photo => {
+        const primaryClass = photo.is_primary ? ' primary-photo' : '';
+        html += `
+            <img src="${photo.url}" 
+                 alt="${photo.original_name || 'Foto'}" 
+                 class="${primaryClass}"
+                 onclick="openLightbox('${photo.url}')"
+                 title="${photo.original_name || 'Foto'}${photo.is_primary ? ' (Utama)' : ''}">
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// Lightbox
+function openLightbox(url) {
+    let lightbox = document.getElementById('lightbox');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'lightbox';
+        lightbox.className = 'lightbox';
+        lightbox.innerHTML = `
+            <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+            <img src="" alt="Foto">
+        `;
+        lightbox.onclick = function(e) {
+            if (e.target === lightbox) closeLightbox();
+        };
+        document.body.appendChild(lightbox);
+    }
+    
+    lightbox.querySelector('img').src = url;
+    lightbox.classList.add('show');
+}
+
+function closeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    if (lightbox) {
+        lightbox.classList.remove('show');
+    }
+}
 // Edit device
 async function editDevice(id, type) {
     const device = type === 'odc' ? 
@@ -514,8 +867,31 @@ async function editDevice(id, type) {
         document.getElementById('odpDescription').value = device.description || '';
         
         await populateSourceDropdown();
+        // Di bagian else (edit ODP), tambahkan setelah populateSourceDropdown:
+        // Tampilkan foto existing
+        const photoPreview = document.getElementById('odpPhotoPreview');
+        photoPreview.innerHTML = '';
+        if (device.photos && device.photos.length > 0) {
+            device.photos.forEach(photo => {
+                const div = document.createElement('div');
+                div.className = `photo-item${photo.is_primary ? ' primary' : ''}`;
+                div.innerHTML = `
+                    <img src="${photo.url}" alt="${photo.original_name}">
+                    <button type="button" class="delete-photo" onclick="deletePhoto(${photo.id}, 'odp', ${device.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    ${photo.is_primary ? '<span class="primary-badge">Utama</span>' : ''}
+                `;
+                photoPreview.appendChild(div);
+            });
+        }
         if (device.source_id) {
             document.getElementById('odpSource').value = device.source_id;
+            if (device.port_number_in_odc) {
+                await loadODCPortsForEdit(device.source_id, device.port_number_in_odc);
+            } else {
+                await loadODCPortsForEdit(device.source_id);
+            }
         }
         
         generatePortStatusInputs(device.ports);
@@ -592,10 +968,62 @@ function searchCustomer() {
     
     resultsContainer.innerHTML = html;
 }
+async function onODCSourceChange() {
+    const odcId = document.getElementById('odpSource').value;
+    const portGroup = document.getElementById('odcPortGroup');
+    const portSelect = document.getElementById('odpPortInODC');
+    
+    if (!odcId) {
+        portGroup.style.display = 'none';
+        return;
+    }
+    
+    portGroup.style.display = 'block';
+    portSelect.innerHTML = '<option value="">Loading port...</option>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/odc.php?id=${odcId}&ports=true`, {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const ports = await response.json();
+            portSelect.innerHTML = '<option value="">Pilih port...</option>';
+            
+            ports.forEach(port => {
+                const option = document.createElement('option');
+                option.value = port.port_number;
+                
+                let statusText = '';
+                let disabled = false;
+                
+                if (port.status === 'used') {
+                    statusText = `❌ Terpakai oleh ${port.odp_name || 'ODP'}`;
+                    disabled = true;
+                } else {
+                    statusText = '✅ Tersedia';
+                }
+                
+                option.textContent = `Port ${port.port_number} - ${statusText}`;
+                option.disabled = disabled;
+                portSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading ports:', error);
+        portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
+    }
+}
 
-// Close modal
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
+    
+    // Invalidate map size setelah modal tertutup
+    setTimeout(() => {
+        if (typeof map !== 'undefined' && map) {
+            map.invalidateSize();
+        }
+    }, 300);
 }
 
 // Close modal when clicking outside

@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- Leaflet Geoman -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -17,20 +21,39 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
+        <!-- ✅ Toggle Sidebar Button (Mobile) -->
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- ✅ Overlay untuk mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+        
+        <!-- ✅ SIDEBAR - PASTIKAN id="sidebar" ADA -->
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2><i class="fas fa-network-wired"></i> Fiber Manager</h2>
+                <!-- ✅ Tombol close untuk mobile -->
+                <button class="sidebar-close" onclick="closeSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
                 <div class="user-info">
                     <span id="userDisplayName">Loading...</span>
-                    <button class="btn-logout" onclick="logout()" title="Logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+                    <div style="display: flex; gap: 5px;">
+                        <button id="btnUserManagement" class="btn-logout" onclick="window.location.href='users.html'" 
+                                style="display: none;" title="Manajemen User">
+                            <i class="fas fa-users-cog"></i>
+                        </button>
+                        <button class="btn-logout" onclick="logout()" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>            
+            </div>
+            
             <div class="sidebar-content">
                 <!-- Tombol Tambah -->
-                <div class="action-buttons">
+                <div class="action-buttons" id="actionButtons">
                     <button class="btn btn-primary" onclick="showAddODPDialog()">
                         <i class="fas fa-plus-circle"></i> Tambah ODP
                     </button>
@@ -48,6 +71,7 @@
                         <button class="filter-btn" data-filter="odp">ODP</button>
                     </div>
                 </div>
+
                 <!-- Pencarian Pelanggan -->
                 <div class="customer-search-section">
                     <h4><i class="fas fa-users"></i> Cari Pelanggan</h4>
@@ -62,6 +86,7 @@
                 <div class="device-list" id="deviceList"></div>
             </div>
         </div>
+        <!-- ✅ END SIDEBAR -->
         
         <!-- Map Container -->
         <div class="map-container">
@@ -83,6 +108,8 @@
                 <input type="text" id="searchCoordinate" placeholder="Cari koordinat... (-6.2088, 106.8456)">
                 <button onclick="searchAndZoom()"><i class="fas fa-search"></i></button>
             </div>
+            
+
         </div>
     </div>
     
@@ -101,11 +128,20 @@
                     <input type="text" id="odpName" placeholder="Contoh: ODP-FT-001" required>
                 </div>
                 
+                <!-- Form ODP - update bagian ini -->
                 <div class="form-group">
                     <label>Berasal dari (ODC):</label>
-                    <select id="odpSource">
+                    <select id="odpSource" onchange="onODCSourceChange()">
                         <option value="">Pilih ODC sumber...</option>
                     </select>
+                </div>
+
+                <div class="form-group" id="odcPortGroup" style="display: none;">
+                    <label>Pilih Port di ODC:</label>
+                    <select id="odpPortInODC">
+                        <option value="">Pilih port...</option>
+                    </select>
+                    <small id="portInfoText">Pilih port ODC yang akan dihubungkan ke ODP ini</small>
                 </div>
                 
                 <div class="form-group">
@@ -138,6 +174,17 @@
                     <label>Keterangan:</label>
                     <textarea id="odpDescription" rows="3" placeholder="Tambahkan keterangan..."></textarea>
                 </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="odpPhotos" accept="image/*" multiple style="display: none;" onchange="previewODPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('odpPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="odpPhotoPreview" class="photo-preview"></div>
+                </div>
                 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('odpModal')">Batal</button>
@@ -146,6 +193,7 @@
             </form>
         </div>
     </div>
+    
     
     <!-- Modal Form ODC -->
     <div class="modal" id="odcModal">
@@ -187,10 +235,21 @@
                     <label>Daftar ODP Terhubung:</label>
                     <div class="connected-list" id="connectedODPList"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Keterangan:</label>
                     <textarea id="odcDescription" rows="3" placeholder="Tambahkan keterangan..."></textarea>
+                </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="odcPhotos" accept="image/*" multiple style="display: none;" onchange="previewODCPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('odcPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="odcPhotoPreview" class="photo-preview"></div>
                 </div>
                 
                 <div class="form-actions">
@@ -228,6 +287,11 @@
                 <button class="btn btn-secondary btn-block" style="margin-top:5px;" onclick="clearPort()">Kosongkan Port</button>
             </div>
         </div>
+    </div>
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+        <img src="" alt="Foto" id="lightboxImg">
     </div>
     
     <!-- JavaScript -->

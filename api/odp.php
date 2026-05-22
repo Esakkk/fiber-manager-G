@@ -1,6 +1,9 @@
 <?php
 require_once 'config.php';
 
+// Proteksi: harus login
+requireAuth();
+
 $method = $_SERVER['REQUEST_METHOD'];
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
@@ -13,12 +16,15 @@ switch($method) {
         }
         break;
     case 'POST':
+        checkRole(['admin', 'operator']);
         createODP();
         break;
     case 'PUT':
+        checkRole(['admin', 'operator']);
         updateODP($id);
         break;
     case 'DELETE':
+        checkRole(['admin']);
         deleteODP($id);
         break;
     default:
@@ -38,8 +44,8 @@ function getAllODP() {
         ");
         $odps = $stmt->fetchAll();
         
-        // Get ports for each ODP
         foreach ($odps as &$odp) {
+            // Get ports
             $stmt2 = $pdo->prepare("SELECT * FROM odp_ports WHERE odp_id = ? ORDER BY port_number");
             $stmt2->execute([$odp['id']]);
             $odp['ports'] = $stmt2->fetchAll();
@@ -50,6 +56,17 @@ function getAllODP() {
                 if ($port['status'] === 'available') $available++;
             }
             $odp['available_ports'] = $available;
+            
+            // Get photos
+            $stmt3 = $pdo->prepare("
+                SELECT id, filename, original_name, is_primary, file_size, created_at,
+                       CONCAT('uploads/odp/', filename) as url
+                FROM odp_photos 
+                WHERE odp_id = ? 
+                ORDER BY is_primary DESC, created_at ASC
+            ");
+            $stmt3->execute([$odp['id']]);
+            $odp['photos'] = $stmt3->fetchAll();
         }
         
         sendResponse($odps);
@@ -85,6 +102,17 @@ function getODP($id) {
             }
             $odp['available_ports'] = $available;
             
+            // Get photos
+            $stmt3 = $pdo->prepare("
+                SELECT id, filename, original_name, is_primary, file_size, created_at,
+                       CONCAT('uploads/odp/', filename) as url
+                FROM odp_photos 
+                WHERE odp_id = ? 
+                ORDER BY is_primary DESC, created_at ASC
+            ");
+            $stmt3->execute([$id]);
+            $odp['photos'] = $stmt3->fetchAll();
+            
             sendResponse($odp);
         } else {
             sendResponse(['error' => 'ODP not found'], 404);
@@ -105,20 +133,35 @@ function createODP() {
     try {
         $pdo->beginTransaction();
         
+        // Validasi port belum terpakai jika source_type = 'odc'
+        if ($data['source_type'] === 'odc' && isset($data['source_id']) && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) as total FROM odc_odp_connections 
+                WHERE odc_id = ? AND port_number = ?
+            ");
+            $stmt->execute([$data['source_id'], $data['port_number_in_odc']]);
+            $result = $stmt->fetch();
+            if ($result['total'] > 0) {
+                sendResponse(['error' => 'Port ODC ' . $data['port_number_in_odc'] . ' sudah digunakan oleh ODP lain'], 400);
+            }
+        }
+        
         // Insert ODP
         $stmt = $pdo->prepare("
-            INSERT INTO odp (name, source_id, source_type, lat, lng, location, total_ports, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO odp (name, source_id, source_type, port_number_in_odc, lat, lng, location, total_ports, description, path_coordinates)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['name'],
             $data['source_id'] ?? null,
             $data['source_type'] ?? null,
+            $data['port_number_in_odc'] ?? null,
             $data['lat'],
             $data['lng'],
             $data['location'] ?? '',
             $data['total_ports'] ?? 8,
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            $data['path_coordinates'] ?? null
         ]);
         
         $odp_id = $pdo->lastInsertId();
@@ -134,12 +177,12 @@ function createODP() {
         }
         
         // If connected to ODC, create connection
-        if (isset($data['source_id']) && $data['source_type'] === 'odc') {
+        if (isset($data['source_id']) && $data['source_type'] === 'odc' && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
             $stmt = $pdo->prepare("
-                INSERT IGNORE INTO odc_odp_connections (odc_id, odp_id)
-                VALUES (?, ?)
+                INSERT INTO odc_odp_connections (odc_id, odp_id, port_number)
+                VALUES (?, ?, ?)
             ");
-            $stmt->execute([$data['source_id'], $odp_id]);
+            $stmt->execute([$data['source_id'], $odp_id, $data['port_number_in_odc']]);
             updateODCUsedPorts($data['source_id']);
         }
         
@@ -171,6 +214,23 @@ function updateODP($id) {
             sendResponse(['error' => 'ODP not found'], 404);
         }
         
+        // Validasi port baru jika berubah
+        if (isset($data['source_type']) && $data['source_type'] === 'odc' && 
+            isset($data['source_id']) && isset($data['port_number_in_odc']) && 
+            $data['port_number_in_odc'] && 
+            ($oldData['source_id'] != $data['source_id'] || $oldData['port_number_in_odc'] != $data['port_number_in_odc'])) {
+            
+            $stmt = $pdo->prepare("
+                SELECT COUNT(*) as total FROM odc_odp_connections 
+                WHERE odc_id = ? AND port_number = ? AND odp_id != ?
+            ");
+            $stmt->execute([$data['source_id'], $data['port_number_in_odc'], $id]);
+            $result = $stmt->fetch();
+            if ($result['total'] > 0) {
+                sendResponse(['error' => 'Port ODC ' . $data['port_number_in_odc'] . ' sudah digunakan oleh ODP lain'], 400);
+            }
+        }
+        
         // Update ODP fields
         $fields = [];
         $values = [];
@@ -178,11 +238,13 @@ function updateODP($id) {
         if (isset($data['name'])) { $fields[] = "name = ?"; $values[] = $data['name']; }
         if (isset($data['source_id'])) { $fields[] = "source_id = ?"; $values[] = $data['source_id']; }
         if (isset($data['source_type'])) { $fields[] = "source_type = ?"; $values[] = $data['source_type']; }
+        if (isset($data['port_number_in_odc'])) { $fields[] = "port_number_in_odc = ?"; $values[] = $data['port_number_in_odc']; }
         if (isset($data['lat'])) { $fields[] = "lat = ?"; $values[] = $data['lat']; }
         if (isset($data['lng'])) { $fields[] = "lng = ?"; $values[] = $data['lng']; }
         if (isset($data['location'])) { $fields[] = "location = ?"; $values[] = $data['location']; }
         if (isset($data['total_ports'])) { $fields[] = "total_ports = ?"; $values[] = $data['total_ports']; }
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
+        if (isset($data['path_coordinates'])) { $fields[] = "path_coordinates = ?"; $values[] = $data['path_coordinates']; }
         
         if (!empty($fields)) {
             $values[] = $id;
@@ -191,15 +253,12 @@ function updateODP($id) {
             $stmt->execute($values);
         }
         
-        // =============================================
-        // HANDLE PERUBAHAN JUMLAH PORT
-        // =============================================
+        // Handle perubahan jumlah port
         if (isset($data['total_ports'])) {
             $newTotalPorts = (int)$data['total_ports'];
             $oldTotalPorts = (int)$oldData['total_ports'];
             
             if ($newTotalPorts > $oldTotalPorts) {
-                // Tambah port baru (status available)
                 $stmt = $pdo->prepare("
                     INSERT INTO odp_ports (odp_id, port_number, status) 
                     VALUES (?, ?, 'available')
@@ -207,20 +266,12 @@ function updateODP($id) {
                 for ($i = $oldTotalPorts + 1; $i <= $newTotalPorts; $i++) {
                     $stmt->execute([$id, $i]);
                 }
-            } 
-            elseif ($newTotalPorts < $oldTotalPorts) {
-                // Hapus port berlebih - HANYA yang statusnya 'available'
-                // Port yang 'used' atau 'maintenance' tidak dihapus
+            } elseif ($newTotalPorts < $oldTotalPorts) {
                 $stmt = $pdo->prepare("
                     DELETE FROM odp_ports 
-                    WHERE odp_id = ? 
-                    AND port_number > ? 
-                    AND status = 'available'
+                    WHERE odp_id = ? AND port_number > ? AND status = 'available'
                 ");
                 $stmt->execute([$id, $newTotalPorts]);
-                
-                // Update port_number untuk port yang tersisa jika perlu
-                // (Tidak diperlukan karena port_number adalah nilai tetap)
             }
         }
         
@@ -231,16 +282,16 @@ function updateODP($id) {
             updateODCUsedPorts($oldData['source_id']);
         }
         
-        if (isset($data['source_id']) && $data['source_type'] === 'odc') {
+        if (isset($data['source_id']) && isset($data['source_type']) && $data['source_type'] === 'odc' && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
             $stmt = $pdo->prepare("
-                INSERT IGNORE INTO odc_odp_connections (odc_id, odp_id)
-                VALUES (?, ?)
+                INSERT INTO odc_odp_connections (odc_id, odp_id, port_number)
+                VALUES (?, ?, ?)
             ");
-            $stmt->execute([$data['source_id'], $id]);
+            $stmt->execute([$data['source_id'], $id, $data['port_number_in_odc']]);
             updateODCUsedPorts($data['source_id']);
         }
         
-        // Update available_ports based on port statuses
+        // Update available_ports
         updateODPAvailablePorts($id);
         
         $pdo->commit();
@@ -257,7 +308,6 @@ function updateODP($id) {
         $stmt->execute([$id]);
         $updatedODP = $stmt->fetch();
         
-        // Get ports
         $stmt2 = $pdo->prepare("SELECT * FROM odp_ports WHERE odp_id = ? ORDER BY port_number");
         $stmt2->execute([$id]);
         $updatedODP['ports'] = $stmt2->fetchAll();
@@ -293,18 +343,13 @@ function deleteODP($id) {
         $stmt->execute([$id]);
         $odp = $stmt->fetch();
         
-        // Delete connections
         if ($odp && $odp['source_id']) {
             $stmt = $pdo->prepare("DELETE FROM odc_odp_connections WHERE odp_id = ?");
             $stmt->execute([$id]);
             updateODCUsedPorts($odp['source_id']);
         }
         
-        // Set source_id to NULL for ODPs connected to this ODP
-        $stmt = $pdo->prepare("UPDATE odp SET source_id = NULL, source_type = NULL WHERE source_id = ? AND source_type = 'odp'");
-        $stmt->execute([$id]);
-        
-        // Delete ODP (cascade deletes ports)
+        // Delete ODP
         $stmt = $pdo->prepare("DELETE FROM odp WHERE id = ?");
         $stmt->execute([$id]);
         

@@ -7,9 +7,14 @@ requireAuth();
 $method = $_SERVER['REQUEST_METHOD'];
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
+// =============================================
+// PERBAIKAN: Switch statement yang benar
+// =============================================
 switch($method) {
     case 'GET':
-        if ($id && isset($_GET['ports'])) {
+        if (isset($_GET['sources'])) {
+            getAvailableSources();
+        } elseif ($id && isset($_GET['ports'])) {
             getODCPorts($id);
         } elseif ($id) {
             getODC($id);
@@ -17,51 +22,57 @@ switch($method) {
             getAllODC();
         }
         break;
+        
     case 'POST':
         checkRole(['admin', 'operator']);
         createODC();
         break;
+        
     case 'PUT':
         checkRole(['admin', 'operator']);
         updateODC($id);
         break;
+        
     case 'DELETE':
         checkRole(['admin']);
         deleteODC($id);
         break;
+        
     default:
         sendResponse(['error' => 'Method not allowed'], 405);
 }
+
+// =============================================
+// FUNGSI-FUNGSI
+// =============================================
 
 function getAllODC() {
     global $pdo;
     try {
         $stmt = $pdo->query("
             SELECT o.*, 
-                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps
+                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps,
+                   CASE 
+                       WHEN o.source_type = 'pop' THEN (SELECT name FROM pop WHERE id = o.source_id)
+                       WHEN o.source_type = 'olt' THEN (SELECT name FROM olt WHERE id = o.source_id)
+                       WHEN o.source_type = 'pon' THEN (SELECT name FROM pon WHERE id = o.source_id)
+                       ELSE NULL
+                   END as source_name
             FROM odc o 
             ORDER BY o.created_at DESC
         ");
         $odcs = $stmt->fetchAll();
         
         foreach ($odcs as &$odc) {
-            // Get photos
             $stmt2 = $pdo->prepare("
-                SELECT id, filename, original_name, is_primary, file_size, created_at,
+                SELECT id, filename, original_name, is_primary,
                        CONCAT('uploads/odc/', filename) as url
                 FROM odc_photos 
                 WHERE odc_id = ? 
-                ORDER BY is_primary DESC, created_at ASC
+                ORDER BY is_primary DESC
             ");
             $stmt2->execute([$odc['id']]);
             $odc['photos'] = $stmt2->fetchAll();
-            
-            // Get port usage
-            $stmt3 = $pdo->prepare("
-                SELECT COUNT(*) as used_ports FROM odc_odp_connections WHERE odc_id = ?
-            ");
-            $stmt3->execute([$odc['id']]);
-            $odc['used_ports'] = $stmt3->fetch()['used_ports'];
         }
         
         sendResponse($odcs);
@@ -116,7 +127,6 @@ function getODC($id) {
     }
 }
 
-// FUNGSI BARU: Get all ports status for an ODC
 function getODCPorts($odc_id) {
     global $pdo;
     try {
@@ -179,13 +189,13 @@ function createODC() {
     $data = getRequestData();
     
     if (!isset($data['name']) || !isset($data['lat']) || !isset($data['lng'])) {
-        sendResponse(['error' => 'Missing required fields'], 400);
+        sendResponse(['error' => 'Missing required fields: name, lat, lng'], 400);
     }
     
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO odc (name, lat, lng, location, capacity, description)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO odc (name, lat, lng, location, capacity, description, source_type, source_id, pon_port_number)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['name'],
@@ -193,10 +203,17 @@ function createODC() {
             $data['lng'],
             $data['location'] ?? '',
             $data['capacity'] ?? 24,
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            $data['source_type'] ?? null,
+            $data['source_id'] ?? null,
+            $data['pon_port_number'] ?? null
         ]);
         
         $id = $pdo->lastInsertId();
+        
+        // Update used_ports
+        updateODCUsedPorts($id);
+        
         sendResponse(['id' => $id, 'message' => 'ODC created successfully']);
     } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);
@@ -221,6 +238,9 @@ function updateODC($id) {
         if (isset($data['location'])) { $fields[] = "location = ?"; $values[] = $data['location']; }
         if (isset($data['capacity'])) { $fields[] = "capacity = ?"; $values[] = $data['capacity']; }
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
+        if (isset($data['source_type'])) { $fields[] = "source_type = ?"; $values[] = $data['source_type']; }
+        if (isset($data['source_id'])) { $fields[] = "source_id = ?"; $values[] = $data['source_id']; }
+        if (isset($data['pon_port_number'])) { $fields[] = "pon_port_number = ?"; $values[] = $data['pon_port_number']; }
         
         if (empty($fields)) {
             sendResponse(['error' => 'No fields to update'], 400);
@@ -265,6 +285,47 @@ function deleteODC($id) {
         sendResponse(['message' => 'ODC deleted successfully']);
     } catch(PDOException $e) {
         $pdo->rollBack();
+        sendResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+function getAvailableSources() {
+    global $pdo;
+    try {
+        $sources = [
+            'pops' => [],
+            'olts' => [],
+            'pons' => []
+        ];
+        
+        // Get POPs
+        $result = $pdo->query("SELECT id, name, code, location FROM pop ORDER BY name");
+        $sources['pops'] = $result->fetchAll();
+        
+        // Get OLTS with POP info
+        $result = $pdo->query("
+            SELECT o.id, o.name, o.model, p.name as pop_name, p.id as pop_id
+            FROM olt o
+            JOIN pop p ON o.pop_id = p.id
+            ORDER BY p.name, o.name
+        ");
+        $sources['olts'] = $result->fetchAll();
+        
+        // Get PONs with OLT and POP info
+        $result = $pdo->query("
+            SELECT p.id, p.port_number, p.name as pon_name, 
+                   o.id as olt_id, o.name as olt_name,
+                   po.id as pop_id, po.name as pop_name
+            FROM pon p
+            JOIN olt o ON p.olt_id = o.id
+            JOIN pop po ON o.pop_id = po.id
+            WHERE p.status = 'active'
+            ORDER BY po.name, o.name, p.port_number
+        ");
+        $sources['pons'] = $result->fetchAll();
+        
+        sendResponse($sources);
+    } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);
     }
 }

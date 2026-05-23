@@ -54,6 +54,9 @@
             <div class="sidebar-content">
                 <!-- Tombol Tambah -->
                 <div class="action-buttons" id="actionButtons">
+                    <button class="btn btn-primary" onclick="window.location.href='pop-management.html'" style="background: #9b59b6;">
+                        <i class="fas fa-building"></i> Kelola POP
+                    </button>
                     <button class="btn btn-primary" onclick="showAddODPDialog()">
                         <i class="fas fa-plus-circle"></i> Tambah ODP
                     </button>
@@ -61,7 +64,6 @@
                         <i class="fas fa-plus-circle"></i> Tambah ODC
                     </button>
                 </div>
-                
                 <!-- Filter & Pencarian -->
                 <div class="filter-section">
                     <input type="text" id="searchInput" placeholder="Cari ODP/ODC..." class="search-input">
@@ -194,7 +196,170 @@
         </div>
     </div>
     
-    
+    <!-- Modal POP -->
+    <div class="modal" id="popModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2 id="popModalTitle">Tambah POP</h2>
+                <span class="close" onclick="closeModal('popModal')">&times;</span>
+            </div>
+            <form id="popForm">
+                <input type="hidden" id="popId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama POP:</label>
+                        <input type="text" id="popName" placeholder="Contoh: POP Cikarang" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kode POP:</label>
+                        <input type="text" id="popCode" placeholder="Contoh: CK-01">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Koordinat (latitude, longitude):</label>
+                    <input type="text" id="popCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Lokasi:</label>
+                    <input type="text" id="popLocation" placeholder="Nama area/kecamatan" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Alamat Lengkap:</label>
+                    <textarea id="popAddress" rows="2" placeholder="Alamat lengkap POP"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="popDescription" rows="2" placeholder="Informasi tambahan..."></textarea>
+                </div>
+                
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="popPhotos" accept="image/*" multiple style="display: none;" onchange="previewPOPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('popPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <div id="popPhotoPreview" class="photo-preview"></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('popModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan POP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal OLT -->
+    <div class="modal" id="oltModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2 id="oltModalTitle">Tambah OLT</h2>
+                <span class="close" onclick="closeModal('oltModal')">&times;</span>
+            </div>
+            <form id="oltForm">
+                <input type="hidden" id="oltId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pilih POP:</label>
+                        <select id="oltPopId" required>
+                            <option value="">Pilih POP...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama OLT:</label>
+                        <input type="text" id="oltName" placeholder="Contoh: OLT-CK-01" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Model:</label>
+                        <input type="text" id="oltModel" placeholder="Contoh: Huawei MA5800">
+                    </div>
+                    <div class="form-group">
+                        <label>IP Address:</label>
+                        <input type="text" id="oltIpAddress" placeholder="192.168.1.100">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Management Port:</label>
+                        <input type="number" id="oltManagementPort" value="22">
+                    </div>
+                    <div class="form-group">
+                        <label>Total PON Ports:</label>
+                        <input type="number" id="oltTotalPonPorts" min="1" max="64" value="16">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Koordinat (Optional):</label>
+                    <input type="text" id="oltCoordinates" placeholder="Contoh: -6.208800, 106.845600">
+                </div>
+                
+                <div class="form-group">
+                    <label>Lokasi:</label>
+                    <input type="text" id="oltLocation" placeholder="Lokasi fisik OLT">
+                </div>
+                
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="oltDescription" rows="2"></textarea>
+                </div>
+                
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="oltPhotos" accept="image/*" multiple style="display: none;" onchange="previewOLTPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('oltPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <div id="oltPhotoPreview" class="photo-preview"></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('oltModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan OLT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal PON (untuk edit) -->
+<div class="modal" id="ponModal">
+    <div class="modal-content modal-small">
+        <div class="modal-header">
+            <h3>Edit PON</h3>
+            <span class="close" onclick="closeModal('ponModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="ponId">
+            <div class="form-group">
+                <label>Nama PON:</label>
+                <input type="text" id="ponName" placeholder="Contoh: PON-1 (Rumah Sakit)">
+            </div>
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="ponStatus">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Keterangan:</label>
+                <textarea id="ponDescription" rows="2"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="savePON()">Simpan</button>
+        </div>
+    </div>
+</div>
     <!-- Modal Form ODC -->
     <div class="modal" id="odcModal">
         <div class="modal-content">
@@ -209,7 +374,28 @@
                     <label>Nama ODC:</label>
                     <input type="text" id="odcName" placeholder="Contoh: ODC-CKR-001" required>
                 </div>
-                
+                <!-- Di modal ODC, tambahkan setelah nama ODC -->
+                <div class="form-group">
+                    <label>Sumber / Berasal dari:</label>
+                    <select id="odcSourceType" onchange="onSourceTypeChange()">
+                        <option value="">Tidak ada (Standalone)</option>
+                        <option value="pop">POP (Point of Presence)</option>
+                        <option value="olt">OLT (Optical Line Terminal)</option>
+                        <option value="pon">PON (Passive Optical Network)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="odcSourceGroup" style="display: none;">
+                    <label id="odcSourceLabel">Pilih Sumber:</label>
+                    <select id="odcSourceId">
+                        <option value="">Pilih...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="odcPonPortGroup" style="display: none;">
+                    <label>Port di PON:</label>
+                    <input type="number" id="odcPonPortNumber" placeholder="Nomor port">
+                </div>
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>

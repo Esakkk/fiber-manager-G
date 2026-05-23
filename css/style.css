@@ -1054,3 +1054,24 @@ form {
         max-height: 120px;
     }
 }
+/* Tambahan untuk modal besar */
+.modal-lg {
+    max-width: 700px;
+    width: 90%;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* Warna tombol hierarchy */
+.btn-pop { background: #9b59b6; }
+.btn-olt { background: #e67e22; }
+.btn-pon { background: #1abc9c; }

@@ -53,6 +53,7 @@ async function checkAuthentication() {
 }
 
 // Load user info
+// Load user info
 async function loadUserInfo() {
     try {
         const response = await fetch(`${API_BASE}/auth.php?action=me`, {
@@ -83,6 +84,13 @@ async function loadUserInfo() {
                 const btnUserManagement = document.getElementById('btnUserManagement');
                 if (btnUserManagement && data.user.role === 'admin') {
                     btnUserManagement.style.display = 'inline-block';
+                }
+                
+                // =============================================
+                // 🔴 TAMBAHKAN INI - Untuk menampilkan tombol POP & OLT
+                // =============================================
+                if (data.user.role === 'admin' || data.user.role === 'operator') {
+                    addHierarchyButtons();
                 }
             }
         }
@@ -171,7 +179,19 @@ function initEventListeners() {
             refreshDeviceList();
         });
     });
-    
+    // Di dalam fungsi initEventListeners(), tambahkan:
+
+    document.getElementById('popForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        savePOP();
+    });
+
+    // Event listener untuk form OLT
+    document.getElementById('oltForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveOLT();
+    });
+        
     const searchCoord = document.getElementById('searchCoordinate');
     if (searchCoord) {
         searchCoord.addEventListener('keypress', function(e) {
@@ -1014,6 +1034,206 @@ async function onODCSourceChange() {
         portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
     }
 }
+// =============================================
+// POP FUNCTIONS
+// =============================================
+
+async function loadPOPs() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/pop.php`);
+        if (response && response.ok) {
+            const pops = await response.json();
+            return pops;
+        }
+        return [];
+    } catch (error) {
+        console.error('Error loading POPs:', error);
+        return [];
+    }
+}
+
+
+// =============================================
+// OLT FUNCTIONS
+// =============================================
+
+
+
+async function loadPOPsForOLT() {
+    const popSelect = document.getElementById('oltPopId');
+    const pops = await loadPOPs();
+    
+    popSelect.innerHTML = '<option value="">Pilih POP...</option>';
+    pops.forEach(pop => {
+        const option = document.createElement('option');
+        option.value = pop.id;
+        option.textContent = `${pop.name} ${pop.code ? '(' + pop.code + ')' : ''}`;
+        popSelect.appendChild(option);
+    });
+}
+
+function previewOLTPhotos() {
+    const files = document.getElementById('oltPhotos').files;
+    const preview = document.getElementById('oltPhotoPreview');
+    
+    preview.innerHTML = '';
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-item';
+            div.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="delete-photo" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+
+// =============================================
+// ODC SOURCE SELECTION (Updated)
+// =============================================
+
+async function onSourceTypeChange() {
+    const sourceType = document.getElementById('odcSourceType').value;
+    const sourceGroup = document.getElementById('odcSourceGroup');
+    const sourceLabel = document.getElementById('odcSourceLabel');
+    const sourceSelect = document.getElementById('odcSourceId');
+    const ponPortGroup = document.getElementById('odcPonPortGroup');
+    
+    if (!sourceType) {
+        sourceGroup.style.display = 'none';
+        ponPortGroup.style.display = 'none';
+        return;
+    }
+    
+    sourceGroup.style.display = 'block';
+    ponPortGroup.style.display = 'none';
+    
+    let options = [];
+    
+    switch(sourceType) {
+        case 'pop':
+            sourceLabel.textContent = 'Pilih POP:';
+            const pops = await loadPOPs();
+            options = pops.map(p => ({ id: p.id, name: `${p.name} ${p.code ? '(' + p.code + ')' : ''}` }));
+            break;
+        case 'olt':
+            sourceLabel.textContent = 'Pilih OLT:';
+            const olts = await loadOLTsForDropdown();
+            options = olts.map(o => ({ id: o.id, name: `${o.name} (${o.pop_name})` }));
+            break;
+        case 'pon':
+            sourceLabel.textContent = 'Pilih PON:';
+            const pons = await loadPONsForDropdown();
+            options = pons.map(p => ({ 
+                id: p.id, 
+                name: `PON ${p.port_number} - ${p.name || ''} (${p.olt_name} - ${p.pop_name})` 
+            }));
+            break;
+    }
+    
+    sourceSelect.innerHTML = '<option value="">Pilih...</option>';
+    options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.id;
+        option.textContent = opt.name;
+        sourceSelect.appendChild(option);
+    });
+    
+    if (sourceType === 'pon') {
+        ponPortGroup.style.display = 'block';
+    }
+}
+
+// Update saveODC untuk include source
+async function saveODC() {
+    const id = document.getElementById('odcId').value;
+    const coordString = document.getElementById('odcCoordinates').value.trim();
+    const sourceType = document.getElementById('odcSourceType').value;
+    
+    const coords = parseCoordinates(coordString);
+    if (!coords) {
+        alert('Format koordinat tidak valid!');
+        return;
+    }
+    
+    const data = {
+        name: document.getElementById('odcName').value,
+        lat: coords.lat,
+        lng: coords.lng,
+        location: document.getElementById('odcLocation').value,
+        capacity: parseInt(document.getElementById('odcCapacity').value),
+        description: document.getElementById('odcDescription').value,
+        source_type: sourceType || null,
+        source_id: sourceType ? document.getElementById('odcSourceId').value : null,
+        pon_port_number: sourceType === 'pon' ? document.getElementById('odcPonPortNumber').value : null
+    };
+    
+    if (!data.name) {
+        alert('Nama ODC harus diisi');
+        return;
+    }
+    
+    if (!data.location) {
+        alert('Alamat lokasi harus diisi');
+        return;
+    }
+    
+    try {
+        const url = id ? `${API_BASE}/odc.php?id=${id}` : `${API_BASE}/odc.php`;
+        const method = id ? 'PUT' : 'POST';
+        
+        const response = await fetchWithAuth(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+        
+        if (response && response.ok) {
+            const result = await response.json();
+            const deviceId = id || result.id;
+            
+            if (deviceId) {
+                await uploadPhotos(deviceId, 'odc');
+            }
+            
+            closeModal('odcModal');
+            await loadDevices();
+            alert('ODC berhasil disimpan');
+        } else {
+            const error = await response.json();
+            alert('Gagal menyimpan ODC: ' + (error.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Gagal menyimpan ODC');
+    }
+}
+
+// Tambahkan tombol di sidebar untuk POP dan OLT
+// Tambahkan tombol di sidebar untuk POP dan OLT
+function addHierarchyButtons() {
+    const actionButtons = document.getElementById('actionButtons');
+    if (!actionButtons) return;
+    
+    // Cek apakah tombol sudah ada (hindari duplikasi)
+    if (document.getElementById('btnAddPOP')) return;
+    
+    const buttonsHtml = `
+        <button id="btnAddPOP" class="btn btn-primary" onclick="showAddPOPDialog()" style="background: #9b59b6; margin-top: 5px;">
+            <i class="fas fa-building"></i> Tambah POP
+        </button>
+        <button id="btnAddOLT" class="btn btn-primary" onclick="showAddOLTDialog()" style="background: #e67e22; margin-top: 5px;">
+            <i class="fas fa-server"></i> Tambah OLT
+        </button>
+    `;
+    
+    actionButtons.insertAdjacentHTML('beforeend', buttonsHtml);
+}
+
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');

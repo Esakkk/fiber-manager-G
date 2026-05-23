@@ -26,10 +26,10 @@ switch($method) {
 function uploadPhoto() {
     global $pdo;
     
-    $type = $_POST['type'] ?? ''; // 'odc' atau 'odp'
+    $type = $_POST['type'] ?? ''; // 'pop', 'olt', 'odc', 'odp'
     $deviceId = isset($_POST['device_id']) ? (int)$_POST['device_id'] : 0;
     
-    if (!in_array($type, ['odc', 'odp'])) {
+    if (!in_array($type, ['pop', 'olt', 'odc', 'odp'])) {
         sendResponse(['error' => 'Tipe device tidak valid'], 400);
     }
     
@@ -37,18 +37,54 @@ function uploadPhoto() {
         sendResponse(['error' => 'Device ID harus diisi'], 400);
     }
     
-    // Cek apakah device exists
-    $table = $type === 'odc' ? 'odc' : 'odp';
-    $stmt = $pdo->prepare("SELECT id FROM $table WHERE id = ?");
+    // =============================================
+    // FIX 1: Mapping tabel untuk semua tipe
+    // =============================================
+    $tableMap = [
+        'pop' => [
+            'table' => 'pop',
+            'photo_table' => 'pop_photos',
+            'id_column' => 'pop_id',
+            'upload_dir' => 'pop'
+        ],
+        'olt' => [
+            'table' => 'olt',
+            'photo_table' => 'olt_photos',
+            'id_column' => 'olt_id',
+            'upload_dir' => 'olt'
+        ],
+        'odc' => [
+            'table' => 'odc',
+            'photo_table' => 'odc_photos',
+            'id_column' => 'odc_id',
+            'upload_dir' => 'odc'
+        ],
+        'odp' => [
+            'table' => 'odp',
+            'photo_table' => 'odp_photos',
+            'id_column' => 'odp_id',
+            'upload_dir' => 'odp'
+        ]
+    ];
+    
+    $map = $tableMap[$type];
+    $mainTable = $map['table'];
+    $photoTable = $map['photo_table'];
+    $idColumn = $map['id_column'];
+    $uploadSubDir = $map['upload_dir'];
+    
+    // =============================================
+    // FIX 2: Cek apakah device exists (untuk semua tipe)
+    // =============================================
+    $stmt = $pdo->prepare("SELECT id FROM $mainTable WHERE id = ?");
     $stmt->execute([$deviceId]);
     if (!$stmt->fetch()) {
-        sendResponse(['error' => 'Device tidak ditemukan'], 404);
+        sendResponse(['error' => ucfirst($type) . ' tidak ditemukan'], 404);
     }
     
-    // Cek jumlah foto existing
-    $photoTable = $type === 'odc' ? 'odc_photos' : 'odp_photos';
-    $idColumn = $type === 'odc' ? 'odc_id' : 'odp_id';
-    
+    // =============================================
+    // FIX 3: Cek jumlah foto existing (pakai mapping)
+    // =============================================
     $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM $photoTable WHERE $idColumn = ?");
     $stmt->execute([$deviceId]);
     $result = $stmt->fetch();
@@ -66,7 +102,10 @@ function uploadPhoto() {
         sendResponse(['error' => 'File foto harus diupload'], 400);
     }
     
-    $uploadDir = __DIR__ . '/../uploads/' . $type . '/';
+    // =============================================
+    // FIX 4: Gunakan uploadSubDir untuk folder
+    // =============================================
+    $uploadDir = __DIR__ . '/../uploads/' . $uploadSubDir . '/';
     
     // Buat folder jika belum ada
     if (!file_exists($uploadDir)) {
@@ -78,6 +117,12 @@ function uploadPhoto() {
     
     $files = $_FILES['photos'];
     $fileCount = count($files['name']);
+    
+    // =============================================
+    // FIX 5: Tambahkan validasi tambahan
+    // =============================================
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     
     for ($i = 0; $i < $fileCount; $i++) {
         $fileName = $files['name'][$i];
@@ -91,13 +136,19 @@ function uploadPhoto() {
             continue;
         }
         
-        // Validasi tipe file
-        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        // Validasi ekstensi file
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        if (!in_array($extension, $allowedExtensions)) {
+            $errors[] = "Ekstensi file tidak diizinkan: $fileName (hanya " . implode(', ', $allowedExtensions) . ")";
+            continue;
+        }
+        
+        // Validasi tipe MIME
         $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($fileInfo, $fileTmp);
         finfo_close($fileInfo);
         
-        if (!in_array($mimeType, $allowedTypes)) {
+        if (!in_array($mimeType, $allowedMimeTypes)) {
             $errors[] = "Tipe file tidak diizinkan: $fileName (hanya JPG, PNG, GIF, WEBP)";
             continue;
         }
@@ -109,20 +160,21 @@ function uploadPhoto() {
             continue;
         }
         
-        // Generate unique filename
-        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-        $newFileName = $type . '_' . $deviceId . '_' . time() . '_' . uniqid() . '.' . $extension;
+        // Generate unique filename dengan timestamp dan random
+        $timestamp = time();
+        $random = bin2hex(random_bytes(8));
+        $newFileName = $type . '_' . $deviceId . '_' . $timestamp . '_' . $random . '.' . $extension;
         $destination = $uploadDir . $newFileName;
         
         if (move_uploaded_file($fileTmp, $destination)) {
             // Simpan ke database
             $stmt = $pdo->prepare("
-                INSERT INTO $photoTable ($idColumn, filename, original_name, file_size, is_primary)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO $photoTable ($idColumn, filename, original_name, file_size, is_primary, created_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
             ");
             
             // Foto pertama otomatis jadi primary jika belum ada foto
-            $isPrimary = ($existingCount === 0 && $i === 0 && count($uploadedPhotos) === 0) ? 1 : 0;
+            $isPrimary = ($existingCount === 0 && count($uploadedPhotos) === 0) ? 1 : 0;
             
             $stmt->execute([
                 $deviceId,
@@ -137,21 +189,34 @@ function uploadPhoto() {
                 'id' => $photoId,
                 'filename' => $newFileName,
                 'original_name' => $fileName,
-                'is_primary' => $isPrimary,
-                'url' => 'uploads/' . $type . '/' . $newFileName
+                'file_size' => $fileSize,
+                'is_primary' => (bool)$isPrimary,
+                'url' => 'uploads/' . $uploadSubDir . '/' . $newFileName,
+                'created_at' => date('Y-m-d H:i:s')
             ];
         } else {
             $errors[] = "Gagal menyimpan file: $fileName";
         }
     }
     
+    // =============================================
+    // FIX 6: Update has_photo flag di tabel utama (opsional)
+    // =============================================
+    if (count($uploadedPhotos) > 0) {
+        $stmt = $pdo->prepare("UPDATE $mainTable SET has_photo = 1 WHERE id = ?");
+        $stmt->execute([$deviceId]);
+    }
+    
     $response = [
+        'success' => true,
         'message' => count($uploadedPhotos) . ' foto berhasil diupload',
-        'photos' => $uploadedPhotos
+        'photos' => $uploadedPhotos,
+        'total_photos' => $existingCount + count($uploadedPhotos)
     ];
     
     if (!empty($errors)) {
         $response['errors'] = $errors;
+        $response['success'] = false;
     }
     
     sendResponse($response);
@@ -164,7 +229,7 @@ function deletePhoto() {
     $photoId = isset($data['photo_id']) ? (int)$data['photo_id'] : 0;
     $type = $data['type'] ?? '';
     
-    if (!in_array($type, ['odc', 'odp'])) {
+    if (!in_array($type, ['pop', 'olt', 'odc', 'odp'])) {
         sendResponse(['error' => 'Tipe device tidak valid'], 400);
     }
     
@@ -172,8 +237,21 @@ function deletePhoto() {
         sendResponse(['error' => 'Photo ID harus diisi'], 400);
     }
     
-    $photoTable = $type === 'odc' ? 'odc_photos' : 'odp_photos';
-    $idColumn = $type === 'odc' ? 'odc_id' : 'odp_id';
+    // =============================================
+    // Mapping untuk delete
+    // =============================================
+    $tableMap = [
+        'pop' => ['photo_table' => 'pop_photos', 'main_table' => 'pop', 'id_column' => 'pop_id', 'dir' => 'pop'],
+        'olt' => ['photo_table' => 'olt_photos', 'main_table' => 'olt', 'id_column' => 'olt_id', 'dir' => 'olt'],
+        'odc' => ['photo_table' => 'odc_photos', 'main_table' => 'odc', 'id_column' => 'odc_id', 'dir' => 'odc'],
+        'odp' => ['photo_table' => 'odp_photos', 'main_table' => 'odp', 'id_column' => 'odp_id', 'dir' => 'odp']
+    ];
+    
+    $map = $tableMap[$type];
+    $photoTable = $map['photo_table'];
+    $mainTable = $map['main_table'];
+    $idColumn = $map['id_column'];
+    $uploadDir = $map['dir'];
     
     try {
         // Ambil info foto
@@ -185,8 +263,10 @@ function deletePhoto() {
             sendResponse(['error' => 'Foto tidak ditemukan'], 404);
         }
         
+        $deviceId = $photo[$idColumn];
+        
         // Hapus file fisik
-        $filePath = __DIR__ . '/../uploads/' . $type . '/' . $photo['filename'];
+        $filePath = __DIR__ . '/../uploads/' . $uploadDir . '/' . $photo['filename'];
         if (file_exists($filePath)) {
             unlink($filePath);
         }
@@ -195,8 +275,19 @@ function deletePhoto() {
         $stmt = $pdo->prepare("DELETE FROM $photoTable WHERE id = ?");
         $stmt->execute([$photoId]);
         
+        // Cek sisa foto
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM $photoTable WHERE $idColumn = ?");
+        $stmt->execute([$deviceId]);
+        $remaining = $stmt->fetch()['total'];
+        
+        // Jika tidak ada foto tersisa, update has_photo = 0
+        if ($remaining == 0) {
+            $stmt = $pdo->prepare("UPDATE $mainTable SET has_photo = 0 WHERE id = ?");
+            $stmt->execute([$deviceId]);
+        }
+        
         // Jika foto yang dihapus adalah primary, jadikan foto lain sebagai primary
-        if ($photo['is_primary']) {
+        if ($photo['is_primary'] && $remaining > 0) {
             $stmt = $pdo->prepare("
                 UPDATE $photoTable 
                 SET is_primary = 1 
@@ -204,10 +295,10 @@ function deletePhoto() {
                 ORDER BY id ASC 
                 LIMIT 1
             ");
-            $stmt->execute([$photo[$idColumn]]);
+            $stmt->execute([$deviceId]);
         }
         
-        sendResponse(['message' => 'Foto berhasil dihapus']);
+        sendResponse(['message' => 'Foto berhasil dihapus', 'remaining_photos' => $remaining]);
     } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);
     }

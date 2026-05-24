@@ -1021,19 +1021,28 @@ async function editDevice(id, type) {
         const odcUsedPorts = document.getElementById('odcUsedPorts');
         const odcDescription = document.getElementById('odcDescription');
         const connectedODPList = document.getElementById('connectedODPList');
-        
-        if (odcId) odcId.value = device.id;
-        if (odcName) odcName.value = device.name;
-        if (odcCoordinates) odcCoordinates.value = formatCoordinates(device.lat, device.lng);
-        if (odcLocation) odcLocation.value = device.location;
-        if (odcCapacity) odcCapacity.value = device.capacity;
-        if (odcUsedPorts) odcUsedPorts.value = device.used_ports || 0;
-        if (odcDescription) odcDescription.value = device.description || '';
-        
+
+        // Fetch full ODC record (includes source ids) to populate POP/OLT/PON dropdowns
+        let fullODC = device;
+        try {
+            const resp = await fetch(`${API_BASE}/odc.php?id=${device.id}`);
+            if (resp.ok) fullODC = await resp.json();
+        } catch (e) {
+            console.error('Failed to fetch full ODC data:', e);
+        }
+
+        if (odcId) odcId.value = fullODC.id;
+        if (odcName) odcName.value = fullODC.name;
+        if (odcCoordinates) odcCoordinates.value = formatCoordinates(fullODC.lat, fullODC.lng);
+        if (odcLocation) odcLocation.value = fullODC.location;
+        if (odcCapacity) odcCapacity.value = fullODC.capacity;
+        if (odcUsedPorts) odcUsedPorts.value = fullODC.used_ports || 0;
+        if (odcDescription) odcDescription.value = fullODC.description || '';
+
         if (connectedODPList) {
             connectedODPList.innerHTML = '';
-            if (device.connected_odps_list) {
-                device.connected_odps_list.forEach(odp => {
+            if (fullODC.connected_odps_list) {
+                fullODC.connected_odps_list.forEach(odp => {
                     const div = document.createElement('div');
                     div.className = 'connected-item';
                     div.textContent = odp.name;
@@ -1041,7 +1050,42 @@ async function editDevice(id, type) {
                 });
             }
         }
-        
+
+        // Populate POP/OLT/PON dropdown hierarchy and select current values
+        await loadPOPsForODC();
+        try {
+            if (fullODC.source_pop_id) {
+                const popSelect = document.getElementById('odcSourcePop');
+                if (popSelect) {
+                    popSelect.value = fullODC.source_pop_id;
+                    await loadOLTByPop();
+                }
+            }
+
+            if (fullODC.source_olt_id) {
+                const oltSelect = document.getElementById('odcSourceOlt');
+                if (oltSelect) {
+                    oltSelect.value = fullODC.source_olt_id;
+                    await loadPONByOLT();
+                }
+            }
+
+            if (fullODC.source_pon_id) {
+                const ponSelect = document.getElementById('odcSourcePon');
+                if (ponSelect) {
+                    ponSelect.value = fullODC.source_pon_id;
+                    await loadPortByPON();
+                }
+            }
+
+            if (fullODC.source_port_number) {
+                const portSelect = document.getElementById('odcPonPort');
+                if (portSelect) portSelect.value = fullODC.source_port_number;
+            }
+        } catch (e) {
+            console.error('Error populating source dropdowns:', e);
+        }
+
         const odcModal = document.getElementById('odcModal');
         if (odcModal) odcModal.classList.add('show');
     } else {

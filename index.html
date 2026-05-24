@@ -138,12 +138,12 @@
                     </select>
                 </div>
 
-                <div class="form-group" id="odcPortGroup" style="display: none;">
+                <div class="form-group" id="odpOdcPortGroup" style="display: none;">
                     <label>Pilih Port di ODC:</label>
                     <select id="odpPortInODC">
                         <option value="">Pilih port...</option>
                     </select>
-                    <small id="portInfoText">Pilih port ODC yang akan dihubungkan ke ODP ini</small>
+                    <small id="odpPortInfoText">Pilih port ODC yang akan dihubungkan ke ODP ini</small>
                 </div>
                 
                 <div class="form-group">
@@ -374,28 +374,39 @@
                     <label>Nama ODC:</label>
                     <input type="text" id="odcName" placeholder="Contoh: ODC-CKR-001" required>
                 </div>
-                <!-- Di modal ODC, tambahkan setelah nama ODC -->
-                <div class="form-group">
-                    <label>Sumber / Berasal dari:</label>
-                    <select id="odcSourceType" onchange="onSourceTypeChange()">
-                        <option value="">Tidak ada (Standalone)</option>
-                        <option value="pop">POP (Point of Presence)</option>
-                        <option value="olt">OLT (Optical Line Terminal)</option>
-                        <option value="pon">PON (Passive Optical Network)</option>
-                    </select>
-                </div>
+<!-- Di modal ODC, pastikan ID nya seperti ini -->
+<div class="form-group">
+    <label>Sumber / Berasal dari POP:</label>
+    <select id="odcSourcePop">
+        <option value="">Pilih POP...</option>
+    </select>
+</div>
 
-                <div class="form-group" id="odcSourceGroup" style="display: none;">
-                    <label id="odcSourceLabel">Pilih Sumber:</label>
-                    <select id="odcSourceId">
-                        <option value="">Pilih...</option>
-                    </select>
-                </div>
+<div class="form-group" id="odcOltGroup" style="display: none;">
+    <label>Pilih OLT:</label>
+    <select id="odcSourceOlt">
+        <option value="">Pilih OLT...</option>
+    </select>
+</div>
 
-                <div class="form-group" id="odcPonPortGroup" style="display: none;">
-                    <label>Port di PON:</label>
-                    <input type="number" id="odcPonPortNumber" placeholder="Nomor port">
-                </div>
+<div class="form-group" id="odcPonGroup" style="display: none;">
+    <label>Pilih PON Card:</label>
+        <select id="odcSourcePon" onchange="loadPortByPON()">
+            <option value="">Pilih PON Card...</option>
+        </select>
+</div>
+
+<div class="form-group" id="odcPortGroup" style="display: none;">
+    <label>Pilih Port PON:</label>
+    <select id="odcPonPort">
+        <option value="">Pilih port...</option>
+    </select>
+    <small>Pilih port PON yang tersedia</small>
+</div>
+
+<div class="info-card" id="selectedPortInfo" style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
+    <i class="fas fa-info-circle"></i> <span id="portInfoText"></span>
+</div>
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
@@ -411,12 +422,6 @@
                     <label>Kapasitas Port:</label>
                     <input type="number" id="odcCapacity" min="1" max="288" value="24" required>
                 </div>
-                
-                <div class="form-group">
-                    <label>Port Terpakai:</label>
-                    <input type="number" id="odcUsedPorts" min="0" readonly>
-                </div>
-                
                 <div class="form-group">
                     <label>Daftar ODP Terhubung:</label>
                     <div class="connected-list" id="connectedODPList"></div>

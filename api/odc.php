@@ -8,7 +8,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
 // =============================================
-// PERBAIKAN: Switch statement yang benar
+// SWITCH CASE YANG BENAR
 // =============================================
 switch($method) {
     case 'GET':
@@ -22,42 +22,31 @@ switch($method) {
             getAllODC();
         }
         break;
-        
     case 'POST':
         checkRole(['admin', 'operator']);
         createODC();
         break;
-        
     case 'PUT':
         checkRole(['admin', 'operator']);
         updateODC($id);
         break;
-        
     case 'DELETE':
         checkRole(['admin']);
         deleteODC($id);
         break;
-        
     default:
         sendResponse(['error' => 'Method not allowed'], 405);
 }
 
 // =============================================
-// FUNGSI-FUNGSI
+// GET ALL ODC
 // =============================================
-
 function getAllODC() {
     global $pdo;
     try {
         $stmt = $pdo->query("
             SELECT o.*, 
-                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps,
-                   CASE 
-                       WHEN o.source_type = 'pop' THEN (SELECT name FROM pop WHERE id = o.source_id)
-                       WHEN o.source_type = 'olt' THEN (SELECT name FROM olt WHERE id = o.source_id)
-                       WHEN o.source_type = 'pon' THEN (SELECT name FROM pon WHERE id = o.source_id)
-                       ELSE NULL
-                   END as source_name
+                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps
             FROM odc o 
             ORDER BY o.created_at DESC
         ");
@@ -81,6 +70,9 @@ function getAllODC() {
     }
 }
 
+// =============================================
+// GET SINGLE ODC
+// =============================================
 function getODC($id) {
     global $pdo;
     try {
@@ -94,7 +86,6 @@ function getODC($id) {
         $odc = $stmt->fetch();
         
         if ($odc) {
-            // Get connected ODPs with port numbers
             $stmt2 = $pdo->prepare("
                 SELECT odp.id, odp.name, odp.port_number_in_odc as port_number
                 FROM odc_odp_connections coc
@@ -103,11 +94,8 @@ function getODC($id) {
             ");
             $stmt2->execute([$id]);
             $odc['connected_odps_list'] = $stmt2->fetchAll();
-            
-            // Update used_ports count
             $odc['used_ports'] = count($odc['connected_odps_list']);
             
-            // Get photos
             $stmt3 = $pdo->prepare("
                 SELECT id, filename, original_name, is_primary, file_size, created_at,
                        CONCAT('uploads/odc/', filename) as url
@@ -127,10 +115,12 @@ function getODC($id) {
     }
 }
 
+// =============================================
+// GET ODC PORTS
+// =============================================
 function getODCPorts($odc_id) {
     global $pdo;
     try {
-        // Get all connections with port numbers
         $stmt = $pdo->prepare("
             SELECT 
                 coc.odp_id,
@@ -143,13 +133,11 @@ function getODCPorts($odc_id) {
         $stmt->execute([$odc_id]);
         $usedPorts = $stmt->fetchAll();
         
-        // Get ODC capacity
         $stmt2 = $pdo->prepare("SELECT capacity FROM odc WHERE id = ?");
         $stmt2->execute([$odc_id]);
         $odc = $stmt2->fetch();
         $capacity = $odc ? $odc['capacity'] : 24;
         
-        // Buat array port yang terpakai
         $usedPortMap = [];
         foreach ($usedPorts as $port) {
             $usedPortMap[$port['port_number']] = [
@@ -158,7 +146,6 @@ function getODCPorts($odc_id) {
             ];
         }
         
-        // Generate semua port 1..capacity
         $ports = [];
         for ($i = 1; $i <= $capacity; $i++) {
             if (isset($usedPortMap[$i])) {
@@ -184,6 +171,53 @@ function getODCPorts($odc_id) {
     }
 }
 
+// =============================================
+// GET AVAILABLE SOURCES (POP, OLT, PON)
+// =============================================
+function getAvailableSources() {
+    global $pdo;
+    try {
+        $sources = [
+            'pops' => [],
+            'olts' => [],
+            'pons' => []
+        ];
+        
+        // Get POPs
+        $stmt = $pdo->query("SELECT id, name, code, location FROM pop ORDER BY name");
+        $sources['pops'] = $stmt->fetchAll();
+        
+        // Get OLTs with POP info
+        $stmt = $pdo->query("
+            SELECT o.id, o.name, o.model, p.id as pop_id, p.name as pop_name
+            FROM olt o
+            JOIN pop p ON o.pop_id = p.id
+            ORDER BY p.name, o.name
+        ");
+        $sources['olts'] = $stmt->fetchAll();
+        
+        // Get PONs with OLT and POP info
+        $stmt = $pdo->query("
+            SELECT p.id, p.card_number, p.name as pon_name, p.port_count,
+                   o.id as olt_id, o.name as olt_name,
+                   po.id as pop_id, po.name as pop_name
+            FROM pon p
+            JOIN olt o ON p.olt_id = o.id
+            JOIN pop po ON o.pop_id = po.id
+            WHERE p.status = 'active'
+            ORDER BY po.name, o.name, p.card_number
+        ");
+        $sources['pons'] = $stmt->fetchAll();
+        
+        sendResponse($sources);
+    } catch(PDOException $e) {
+        sendResponse(['error' => $e->getMessage()], 500);
+    }
+}
+
+// =============================================
+// CREATE ODC
+// =============================================
 function createODC() {
     global $pdo;
     $data = getRequestData();
@@ -193,9 +227,11 @@ function createODC() {
     }
     
     try {
+        $pdo->beginTransaction();
+        
         $stmt = $pdo->prepare("
-            INSERT INTO odc (name, lat, lng, location, capacity, description, source_type, source_id, pon_port_number)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO odc (name, lat, lng, location, capacity, description)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['name'],
@@ -203,23 +239,22 @@ function createODC() {
             $data['lng'],
             $data['location'] ?? '',
             $data['capacity'] ?? 24,
-            $data['description'] ?? '',
-            $data['source_type'] ?? null,
-            $data['source_id'] ?? null,
-            $data['pon_port_number'] ?? null
+            $data['description'] ?? ''
         ]);
         
         $id = $pdo->lastInsertId();
         
-        // Update used_ports
-        updateODCUsedPorts($id);
-        
+        $pdo->commit();
         sendResponse(['id' => $id, 'message' => 'ODC created successfully']);
     } catch(PDOException $e) {
+        $pdo->rollBack();
         sendResponse(['error' => $e->getMessage()], 500);
     }
 }
 
+// =============================================
+// UPDATE ODC
+// =============================================
 function updateODC($id) {
     global $pdo;
     if (!$id) {
@@ -238,9 +273,6 @@ function updateODC($id) {
         if (isset($data['location'])) { $fields[] = "location = ?"; $values[] = $data['location']; }
         if (isset($data['capacity'])) { $fields[] = "capacity = ?"; $values[] = $data['capacity']; }
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
-        if (isset($data['source_type'])) { $fields[] = "source_type = ?"; $values[] = $data['source_type']; }
-        if (isset($data['source_id'])) { $fields[] = "source_id = ?"; $values[] = $data['source_id']; }
-        if (isset($data['pon_port_number'])) { $fields[] = "pon_port_number = ?"; $values[] = $data['pon_port_number']; }
         
         if (empty($fields)) {
             sendResponse(['error' => 'No fields to update'], 400);
@@ -251,15 +283,15 @@ function updateODC($id) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($values);
         
-        // Update used_ports based on connections
-        updateODCUsedPorts($id);
-        
         sendResponse(['message' => 'ODC updated successfully']);
     } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);
     }
 }
 
+// =============================================
+// DELETE ODC
+// =============================================
 function deleteODC($id) {
     global $pdo;
     if (!$id) {
@@ -269,15 +301,9 @@ function deleteODC($id) {
     try {
         $pdo->beginTransaction();
         
-        // Set source_id to NULL for connected ODPs
-        $stmt = $pdo->prepare("UPDATE odp SET source_id = NULL, source_type = NULL, port_number_in_odc = NULL WHERE source_id = ? AND source_type = 'odc'");
-        $stmt->execute([$id]);
-        
-        // Delete connections
         $stmt = $pdo->prepare("DELETE FROM odc_odp_connections WHERE odc_id = ?");
         $stmt->execute([$id]);
         
-        // Delete ODC
         $stmt = $pdo->prepare("DELETE FROM odc WHERE id = ?");
         $stmt->execute([$id]);
         
@@ -287,56 +313,5 @@ function deleteODC($id) {
         $pdo->rollBack();
         sendResponse(['error' => $e->getMessage()], 500);
     }
-}
-
-function getAvailableSources() {
-    global $pdo;
-    try {
-        $sources = [
-            'pops' => [],
-            'olts' => [],
-            'pons' => []
-        ];
-        
-        // Get POPs
-        $result = $pdo->query("SELECT id, name, code, location FROM pop ORDER BY name");
-        $sources['pops'] = $result->fetchAll();
-        
-        // Get OLTS with POP info
-        $result = $pdo->query("
-            SELECT o.id, o.name, o.model, p.name as pop_name, p.id as pop_id
-            FROM olt o
-            JOIN pop p ON o.pop_id = p.id
-            ORDER BY p.name, o.name
-        ");
-        $sources['olts'] = $result->fetchAll();
-        
-        // Get PONs with OLT and POP info
-        $result = $pdo->query("
-            SELECT p.id, p.port_number, p.name as pon_name, 
-                   o.id as olt_id, o.name as olt_name,
-                   po.id as pop_id, po.name as pop_name
-            FROM pon p
-            JOIN olt o ON p.olt_id = o.id
-            JOIN pop po ON o.pop_id = po.id
-            WHERE p.status = 'active'
-            ORDER BY po.name, o.name, p.port_number
-        ");
-        $sources['pons'] = $result->fetchAll();
-        
-        sendResponse($sources);
-    } catch(PDOException $e) {
-        sendResponse(['error' => $e->getMessage()], 500);
-    }
-}
-
-function updateODCUsedPorts($odc_id) {
-    global $pdo;
-    $stmt = $pdo->prepare("
-        UPDATE odc 
-        SET used_ports = (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = ?)
-        WHERE id = ?
-    ");
-    $stmt->execute([$odc_id, $odc_id]);
 }
 ?>

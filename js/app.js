@@ -1,24 +1,17 @@
-// js/app.js
-// js/app.js
-
 // =============================================
-// CATATAN: API_BASE sudah dideklarasikan di map.js
-// JANGAN deklarasi ulang di sini!
+// APP.JS - VERSI LENGKAP DAN STABIL
 // =============================================
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', async function() {
-    // Check authentication FIRST
     const isAuth = await checkAuthentication();
     if (!isAuth) {
         window.location.href = 'login.html';
         return;
     }
     
-    // Load user info
     await loadUserInfo();
     
-    // Initialize app
     initMap();
     initEventListeners();
     loadDevices();
@@ -53,7 +46,6 @@ async function checkAuthentication() {
 }
 
 // Load user info
-// Load user info
 async function loadUserInfo() {
     try {
         const response = await fetch(`${API_BASE}/auth.php?action=me`, {
@@ -74,51 +66,11 @@ async function loadUserInfo() {
                 }
                 window.currentUser = data.user;
                 
-                // Sembunyikan tombol tambah untuk viewer
                 const actionButtons = document.getElementById('actionButtons');
                 if (actionButtons && data.user.role === 'viewer') {
                     actionButtons.style.display = 'none';
                 }
                 
-                // Tampilkan tombol manajemen user untuk admin
-                const btnUserManagement = document.getElementById('btnUserManagement');
-                if (btnUserManagement && data.user.role === 'admin') {
-                    btnUserManagement.style.display = 'inline-block';
-                }
-                
-                // =============================================
-                // 🔴 TAMBAHKAN INI - Untuk menampilkan tombol POP & OLT
-                // =============================================
-                if (data.user.role === 'admin' || data.user.role === 'operator') {
-                    addHierarchyButtons();
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load user info:', error);
-    }
-}
-async function loadUserInfo() {
-    try {
-        const response = await fetch(`${API_BASE}/auth.php?action=me`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.user) {
-                const userDisplay = document.getElementById('userDisplayName');
-                if (userDisplay) {
-                    userDisplay.textContent = data.user.full_name + ' (' + data.user.role.toUpperCase() + ')';
-                }
-                window.currentUser = data.user;
-                
-                // Tampilkan tombol manajemen user untuk admin
                 const btnUserManagement = document.getElementById('btnUserManagement');
                 if (btnUserManagement && data.user.role === 'admin') {
                     btnUserManagement.style.display = 'inline-block';
@@ -129,20 +81,16 @@ async function loadUserInfo() {
         console.error('Failed to load user info:', error);
     }
 }
+
 // Logout function
 async function logout() {
     if (!confirm('Apakah Anda yakin ingin logout?')) return;
     
     try {
-        const response = await fetch(`${API_BASE}/auth.php?action=logout`, {
+        await fetch(`${API_BASE}/auth.php?action=logout`, {
             method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
+            credentials: 'include'
         });
-        
         window.location.href = 'login.html';
     } catch (error) {
         console.error('Logout failed:', error);
@@ -152,46 +100,47 @@ async function logout() {
 
 // Initialize event listeners
 function initEventListeners() {
-    document.getElementById('odpForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveODP();
-    });
+    const odpForm = document.getElementById('odpForm');
+    if (odpForm) {
+        odpForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveODP();
+        });
+    }
     
-    document.getElementById('odcForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveODC();
-    });
+    const odcForm = document.getElementById('odcForm');
+    if (odcForm) {
+        odcForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveODC();
+        });
+    }
     
-    document.getElementById('odpTotalPorts')?.addEventListener('change', function() {
-        if (!currentEditingDevice) {
-            generatePortStatusInputs();
-        }
-    });
+    const totalPorts = document.getElementById('odpTotalPorts');
+    if (totalPorts) {
+        totalPorts.addEventListener('change', function() {
+            if (!currentEditingDevice) {
+                generatePortStatusInputs();
+            }
+        });
+    }
     
-    document.getElementById('searchInput')?.addEventListener('input', function() {
-        refreshDeviceList();
-    });
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            refreshDeviceList();
+        });
+    }
     
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            filterBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             refreshDeviceList();
         });
     });
-    // Di dalam fungsi initEventListeners(), tambahkan:
-
-    document.getElementById('popForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        savePOP();
-    });
-
-    // Event listener untuk form OLT
-    document.getElementById('oltForm')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveOLT();
-    });
-        
+    
     const searchCoord = document.getElementById('searchCoordinate');
     if (searchCoord) {
         searchCoord.addEventListener('keypress', function(e) {
@@ -209,36 +158,55 @@ function initEventListeners() {
             }
         });
     }
+    
+    // =============================================
+    // EVENT LISTENER UNTUK ODC DROPDOWN
+    // =============================================
+    const popSelect = document.getElementById('odcSourcePop');
+    const oltSelect = document.getElementById('odcSourceOlt');
+    const ponSelect = document.getElementById('odcSourcePon');
+    
+    if (popSelect) {
+        popSelect.addEventListener('change', loadOLTByPop);
+    }
+    if (oltSelect) {
+        oltSelect.addEventListener('change', loadPONByOLT);
+    }
+if (ponSelect) {
+    ponSelect.addEventListener('change', loadPortByPON);
+    console.log('Event listener attached to odcSourcePon');
+}
 }
 
+// =============================================
+// ODP FUNCTIONS
+// =============================================
 
-
-// Show add ODP dialog
 async function showAddODPDialog() {
     currentEditingDevice = null;
-    document.getElementById('modalTitle').textContent = 'Tambah ODP';
-    document.getElementById('odpForm').reset();
-    document.getElementById('odpId').value = '';
-    document.getElementById('odcPortGroup').style.display = 'none';
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.textContent = 'Tambah ODP';
+    
+    const odpForm = document.getElementById('odpForm');
+    if (odpForm) odpForm.reset();
+    
+    const odpId = document.getElementById('odpId');
+    if (odpId) odpId.value = '';
+    
+    const odpOdcPortGroup = document.getElementById('odpOdcPortGroup');
+    if (odpOdcPortGroup) odpOdcPortGroup.style.display = 'none';
     
     await populateSourceDropdown();
     generatePortStatusInputs();
     
-    document.getElementById('odpModal').classList.add('show');
+    const odpModal = document.getElementById('odpModal');
+    if (odpModal) odpModal.classList.add('show');
 }
 
-
-// Show add ODC dialog
-function showAddODCDialog() {
-    currentEditingDevice = null;
-    document.getElementById('odcForm').reset();
-    document.getElementById('odcId').value = '';
-    document.getElementById('odcModal').classList.add('show');
-}
-
-// Update populateSourceDropdown
 async function populateSourceDropdown(selectedSourceId = null, selectedPort = null) {
     const sourceSelect = document.getElementById('odpSource');
+    if (!sourceSelect) return;
+    
     sourceSelect.innerHTML = '<option value="">Pilih ODC sumber...</option>';
     
     devices.odc.forEach(odc => {
@@ -254,22 +222,22 @@ async function populateSourceDropdown(selectedSourceId = null, selectedPort = nu
         sourceSelect.appendChild(option);
     });
     
-    // Load ports jika ada selectedSourceId
     if (selectedSourceId) {
         await loadODCPortsForEdit(selectedSourceId, selectedPort);
     }
 }
+
 async function loadODCPortsForEdit(odcId, selectedPort = null) {
-    const portGroup = document.getElementById('odcPortGroup');
+    const portGroup = document.getElementById('odpOdcPortGroup');
     const portSelect = document.getElementById('odpPortInODC');
     
     if (!odcId) {
-        portGroup.style.display = 'none';
+        if (portGroup) portGroup.style.display = 'none';
         return;
     }
     
-    portGroup.style.display = 'block';
-    portSelect.innerHTML = '<option value="">Loading port...</option>';
+    if (portGroup) portGroup.style.display = 'block';
+    if (portSelect) portSelect.innerHTML = '<option value="">Loading port...</option>';
     
     try {
         const response = await fetch(`${API_BASE}/odc.php?id=${odcId}&ports=true`, {
@@ -278,46 +246,49 @@ async function loadODCPortsForEdit(odcId, selectedPort = null) {
         
         if (response.ok) {
             const ports = await response.json();
-            portSelect.innerHTML = '<option value="">Pilih port...</option>';
-            
-            ports.forEach(port => {
-                const option = document.createElement('option');
-                option.value = port.port_number;
+            if (portSelect) {
+                portSelect.innerHTML = '<option value="">Pilih port...</option>';
                 
-                let statusText = '';
-                let disabled = false;
-                
-                if (port.status === 'used' && port.port_number != selectedPort) {
-                    statusText = `❌ Terpakai oleh ${port.odp_name || 'ODP'}`;
-                    disabled = true;
-                } else if (port.status === 'used' && port.port_number == selectedPort) {
-                    statusText = `🔗 Terhubung (ODP ini)`;
-                    disabled = false;
-                } else {
-                    statusText = '✅ Tersedia';
-                }
-                
-                option.textContent = `Port ${port.port_number} - ${statusText}`;
-                option.disabled = disabled;
-                
-                if (selectedPort == port.port_number) {
-                    option.selected = true;
-                }
-                
-                portSelect.appendChild(option);
-            });
+                ports.forEach(port => {
+                    const option = document.createElement('option');
+                    option.value = port.port_number;
+                    
+                    let statusText = '';
+                    let disabled = false;
+                    
+                    if (port.status === 'used' && port.port_number != selectedPort) {
+                        statusText = `❌ Terpakai oleh ${port.odp_name || 'ODP'}`;
+                        disabled = true;
+                    } else if (port.status === 'used' && port.port_number == selectedPort) {
+                        statusText = `🔗 Terhubung (ODP ini)`;
+                        disabled = false;
+                    } else {
+                        statusText = '✅ Tersedia';
+                    }
+                    
+                    option.textContent = `Port ${port.port_number} - ${statusText}`;
+                    option.disabled = disabled;
+                    
+                    if (selectedPort == port.port_number) {
+                        option.selected = true;
+                    }
+                    
+                    portSelect.appendChild(option);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading ports:', error);
-        portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
+        if (portSelect) portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
     }
 }
 
-
-// Generate port status inputs
 function generatePortStatusInputs(existingPorts = null) {
-    const totalPorts = parseInt(document.getElementById('odpTotalPorts').value) || 8;
+    const totalPortsInput = document.getElementById('odpTotalPorts');
+    const totalPorts = totalPortsInput ? parseInt(totalPortsInput.value) || 8 : 8;
     const container = document.getElementById('odpPortStatus');
+    if (!container) return;
+    
     container.innerHTML = '';
     
     for (let i = 1; i <= totalPorts; i++) {
@@ -339,9 +310,8 @@ function generatePortStatusInputs(existingPorts = null) {
     updateAvailablePortsCount();
 }
 
-// Configure port - hanya pelanggan
 function configurePort(portNumber) {
-    const deviceId = document.getElementById('odpId').value;
+    const deviceId = document.getElementById('odpId')?.value;
     
     if (!deviceId) {
         alert('Simpan ODP terlebih dahulu sebelum mengkonfigurasi port');
@@ -354,17 +324,21 @@ function configurePort(portNumber) {
     const device = devices.odp.find(d => d.id == deviceId);
     const existingPort = device?.ports?.find(p => p.port_number === portNumber);
     
-    document.getElementById('displayPortNumber').value = portNumber;
-    document.getElementById('customerName').value = existingPort?.target || '';
-    document.getElementById('portStatus').value = (existingPort?.status === 'maintenance') ? 'maintenance' : 'active';
+    const displayPortNumber = document.getElementById('displayPortNumber');
+    const customerName = document.getElementById('customerName');
+    const portStatus = document.getElementById('portStatus');
     
-    document.getElementById('portDirectionModal').classList.add('show');
+    if (displayPortNumber) displayPortNumber.value = portNumber;
+    if (customerName) customerName.value = existingPort?.target || '';
+    if (portStatus) portStatus.value = (existingPort?.status === 'maintenance') ? 'maintenance' : 'active';
+    
+    const portModal = document.getElementById('portDirectionModal');
+    if (portModal) portModal.classList.add('show');
 }
 
-// Simpan konfigurasi pelanggan
 async function savePortCustomer() {
-    const customerName = document.getElementById('customerName').value.trim();
-    const statusSelect = document.getElementById('portStatus').value;
+    const customerName = document.getElementById('customerName')?.value.trim();
+    const statusSelect = document.getElementById('portStatus')?.value;
     
     if (!customerName && statusSelect === 'active') {
         alert('Nama pelanggan harus diisi untuk port aktif!');
@@ -394,8 +368,8 @@ async function savePortCustomer() {
             const device = devices.odp.find(d => d.id == currentPortConfig.deviceId);
             if (device) {
                 generatePortStatusInputs(device.ports);
-                const infoTitle = document.getElementById('infoTitle').textContent;
-                if (infoTitle === device.name) {
+                const infoTitle = document.getElementById('infoTitle');
+                if (infoTitle && infoTitle.textContent === device.name) {
                     showDeviceInfo(device);
                 }
             }
@@ -410,7 +384,6 @@ async function savePortCustomer() {
     }
 }
 
-// Kosongkan port
 async function clearPort() {
     if (!confirm('Kosongkan port ini? Status akan kembali ke Available.')) return;
     
@@ -431,19 +404,7 @@ async function clearPort() {
         if (response.ok) {
             closeModal('portDirectionModal');
             await loadDevices();
-            
-            const device = devices.odp.find(d => d.id == currentPortConfig.deviceId);
-            if (device) {
-                generatePortStatusInputs(device.ports);
-                const infoTitle = document.getElementById('infoTitle').textContent;
-                if (infoTitle === device.name) {
-                    showDeviceInfo(device);
-                }
-            }
-            
             alert('Port berhasil dikosongkan');
-        } else if (response.status === 401) {
-            window.location.href = 'login.html';
         }
     } catch (error) {
         console.error('Error:', error);
@@ -451,90 +412,44 @@ async function clearPort() {
     }
 }
 
-// Update available ports count
 function updateAvailablePortsCount() {
-    const totalPorts = parseInt(document.getElementById('odpTotalPorts').value) || 8;
+    const totalPortsInput = document.getElementById('odpTotalPorts');
+    const totalPorts = totalPortsInput ? parseInt(totalPortsInput.value) || 8 : 8;
     const usedPorts = document.querySelectorAll('#odpPortStatus .port-item.used').length;
     const maintenancePorts = document.querySelectorAll('#odpPortStatus .port-item.maintenance').length;
     const availablePorts = totalPorts - usedPorts - maintenancePorts;
     
-    document.getElementById('odpAvailablePorts').value = availablePorts;
+    const odpAvailablePorts = document.getElementById('odpAvailablePorts');
+    if (odpAvailablePorts) odpAvailablePorts.value = availablePorts;
 }
 
-// Generic fetch function with auth handling
-async function fetchWithAuth(url, options = {}) {
-    const defaultOptions = {
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    };
-    
-    const mergedOptions = {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...(options.headers || {})
-        }
-    };
-    
-    try {
-        const response = await fetch(url, mergedOptions);
-        
-        // If unauthorized, redirect to login
-        if (response.status === 401) {
-            window.location.href = 'login.html';
-            return null;
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-    }
-}
-
-// Update fungsi saveODP
 async function saveODP() {
-    const id = document.getElementById('odpId').value;
+    const id = document.getElementById('odpId')?.value;
     const sourceSelect = document.getElementById('odpSource');
-    const selectedOption = sourceSelect.selectedOptions[0];
-    const portInODC = document.getElementById('odpPortInODC').value;
-    const coordString = document.getElementById('odpCoordinates').value.trim();
+    const selectedOption = sourceSelect?.selectedOptions[0];
+    const portInODC = document.getElementById('odpPortInODC')?.value;
+    const coordString = document.getElementById('odpCoordinates')?.value.trim();
     
     const coords = parseCoordinates(coordString);
     if (!coords) {
-        alert('Format koordinat tidak valid!\n\nGunakan format: latitude, longitude\nContoh: -6.963707888562949, 109.64706473647041');
+        alert('Format koordinat tidak valid!');
         return;
     }
     
     const data = {
-        name: document.getElementById('odpName').value,
-        source_id: sourceSelect.value || null,
+        name: document.getElementById('odpName')?.value,
+        source_id: sourceSelect?.value || null,
         source_type: selectedOption ? selectedOption.dataset.type : null,
         port_number_in_odc: portInODC || null,
         lat: coords.lat,
         lng: coords.lng,
-        location: document.getElementById('odpLocation').value,
-        total_ports: parseInt(document.getElementById('odpTotalPorts').value),
-        description: document.getElementById('odpDescription').value
+        location: document.getElementById('odpLocation')?.value,
+        total_ports: parseInt(document.getElementById('odpTotalPorts')?.value) || 8,
+        description: document.getElementById('odpDescription')?.value
     };
     
     if (!data.name) {
         alert('Nama ODP harus diisi');
-        return;
-    }
-    
-    if (!data.location) {
-        alert('Alamat lokasi harus diisi');
-        return;
-    }
-    
-    // Validasi: jika pilih ODC, wajib pilih port
-    if (data.source_type === 'odc' && data.source_id && !data.port_number_in_odc) {
-        alert('Silakan pilih port ODC yang akan digunakan!');
         return;
     }
     
@@ -552,7 +467,6 @@ async function saveODP() {
         const result = await response.json();
         
         if (response.ok) {
-            // Upload foto jika ada
             const deviceId = id || result.id;
             if (deviceId) {
                 await uploadPhotos(deviceId, 'odp');
@@ -566,29 +480,266 @@ async function saveODP() {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Gagal menyimpan ODP. Periksa koneksi ke server.');
+        alert('Gagal menyimpan ODP');
     }
 }
 
-// Save ODC
+// =============================================
+// ODC FUNCTIONS WITH POP, OLT, PON, PORT
+// =============================================
+
+async function loadPOPsForODC() {
+    try {
+        const response = await fetch(`${API_BASE}/pop.php`, { credentials: 'include' });
+        if (response.ok) {
+            const pops = await response.json();
+            const popSelect = document.getElementById('odcSourcePop');
+            if (!popSelect) return;
+            
+            popSelect.innerHTML = '<option value="">Pilih POP...</option>';
+            pops.forEach(pop => {
+                const option = document.createElement('option');
+                option.value = pop.id;
+                option.textContent = `${pop.name} ${pop.code ? '(' + pop.code + ')' : ''} - ${pop.location || ''}`;
+                popSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading POPs:', error);
+    }
+}
+
+async function loadOLTByPop() {
+    const popId = document.getElementById('odcSourcePop')?.value;
+    const oltGroup = document.getElementById('odcOltGroup');
+    const oltSelect = document.getElementById('odcSourceOlt');
+    const ponGroup = document.getElementById('odcPonGroup');
+    const portGroup = document.getElementById('odcPortGroup');
+    
+    if (!popId) {
+        if (oltGroup) oltGroup.style.display = 'none';
+        if (ponGroup) ponGroup.style.display = 'none';
+        if (portGroup) portGroup.style.display = 'none';
+        return;
+    }
+    
+    if (oltGroup) oltGroup.style.display = 'block';
+    if (oltSelect) oltSelect.innerHTML = '<option value="">Loading OLT...</option>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/olt.php`, { credentials: 'include' });
+        if (response.ok) {
+            const olts = await response.json();
+            const filteredOlts = olts.filter(olt => olt.pop_id == popId);
+            
+            if (oltSelect) {
+                oltSelect.innerHTML = '<option value="">Pilih OLT...</option>';
+                filteredOlts.forEach(olt => {
+                    const option = document.createElement('option');
+                    option.value = olt.id;
+                    option.textContent = `${olt.name} ${olt.model ? '(' + olt.model + ')' : ''}`;
+                    oltSelect.appendChild(option);
+                });
+            }
+            
+            if (ponGroup) ponGroup.style.display = 'none';
+            if (portGroup) portGroup.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading OLTs:', error);
+        if (oltSelect) oltSelect.innerHTML = '<option value="">Gagal memuat OLT</option>';
+    }
+}
+
+async function loadPONByOLT() {
+    const oltId = document.getElementById('odcSourceOlt')?.value;
+    const ponGroup = document.getElementById('odcPonGroup');
+    const ponSelect = document.getElementById('odcSourcePon');
+    const portGroup = document.getElementById('odcPortGroup');
+    
+    if (!oltId) {
+        if (ponGroup) ponGroup.style.display = 'none';
+        if (portGroup) portGroup.style.display = 'none';
+        return;
+    }
+    
+    if (ponGroup) ponGroup.style.display = 'block';
+    if (ponSelect) ponSelect.innerHTML = '<option value="">Loading PON Card...</option>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/olt.php?id=${oltId}&action=pons`, { credentials: 'include' });
+        
+        if (response.ok) {
+            const pons = await response.json();
+            
+            if (ponSelect) {
+                ponSelect.innerHTML = '<option value="">Pilih PON Card...</option>';
+                pons.forEach(pon => {
+                    const option = document.createElement('option');
+                    option.value = pon.id;
+                    option.textContent = `PON Card ${pon.card_number} - ${pon.name || 'Card ' + pon.card_number} (${pon.port_count || 8} port)`;
+                    ponSelect.appendChild(option);
+                });
+            }
+            
+            if (portGroup) portGroup.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading PONs:', error);
+        if (ponSelect) ponSelect.innerHTML = '<option value="">Gagal memuat PON</option>';
+    }
+}
+
+// =============================================
+// LOAD PORT BY PON - INI YANG MEMBUAT PORT MUNCUL
+// =============================================
+// =============================================
+// LOAD PORT BY PON - DENGAN DEBUG LENGKAP
+// =============================================
+async function loadPortByPON() {
+    const ponId = document.getElementById('odcSourcePon')?.value;
+    const portGroup = document.getElementById('odcPortGroup');
+    const portSelect = document.getElementById('odcPonPort');
+    const portInfo = document.getElementById('selectedPortInfo');
+    
+    console.log('=== loadPortByPON DEBUG ===');
+    console.log('ponId:', ponId);
+    console.log('portGroup element:', portGroup);
+    console.log('portSelect element:', portSelect);
+    
+    if (!ponId) {
+        console.log('No ponId, hiding groups');
+        if (portGroup) portGroup.style.display = 'none';
+        if (portInfo) portInfo.style.display = 'none';
+        return;
+    }
+    
+    // PASTIKAN PORT GROUP TAMPIL
+    if (portGroup) {
+        portGroup.style.display = 'block';
+        console.log('portGroup display set to block');
+    } else {
+        console.error('ERROR: portGroup element not found!');
+    }
+    
+    if (portSelect) {
+        portSelect.innerHTML = '<option value="">🔄 Loading port...</option>';
+        console.log('portSelect innerHTML set to loading');
+    } else {
+        console.error('ERROR: portSelect element not found! Check ID: odcPonPort');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/pon.php?id=${ponId}&action=ports`, {
+            credentials: 'include'
+        });
+        
+        console.log('API response status:', response.status);
+        
+        if (response.ok) {
+            const ports = await response.json();
+            console.log('Ports data received:', ports);
+            console.log('Number of ports:', ports.length);
+            
+            // Filter hanya port yang statusnya 'available'
+            const availablePorts = ports.filter(p => p.status === 'available');
+            console.log('Available ports:', availablePorts);
+            
+            if (availablePorts.length === 0) {
+                portSelect.innerHTML = '<option value="">❌ Tidak ada port tersedia</option>';
+                if (portInfo) {
+                    portInfo.style.display = 'block';
+                    const portInfoText = document.getElementById('portInfoText');
+                    if (portInfoText) {
+                        portInfoText.innerHTML = '⚠️ Peringatan: Tidak ada port tersedia di PON Card ini. Semua port sudah terpakai.';
+                    }
+                }
+                console.log('No available ports');
+            } else {
+                portSelect.innerHTML = '<option value="">📌 Pilih port...</option>';
+                availablePorts.forEach(port => {
+                    const option = document.createElement('option');
+                    option.value = port.port_number;
+                    option.textContent = `Port ${port.port_number} - ✅ Tersedia`;
+                    portSelect.appendChild(option);
+                    console.log(`Added option: Port ${port.port_number}`);
+                });
+                
+                if (portInfo) {
+                    portInfo.style.display = 'none';
+                }
+                console.log(`Added ${availablePorts.length} ports to dropdown`);
+            }
+        } else {
+            const error = await response.json();
+            console.error('API error:', error);
+            portSelect.innerHTML = '<option value="">❌ Gagal memuat port</option>';
+        }
+    } catch (error) {
+        console.error('Error loading ports:', error);
+        portSelect.innerHTML = '<option value="">❌ Error: ' + error.message + '</option>';
+    }
+    
+    console.log('=== END DEBUG ===');
+}
+
+async function showAddODCDialog() {
+    currentEditingDevice = null;
+    const odcForm = document.getElementById('odcForm');
+    if (odcForm) odcForm.reset();
+    
+    const odcId = document.getElementById('odcId');
+    if (odcId) odcId.value = '';
+    
+    const oltGroup = document.getElementById('odcOltGroup');
+    const ponGroup = document.getElementById('odcPonGroup');
+    const portGroup = document.getElementById('odcPortGroup');
+    const portInfo = document.getElementById('selectedPortInfo');
+    
+    if (oltGroup) oltGroup.style.display = 'none';
+    if (ponGroup) ponGroup.style.display = 'none';
+    if (portGroup) portGroup.style.display = 'none';
+    if (portInfo) portInfo.style.display = 'none';
+    
+    await loadPOPsForODC();
+    
+    const odcModal = document.getElementById('odcModal');
+    if (odcModal) odcModal.classList.add('show');
+}
+
 async function saveODC() {
-    const id = document.getElementById('odcId').value;
-    const coordString = document.getElementById('odcCoordinates').value.trim();
+    const id = document.getElementById('odcId')?.value;
+    const coordString = document.getElementById('odcCoordinates')?.value.trim();
+    const ponId = document.getElementById('odcSourcePon')?.value;
+    const ponPort = document.getElementById('odcPonPort')?.value;
     
     const coords = parseCoordinates(coordString);
     if (!coords) {
-        alert('Format koordinat tidak valid!\n\nGunakan format: latitude, longitude\nContoh: -6.963707888562949, 109.64706473647041');
+        alert('Format koordinat tidak valid!');
+        return;
+    }
+    
+    if (!ponId || !ponPort) {
+        alert('Silakan pilih PON Card dan Port yang akan digunakan!');
         return;
     }
     
     const data = {
-        name: document.getElementById('odcName').value,
+        name: document.getElementById('odcName')?.value,
         lat: coords.lat,
         lng: coords.lng,
-        location: document.getElementById('odcLocation').value,
-        capacity: parseInt(document.getElementById('odcCapacity').value),
-        description: document.getElementById('odcDescription').value
+        location: document.getElementById('odcLocation')?.value,
+        capacity: parseInt(document.getElementById('odcCapacity')?.value) || 24,
+        description: document.getElementById('odcDescription')?.value || '',
+        pon_id: parseInt(ponId),
+        pon_port_number: parseInt(ponPort)
     };
+    
+    if (!data.name) {
+        alert('Nama ODC harus diisi');
+        return;
+    }
     
     if (!data.location) {
         alert('Alamat lokasi harus diisi');
@@ -606,7 +757,84 @@ async function saveODC() {
         
         if (!response) return;
         
+        const result = await response.json();
+        
         if (response.ok) {
+            const deviceId = id || result.id;
+            if (deviceId) {
+                await uploadPhotos(deviceId, 'odc');
+            }
+            
+            closeModal('odcModal');
+            await loadDevices();
+            alert('ODC berhasil disimpan');
+        } else {
+            alert('Gagal menyimpan ODC: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Gagal menyimpan ODC');
+    }
+}
+
+// =============================================
+// ODC FUNCTIONS (ORIGINAL)
+// =============================================
+
+function showAddODCDialogOriginal() {
+    currentEditingDevice = null;
+    const odcForm = document.getElementById('odcForm');
+    if (odcForm) odcForm.reset();
+    
+    const odcId = document.getElementById('odcId');
+    if (odcId) odcId.value = '';
+    
+    const odcModal = document.getElementById('odcModal');
+    if (odcModal) odcModal.classList.add('show');
+}
+
+async function saveODCOriginal() {
+    const id = document.getElementById('odcId')?.value;
+    const coordString = document.getElementById('odcCoordinates')?.value.trim();
+    
+    const coords = parseCoordinates(coordString);
+    if (!coords) {
+        alert('Format koordinat tidak valid!');
+        return;
+    }
+    
+    const data = {
+        name: document.getElementById('odcName')?.value,
+        lat: coords.lat,
+        lng: coords.lng,
+        location: document.getElementById('odcLocation')?.value,
+        capacity: parseInt(document.getElementById('odcCapacity')?.value) || 24,
+        description: document.getElementById('odcDescription')?.value
+    };
+    
+    if (!data.name) {
+        alert('Nama ODC harus diisi');
+        return;
+    }
+    
+    try {
+        const url = id ? `${API_BASE}/odc.php?id=${id}` : `${API_BASE}/odc.php`;
+        const method = id ? 'PUT' : 'POST';
+        
+        const response = await fetchWithAuth(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+        
+        if (!response) return;
+        
+        if (response.ok) {
+            const result = await response.json();
+            const deviceId = id || result.id;
+            if (deviceId) {
+                await uploadPhotos(deviceId, 'odc');
+            }
+            
             closeModal('odcModal');
             await loadDevices();
             alert('ODC berhasil disimpan');
@@ -614,50 +842,34 @@ async function saveODC() {
             const error = await response.json();
             alert('Gagal menyimpan ODC: ' + (error.error || 'Unknown error'));
         }
-        if (response.ok) {
-        const result = await response.json();
-        const deviceId = id || result.id;
-        
-        // Upload foto jika ada
-        if (deviceId) {
-            const photos = await uploadPhotos(deviceId, 'odc');
-        }
-        
-        closeModal('odcModal');
-        await loadDevices();
-        alert('ODC berhasil disimpan');
-        }
     } catch (error) {
         console.error('Error:', error);
-        alert('Gagal menyimpan ODC. Periksa koneksi ke server.');
+        alert('Gagal menyimpan ODC');
     }
 }
+
 // =============================================
-// UPLOAD FOTO FUNCTIONS
+// PHOTO FUNCTIONS
 // =============================================
 
-// Preview foto ODP
 function previewODPPhotos() {
-    const files = document.getElementById('odpPhotos').files;
+    const files = document.getElementById('odpPhotos')?.files;
     const preview = document.getElementById('odpPhotoPreview');
-    const existingCount = preview.querySelectorAll('.photo-item').length;
+    if (!files || !preview) return;
     
+    const existingCount = preview.querySelectorAll('.photo-item').length;
     if (existingCount + files.length > 5) {
         alert('Maksimal 5 foto!');
-        document.getElementById('odpPhotos').value = '';
+        if (document.getElementById('odpPhotos')) document.getElementById('odpPhotos').value = '';
         return;
     }
     
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Validasi tipe
         if (!file.type.startsWith('image/')) {
             alert(`File ${file.name} bukan gambar!`);
             continue;
         }
-        
-        // Validasi ukuran
         if (file.size > 5 * 1024 * 1024) {
             alert(`File ${file.name} terlalu besar (max 5MB)!`);
             continue;
@@ -667,76 +879,38 @@ function previewODPPhotos() {
         reader.onload = function(e) {
             const div = document.createElement('div');
             div.className = 'photo-item new-photo';
-            div.dataset.fileIndex = i;
-            div.innerHTML = `
-                <img src="${e.target.result}" alt="Preview">
-                <button type="button" class="delete-photo" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
+            div.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="delete-photo" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
             preview.appendChild(div);
         };
         reader.readAsDataURL(file);
     }
 }
 
-// Preview foto ODC
 function previewODCPhotos() {
-    const files = document.getElementById('odcPhotos').files;
+    const files = document.getElementById('odcPhotos')?.files;
     const preview = document.getElementById('odcPhotoPreview');
-    const existingCount = preview.querySelectorAll('.photo-item').length;
+    if (!files || !preview) return;
     
-    if (existingCount + files.length > 5) {
-        alert('Maksimal 5 foto!');
-        document.getElementById('odcPhotos').value = '';
-        return;
-    }
-    
+    preview.innerHTML = '';
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        if (!file.type.startsWith('image/')) {
-            alert(`File ${file.name} bukan gambar!`);
-            continue;
-        }
-        
-        if (file.size > 5 * 1024 * 1024) {
-            alert(`File ${file.name} terlalu besar (max 5MB)!`);
-            continue;
-        }
+        if (!file.type.startsWith('image/')) continue;
         
         const reader = new FileReader();
         reader.onload = function(e) {
             const div = document.createElement('div');
-            div.className = 'photo-item new-photo';
-            div.innerHTML = `
-                <img src="${e.target.result}" alt="Preview">
-                <button type="button" class="delete-photo" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
+            div.className = 'photo-item';
+            div.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="delete-photo" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
             preview.appendChild(div);
         };
         reader.readAsDataURL(file);
     }
 }
 
-// Upload foto ke server
 async function uploadPhotos(deviceId, type) {
     const fileInput = document.getElementById(type === 'odc' ? 'odcPhotos' : 'odpPhotos');
-    const files = fileInput.files;
-    
-    if (files.length === 0) return [];
-    
-    // Cek jumlah foto existing + new
-    const preview = document.getElementById(type === 'odc' ? 'odcPhotoPreview' : 'odpPhotoPreview');
-    const existingPhotos = preview.querySelectorAll('.photo-item:not(.new-photo)');
-    const newPhotos = preview.querySelectorAll('.photo-item.new-photo');
-    
-    if (existingPhotos.length + newPhotos.length > 5) {
-        alert('Maksimal 5 foto!');
-        return [];
-    }
+    const files = fileInput?.files;
+    if (!files || files.length === 0) return [];
     
     const formData = new FormData();
     formData.append('type', type);
@@ -750,25 +924,19 @@ async function uploadPhotos(deviceId, type) {
         const response = await fetch(`${API_BASE}/upload.php`, {
             method: 'POST',
             credentials: 'include',
-            body: formData // Jangan set Content-Type, biarkan browser yang set multipart
+            body: formData
         });
         
         const result = await response.json();
-        
         if (response.ok) {
             return result.photos || [];
-        } else {
-            alert(result.error || 'Gagal upload foto');
-            return [];
         }
     } catch (error) {
         console.error('Upload error:', error);
-        alert('Gagal upload foto');
-        return [];
     }
+    return [];
 }
 
-// Hapus foto dari server
 async function deletePhoto(photoId, type, deviceId) {
     if (!confirm('Hapus foto ini?')) return;
     
@@ -781,7 +949,6 @@ async function deletePhoto(photoId, type, deviceId) {
         });
         
         if (response.ok) {
-            // Refresh tampilan
             await loadDevices();
             const device = type === 'odc' ? 
                 devices.odc.find(d => d.id == deviceId) : 
@@ -795,57 +962,47 @@ async function deletePhoto(photoId, type, deviceId) {
     }
 }
 
-// Tampilkan foto di info panel
 function renderPhotoGallery(device, type) {
     if (!device.photos || device.photos.length === 0) {
         return '';
     }
     
     let html = '<hr><h4>📷 Foto (' + device.photos.length + '/5)</h4><div class="photo-gallery">';
-    
     device.photos.forEach(photo => {
         const primaryClass = photo.is_primary ? ' primary-photo' : '';
-        html += `
-            <img src="${photo.url}" 
-                 alt="${photo.original_name || 'Foto'}" 
-                 class="${primaryClass}"
-                 onclick="openLightbox('${photo.url}')"
-                 title="${photo.original_name || 'Foto'}${photo.is_primary ? ' (Utama)' : ''}">
-        `;
+        html += `<img src="${photo.url}" alt="${photo.original_name || 'Foto'}" class="${primaryClass}" onclick="openLightbox('${photo.url}')" title="${photo.original_name || 'Foto'}${photo.is_primary ? ' (Utama)' : ''}">`;
     });
-    
     html += '</div>';
     return html;
 }
 
-// Lightbox
 function openLightbox(url) {
     let lightbox = document.getElementById('lightbox');
     if (!lightbox) {
         lightbox = document.createElement('div');
         lightbox.id = 'lightbox';
         lightbox.className = 'lightbox';
-        lightbox.innerHTML = `
-            <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
-            <img src="" alt="Foto">
-        `;
+        lightbox.innerHTML = `<span class="close-lightbox" onclick="closeLightbox()">&times;</span><img src="" alt="Foto">`;
         lightbox.onclick = function(e) {
             if (e.target === lightbox) closeLightbox();
         };
         document.body.appendChild(lightbox);
     }
     
-    lightbox.querySelector('img').src = url;
+    const img = lightbox.querySelector('img');
+    if (img) img.src = url;
     lightbox.classList.add('show');
 }
 
 function closeLightbox() {
     const lightbox = document.getElementById('lightbox');
-    if (lightbox) {
-        lightbox.classList.remove('show');
-    }
+    if (lightbox) lightbox.classList.remove('show');
 }
-// Edit device
+
+// =============================================
+// EDIT & DELETE DEVICES
+// =============================================
+
 async function editDevice(id, type) {
     const device = type === 'odc' ? 
         devices.odc.find(d => d.id == id) : 
@@ -856,57 +1013,74 @@ async function editDevice(id, type) {
     currentEditingDevice = device;
     
     if (type === 'odc') {
-        document.getElementById('odcId').value = device.id;
-        document.getElementById('odcName').value = device.name;
-        document.getElementById('odcCoordinates').value = formatCoordinates(device.lat, device.lng);
-        document.getElementById('odcLocation').value = device.location;
-        document.getElementById('odcCapacity').value = device.capacity;
-        document.getElementById('odcUsedPorts').value = device.used_ports || 0;
-        document.getElementById('odcDescription').value = device.description || '';
+        const odcId = document.getElementById('odcId');
+        const odcName = document.getElementById('odcName');
+        const odcCoordinates = document.getElementById('odcCoordinates');
+        const odcLocation = document.getElementById('odcLocation');
+        const odcCapacity = document.getElementById('odcCapacity');
+        const odcUsedPorts = document.getElementById('odcUsedPorts');
+        const odcDescription = document.getElementById('odcDescription');
+        const connectedODPList = document.getElementById('connectedODPList');
         
-        const container = document.getElementById('connectedODPList');
-        container.innerHTML = '';
-        if (device.connected_odps_list) {
-            device.connected_odps_list.forEach(odp => {
-                const div = document.createElement('div');
-                div.className = 'connected-item';
-                div.textContent = odp.name;
-                container.appendChild(div);
-            });
+        if (odcId) odcId.value = device.id;
+        if (odcName) odcName.value = device.name;
+        if (odcCoordinates) odcCoordinates.value = formatCoordinates(device.lat, device.lng);
+        if (odcLocation) odcLocation.value = device.location;
+        if (odcCapacity) odcCapacity.value = device.capacity;
+        if (odcUsedPorts) odcUsedPorts.value = device.used_ports || 0;
+        if (odcDescription) odcDescription.value = device.description || '';
+        
+        if (connectedODPList) {
+            connectedODPList.innerHTML = '';
+            if (device.connected_odps_list) {
+                device.connected_odps_list.forEach(odp => {
+                    const div = document.createElement('div');
+                    div.className = 'connected-item';
+                    div.textContent = odp.name;
+                    connectedODPList.appendChild(div);
+                });
+            }
         }
         
-        document.getElementById('odcModal').classList.add('show');
+        const odcModal = document.getElementById('odcModal');
+        if (odcModal) odcModal.classList.add('show');
     } else {
-        document.getElementById('modalTitle').textContent = 'Edit ODP';
-        document.getElementById('odpId').value = device.id;
-        document.getElementById('odpName').value = device.name;
-        document.getElementById('odpCoordinates').value = formatCoordinates(device.lat, device.lng);
-        document.getElementById('odpLocation').value = device.location;
-        document.getElementById('odpTotalPorts').value = device.total_ports;
-        document.getElementById('odpAvailablePorts').value = device.available_ports;
-        document.getElementById('odpDescription').value = device.description || '';
+        const modalTitle = document.getElementById('modalTitle');
+        const odpId = document.getElementById('odpId');
+        const odpName = document.getElementById('odpName');
+        const odpCoordinates = document.getElementById('odpCoordinates');
+        const odpLocation = document.getElementById('odpLocation');
+        const odpTotalPorts = document.getElementById('odpTotalPorts');
+        const odpAvailablePorts = document.getElementById('odpAvailablePorts');
+        const odpDescription = document.getElementById('odpDescription');
+        
+        if (modalTitle) modalTitle.textContent = 'Edit ODP';
+        if (odpId) odpId.value = device.id;
+        if (odpName) odpName.value = device.name;
+        if (odpCoordinates) odpCoordinates.value = formatCoordinates(device.lat, device.lng);
+        if (odpLocation) odpLocation.value = device.location;
+        if (odpTotalPorts) odpTotalPorts.value = device.total_ports;
+        if (odpAvailablePorts) odpAvailablePorts.value = device.available_ports;
+        if (odpDescription) odpDescription.value = device.description || '';
         
         await populateSourceDropdown();
-        // Di bagian else (edit ODP), tambahkan setelah populateSourceDropdown:
-        // Tampilkan foto existing
+        
         const photoPreview = document.getElementById('odpPhotoPreview');
-        photoPreview.innerHTML = '';
-        if (device.photos && device.photos.length > 0) {
-            device.photos.forEach(photo => {
-                const div = document.createElement('div');
-                div.className = `photo-item${photo.is_primary ? ' primary' : ''}`;
-                div.innerHTML = `
-                    <img src="${photo.url}" alt="${photo.original_name}">
-                    <button type="button" class="delete-photo" onclick="deletePhoto(${photo.id}, 'odp', ${device.id})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    ${photo.is_primary ? '<span class="primary-badge">Utama</span>' : ''}
-                `;
-                photoPreview.appendChild(div);
-            });
+        if (photoPreview) {
+            photoPreview.innerHTML = '';
+            if (device.photos && device.photos.length > 0) {
+                device.photos.forEach(photo => {
+                    const div = document.createElement('div');
+                    div.className = `photo-item${photo.is_primary ? ' primary' : ''}`;
+                    div.innerHTML = `<img src="${photo.url}" alt="${photo.original_name}"><button type="button" class="delete-photo" onclick="deletePhoto(${photo.id}, 'odp', ${device.id})"><i class="fas fa-times"></i></button>${photo.is_primary ? '<span class="primary-badge">Utama</span>' : ''}`;
+                    photoPreview.appendChild(div);
+                });
+            }
         }
-        if (device.source_id) {
-            document.getElementById('odpSource').value = device.source_id;
+        
+        const odpSource = document.getElementById('odpSource');
+        if (odpSource && device.source_id) {
+            odpSource.value = device.source_id;
             if (device.port_number_in_odc) {
                 await loadODCPortsForEdit(device.source_id, device.port_number_in_odc);
             } else {
@@ -915,11 +1089,12 @@ async function editDevice(id, type) {
         }
         
         generatePortStatusInputs(device.ports);
-        document.getElementById('odpModal').classList.add('show');
+        
+        const odpModal = document.getElementById('odpModal');
+        if (odpModal) odpModal.classList.add('show');
     }
 }
 
-// Delete device
 async function deleteDevice(id, type) {
     if (!confirm('Yakin ingin menghapus perangkat ini?')) return;
     
@@ -943,19 +1118,21 @@ async function deleteDevice(id, type) {
     }
 }
 
-// Pencarian Pelanggan
+// =============================================
+// SEARCH CUSTOMER
+// =============================================
+
 function searchCustomer() {
     const input = document.getElementById('customerSearchInput');
-    const keyword = input.value.trim().toLowerCase();
+    const keyword = input?.value.trim().toLowerCase();
     const resultsContainer = document.getElementById('customerSearchResults');
     
     if (!keyword) {
-        resultsContainer.innerHTML = '<div class="no-customer">Masukkan nama pelanggan</div>';
+        if (resultsContainer) resultsContainer.innerHTML = '<div class="no-customer">Masukkan nama pelanggan</div>';
         return;
     }
     
     const results = [];
-    
     devices.odp.forEach(odp => {
         if (odp.ports) {
             odp.ports.forEach(port => {
@@ -971,6 +1148,8 @@ function searchCustomer() {
         }
     });
     
+    if (!resultsContainer) return;
+    
     if (results.length === 0) {
         resultsContainer.innerHTML = '<div class="no-customer">Tidak ditemukan</div>';
         return;
@@ -978,267 +1157,22 @@ function searchCustomer() {
     
     let html = '';
     results.forEach(r => {
-        html += `
-            <div class="customer-result-item" onclick="highlightODP('${r.odpId}'); showDeviceInfo(devices.odp.find(d => d.id == '${r.odpId}'))">
-                <div class="customer-name">${r.customerName}</div>
-                <div class="customer-odp">${r.odpName} (Port ${r.portNumber})</div>
-            </div>
-        `;
+        html += `<div class="customer-result-item" onclick="highlightODP('${r.odpId}'); showDeviceInfo(devices.odp.find(d => d.id == '${r.odpId}'))">
+            <div class="customer-name">${r.customerName}</div>
+            <div class="customer-odp">${r.odpName} (Port ${r.portNumber})</div>
+        </div>`;
     });
-    
     resultsContainer.innerHTML = html;
 }
-async function onODCSourceChange() {
-    const odcId = document.getElementById('odpSource').value;
-    const portGroup = document.getElementById('odcPortGroup');
-    const portSelect = document.getElementById('odpPortInODC');
-    
-    if (!odcId) {
-        portGroup.style.display = 'none';
-        return;
-    }
-    
-    portGroup.style.display = 'block';
-    portSelect.innerHTML = '<option value="">Loading port...</option>';
-    
-    try {
-        const response = await fetch(`${API_BASE}/odc.php?id=${odcId}&ports=true`, {
-            credentials: 'include'
-        });
-        
-        if (response.ok) {
-            const ports = await response.json();
-            portSelect.innerHTML = '<option value="">Pilih port...</option>';
-            
-            ports.forEach(port => {
-                const option = document.createElement('option');
-                option.value = port.port_number;
-                
-                let statusText = '';
-                let disabled = false;
-                
-                if (port.status === 'used') {
-                    statusText = `❌ Terpakai oleh ${port.odp_name || 'ODP'}`;
-                    disabled = true;
-                } else {
-                    statusText = '✅ Tersedia';
-                }
-                
-                option.textContent = `Port ${port.port_number} - ${statusText}`;
-                option.disabled = disabled;
-                portSelect.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error('Error loading ports:', error);
-        portSelect.innerHTML = '<option value="">Gagal memuat port</option>';
-    }
-}
-// =============================================
-// POP FUNCTIONS
-// =============================================
-
-async function loadPOPs() {
-    try {
-        const response = await fetchWithAuth(`${API_BASE}/pop.php`);
-        if (response && response.ok) {
-            const pops = await response.json();
-            return pops;
-        }
-        return [];
-    } catch (error) {
-        console.error('Error loading POPs:', error);
-        return [];
-    }
-}
-
 
 // =============================================
-// OLT FUNCTIONS
+// UTILITY FUNCTIONS
 // =============================================
-
-
-
-async function loadPOPsForOLT() {
-    const popSelect = document.getElementById('oltPopId');
-    const pops = await loadPOPs();
-    
-    popSelect.innerHTML = '<option value="">Pilih POP...</option>';
-    pops.forEach(pop => {
-        const option = document.createElement('option');
-        option.value = pop.id;
-        option.textContent = `${pop.name} ${pop.code ? '(' + pop.code + ')' : ''}`;
-        popSelect.appendChild(option);
-    });
-}
-
-function previewOLTPhotos() {
-    const files = document.getElementById('oltPhotos').files;
-    const preview = document.getElementById('oltPhotoPreview');
-    
-    preview.innerHTML = '';
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (!file.type.startsWith('image/')) continue;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const div = document.createElement('div');
-            div.className = 'photo-item';
-            div.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="delete-photo" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
-            preview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-
-// =============================================
-// ODC SOURCE SELECTION (Updated)
-// =============================================
-
-async function onSourceTypeChange() {
-    const sourceType = document.getElementById('odcSourceType').value;
-    const sourceGroup = document.getElementById('odcSourceGroup');
-    const sourceLabel = document.getElementById('odcSourceLabel');
-    const sourceSelect = document.getElementById('odcSourceId');
-    const ponPortGroup = document.getElementById('odcPonPortGroup');
-    
-    if (!sourceType) {
-        sourceGroup.style.display = 'none';
-        ponPortGroup.style.display = 'none';
-        return;
-    }
-    
-    sourceGroup.style.display = 'block';
-    ponPortGroup.style.display = 'none';
-    
-    let options = [];
-    
-    switch(sourceType) {
-        case 'pop':
-            sourceLabel.textContent = 'Pilih POP:';
-            const pops = await loadPOPs();
-            options = pops.map(p => ({ id: p.id, name: `${p.name} ${p.code ? '(' + p.code + ')' : ''}` }));
-            break;
-        case 'olt':
-            sourceLabel.textContent = 'Pilih OLT:';
-            const olts = await loadOLTsForDropdown();
-            options = olts.map(o => ({ id: o.id, name: `${o.name} (${o.pop_name})` }));
-            break;
-        case 'pon':
-            sourceLabel.textContent = 'Pilih PON:';
-            const pons = await loadPONsForDropdown();
-            options = pons.map(p => ({ 
-                id: p.id, 
-                name: `PON ${p.port_number} - ${p.name || ''} (${p.olt_name} - ${p.pop_name})` 
-            }));
-            break;
-    }
-    
-    sourceSelect.innerHTML = '<option value="">Pilih...</option>';
-    options.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.id;
-        option.textContent = opt.name;
-        sourceSelect.appendChild(option);
-    });
-    
-    if (sourceType === 'pon') {
-        ponPortGroup.style.display = 'block';
-    }
-}
-
-// Update saveODC untuk include source
-async function saveODC() {
-    const id = document.getElementById('odcId').value;
-    const coordString = document.getElementById('odcCoordinates').value.trim();
-    const sourceType = document.getElementById('odcSourceType').value;
-    
-    const coords = parseCoordinates(coordString);
-    if (!coords) {
-        alert('Format koordinat tidak valid!');
-        return;
-    }
-    
-    const data = {
-        name: document.getElementById('odcName').value,
-        lat: coords.lat,
-        lng: coords.lng,
-        location: document.getElementById('odcLocation').value,
-        capacity: parseInt(document.getElementById('odcCapacity').value),
-        description: document.getElementById('odcDescription').value,
-        source_type: sourceType || null,
-        source_id: sourceType ? document.getElementById('odcSourceId').value : null,
-        pon_port_number: sourceType === 'pon' ? document.getElementById('odcPonPortNumber').value : null
-    };
-    
-    if (!data.name) {
-        alert('Nama ODC harus diisi');
-        return;
-    }
-    
-    if (!data.location) {
-        alert('Alamat lokasi harus diisi');
-        return;
-    }
-    
-    try {
-        const url = id ? `${API_BASE}/odc.php?id=${id}` : `${API_BASE}/odc.php`;
-        const method = id ? 'PUT' : 'POST';
-        
-        const response = await fetchWithAuth(url, {
-            method: method,
-            body: JSON.stringify(data)
-        });
-        
-        if (response && response.ok) {
-            const result = await response.json();
-            const deviceId = id || result.id;
-            
-            if (deviceId) {
-                await uploadPhotos(deviceId, 'odc');
-            }
-            
-            closeModal('odcModal');
-            await loadDevices();
-            alert('ODC berhasil disimpan');
-        } else {
-            const error = await response.json();
-            alert('Gagal menyimpan ODC: ' + (error.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Gagal menyimpan ODC');
-    }
-}
-
-// Tambahkan tombol di sidebar untuk POP dan OLT
-// Tambahkan tombol di sidebar untuk POP dan OLT
-function addHierarchyButtons() {
-    const actionButtons = document.getElementById('actionButtons');
-    if (!actionButtons) return;
-    
-    // Cek apakah tombol sudah ada (hindari duplikasi)
-    if (document.getElementById('btnAddPOP')) return;
-    
-    const buttonsHtml = `
-        <button id="btnAddPOP" class="btn btn-primary" onclick="showAddPOPDialog()" style="background: #9b59b6; margin-top: 5px;">
-            <i class="fas fa-building"></i> Tambah POP
-        </button>
-        <button id="btnAddOLT" class="btn btn-primary" onclick="showAddOLTDialog()" style="background: #e67e22; margin-top: 5px;">
-            <i class="fas fa-server"></i> Tambah OLT
-        </button>
-    `;
-    
-    actionButtons.insertAdjacentHTML('beforeend', buttonsHtml);
-}
-
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('show');
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('show');
     
-    // Invalidate map size setelah modal tertutup
     setTimeout(() => {
         if (typeof map !== 'undefined' && map) {
             map.invalidateSize();
@@ -1246,7 +1180,37 @@ function closeModal(modalId) {
     }, 300);
 }
 
-// Close modal when clicking outside
+async function fetchWithAuth(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    };
+    
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...(options.headers || {})
+        }
+    };
+    
+    try {
+        const response = await fetch(url, mergedOptions);
+        if (response.status === 401) {
+            window.location.href = 'login.html';
+            return null;
+        }
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
+}
+
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.classList.remove('show');

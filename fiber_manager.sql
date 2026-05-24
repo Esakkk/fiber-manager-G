@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 23 Bulan Mei 2026 pada 17.14
+-- Waktu pembuatan: 24 Bulan Mei 2026 pada 14.28
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.0.30
 
@@ -75,7 +75,8 @@ CREATE TABLE `odc` (
 
 INSERT INTO `odc` (`id`, `name`, `lat`, `lng`, `location`, `capacity`, `used_ports`, `description`, `source_type`, `source_id`, `pon_id`, `pon_port_number`, `olt_id`, `created_at`, `updated_at`) VALUES
 (1, 'MS 1', -6.96620750, 109.64638359, 'Gembong', 8, 4, 'odc gembong 1', 'pop', 1, NULL, 1, NULL, '2026-05-22 05:34:38', '2026-05-23 07:31:45'),
-(2, 'wert', -7.06076246, 109.53894923, 'qwer', 24, 0, '', 'pop', 1, NULL, NULL, NULL, '2026-05-23 07:32:19', '2026-05-23 07:32:19');
+(3, '13', -6.96750832, 109.64612441, '123', 24, 0, '123', NULL, NULL, NULL, NULL, NULL, '2026-05-23 15:20:12', '2026-05-23 15:20:12'),
+(4, 'hy', -6.96620750, 109.64638359, '3', 24, 0, '', NULL, NULL, NULL, NULL, NULL, '2026-05-23 15:29:22', '2026-05-23 15:29:22');
 
 -- --------------------------------------------------------
 
@@ -277,7 +278,8 @@ CREATE TABLE `olt` (
 INSERT INTO `olt` (`id`, `pop_id`, `name`, `model`, `ip_address`, `management_port`, `total_ports`, `total_pon_ports`, `used_pon_ports`, `lat`, `lng`, `location`, `description`, `created_at`, `updated_at`, `has_photo`) VALUES
 (2, 1, 'olt 1', 'zte c300', '192', 22, 16, 8, 0, NULL, NULL, 'gembong', '', '2026-05-23 07:34:25', '2026-05-23 13:52:13', 0),
 (3, 3, 'olt 1', 'olt 1', '192', 22, 16, 1, 0, NULL, NULL, '', '', '2026-05-23 14:09:58', '2026-05-23 14:44:16', 0),
-(4, 2, '123', '123', '123', 22, 8, 2, 0, NULL, NULL, '123', '', '2026-05-23 14:32:18', '2026-05-23 14:32:36', 0);
+(4, 2, '123', '123', '123', 22, 8, 2, 0, NULL, NULL, '123', '', '2026-05-23 14:32:18', '2026-05-23 14:32:36', 0),
+(5, 1, 'olt 2', 'asdf', '1234', 22, 16, 4, 0, NULL, NULL, 'sadf', 'asdf', '2026-05-24 01:30:28', '2026-05-24 01:30:28', 0);
 
 -- --------------------------------------------------------
 
@@ -360,7 +362,11 @@ INSERT INTO `pon` (`id`, `olt_id`, `card_number`, `name`, `port_count`, `status`
 (1, 4, 1, 'PON Card 1', 8, 'active', NULL, '2026-05-23 14:32:18', '2026-05-23 14:32:18'),
 (2, 4, 2, '123', 8, 'active', '', '2026-05-23 14:32:36', '2026-05-23 14:32:36'),
 (3, 3, 2, 'card 1', 8, 'active', '', '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
-(4, 2, 1, 'test', 8, 'active', '', '2026-05-23 14:56:06', '2026-05-23 14:56:06');
+(4, 2, 1, 'test', 8, 'active', '', '2026-05-23 14:56:06', '2026-05-23 14:56:06'),
+(5, 5, 1, 'PON Card 1', 4, 'active', NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(6, 5, 2, 'PON Card 2', 4, 'active', NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(7, 5, 3, 'PON Card 3', 4, 'active', NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(8, 5, 4, 'PON Card 4', 4, 'active', NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28');
 
 -- --------------------------------------------------------
 
@@ -400,8 +406,8 @@ INSERT INTO `pon_ports` (`id`, `pon_id`, `port_number`, `status`, `target_odc_id
 (14, 2, 6, 'available', NULL, NULL, '2026-05-23 14:32:36', '2026-05-23 14:32:36'),
 (15, 2, 7, 'available', NULL, NULL, '2026-05-23 14:32:36', '2026-05-23 14:32:36'),
 (16, 2, 8, 'available', NULL, NULL, '2026-05-23 14:32:36', '2026-05-23 14:32:36'),
-(17, 3, 1, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
-(18, 3, 2, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
+(17, 3, 1, 'used', 1, NULL, '2026-05-23 14:44:16', '2026-05-24 12:22:57'),
+(18, 3, 2, 'used', 3, NULL, '2026-05-23 14:44:16', '2026-05-24 12:23:19'),
 (19, 3, 3, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
 (20, 3, 4, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
 (21, 3, 5, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
@@ -415,7 +421,23 @@ INSERT INTO `pon_ports` (`id`, `pon_id`, `port_number`, `status`, `target_odc_id
 (29, 4, 5, 'available', NULL, NULL, '2026-05-23 14:56:06', '2026-05-23 14:56:06'),
 (30, 4, 6, 'available', NULL, NULL, '2026-05-23 14:56:06', '2026-05-23 14:56:06'),
 (31, 4, 7, 'available', NULL, NULL, '2026-05-23 14:56:06', '2026-05-23 14:56:06'),
-(32, 4, 8, 'available', NULL, NULL, '2026-05-23 14:56:06', '2026-05-23 14:56:06');
+(32, 4, 8, 'available', NULL, NULL, '2026-05-23 14:56:06', '2026-05-23 14:56:06'),
+(33, 5, 1, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(34, 5, 2, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(35, 5, 3, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(36, 5, 4, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(37, 6, 1, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(38, 6, 2, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(39, 6, 3, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(40, 6, 4, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(41, 7, 1, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(42, 7, 2, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(43, 7, 3, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(44, 7, 4, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(45, 8, 1, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(46, 8, 2, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(47, 8, 3, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28'),
+(48, 8, 4, 'available', NULL, NULL, '2026-05-24 01:30:28', '2026-05-24 01:30:28');
 
 -- --------------------------------------------------------
 
@@ -621,7 +643,7 @@ ALTER TABLE `login_logs`
 -- AUTO_INCREMENT untuk tabel `odc`
 --
 ALTER TABLE `odc`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT untuk tabel `odc_odp_connections`
@@ -657,7 +679,7 @@ ALTER TABLE `odp_ports`
 -- AUTO_INCREMENT untuk tabel `olt`
 --
 ALTER TABLE `olt`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT untuk tabel `olt_photos`
@@ -675,13 +697,13 @@ ALTER TABLE `olt_ports`
 -- AUTO_INCREMENT untuk tabel `pon`
 --
 ALTER TABLE `pon`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `pon_ports`
 --
 ALTER TABLE `pon_ports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT untuk tabel `pop`

@@ -39,15 +39,29 @@ switch($method) {
 }
 
 // =============================================
-// GET ALL ODC
+// GET ALL ODC - DENGAN INFORMASI SUMBER LENGKAP
 // =============================================
 function getAllODC() {
     global $pdo;
     try {
         $stmt = $pdo->query("
             SELECT o.*, 
-                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps
-            FROM odc o 
+                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps,
+                   pop.name as source_pop_name,
+                   olt.name as source_olt_name,
+                   pon.card_number as source_pon_card,
+                   pon.name as source_pon_name,
+                   o.pon_port_number as source_port_number,
+                   CONCAT(
+                       COALESCE(pop.name, ''),
+                       IF(olt.name IS NOT NULL, CONCAT(' → ', olt.name), ''),
+                       IF(pon.card_number IS NOT NULL, CONCAT(' → PON ', pon.card_number), ''),
+                       IF(o.pon_port_number IS NOT NULL, CONCAT(' → Port ', o.pon_port_number), '')
+                   ) as source_path
+            FROM odc o
+            LEFT JOIN pop ON o.source_id = pop.id
+            LEFT JOIN olt ON o.olt_id = olt.id
+            LEFT JOIN pon ON o.pon_id = pon.id
             ORDER BY o.created_at DESC
         ");
         $odcs = $stmt->fetchAll();
@@ -71,15 +85,32 @@ function getAllODC() {
 }
 
 // =============================================
-// GET SINGLE ODC
+// GET SINGLE ODC - DENGAN INFORMASI SUMBER LENGKAP
 // =============================================
 function getODC($id) {
     global $pdo;
     try {
         $stmt = $pdo->prepare("
             SELECT o.*, 
-                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps
-            FROM odc o 
+                   (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps,
+                   pop.id as source_pop_id,
+                   pop.name as source_pop_name,
+                   olt.id as source_olt_id,
+                   olt.name as source_olt_name,
+                   pon.id as source_pon_id,
+                   pon.card_number as source_pon_card,
+                   pon.name as source_pon_name,
+                   o.pon_port_number as source_port_number,
+                   CONCAT(
+                       COALESCE(pop.name, ''),
+                       IF(olt.name IS NOT NULL, CONCAT(' → ', olt.name), ''),
+                       IF(pon.card_number IS NOT NULL, CONCAT(' → PON ', pon.card_number), ''),
+                       IF(o.pon_port_number IS NOT NULL, CONCAT(' → Port ', o.pon_port_number), '')
+                   ) as source_path
+            FROM odc o
+            LEFT JOIN pop ON o.source_id = pop.id
+            LEFT JOIN olt ON o.olt_id = olt.id
+            LEFT JOIN pon ON o.pon_id = pon.id
             WHERE o.id = ?
         ");
         $stmt->execute([$id]);
@@ -216,7 +247,7 @@ function getAvailableSources() {
 }
 
 // =============================================
-// CREATE ODC
+// CREATE ODC - DENGAN SUMBER DARI PON
 // =============================================
 function createODC() {
     global $pdo;
@@ -226,12 +257,41 @@ function createODC() {
         sendResponse(['error' => 'Missing required fields: name, lat, lng'], 400);
     }
     
+    // Validasi: harus memiliki sumber PON
+    if (!isset($data['pon_id']) || !isset($data['pon_port_number'])) {
+        sendResponse(['error' => 'ODC harus terhubung ke PON Card dan Port tertentu'], 400);
+    }
+    
     try {
         $pdo->beginTransaction();
         
+        // Cek apakah port PON masih available
         $stmt = $pdo->prepare("
-            INSERT INTO odc (name, lat, lng, location, capacity, description)
-            VALUES (?, ?, ?, ?, ?, ?)
+            SELECT status FROM pon_ports 
+            WHERE pon_id = ? AND port_number = ? AND status = 'available'
+        ");
+        $stmt->execute([$data['pon_id'], $data['pon_port_number']]);
+        if (!$stmt->fetch()) {
+            sendResponse(['error' => 'Port PON sudah tidak tersedia'], 400);
+        }
+        
+        // Dapatkan pop_id dan olt_id dari pon_id
+        $stmt = $pdo->prepare("
+            SELECT p.olt_id, o.pop_id 
+            FROM pon p
+            JOIN olt o ON p.olt_id = o.id
+            WHERE p.id = ?
+        ");
+        $stmt->execute([$data['pon_id']]);
+        $sourceInfo = $stmt->fetch();
+        $olt_id = $sourceInfo['olt_id'];
+        $pop_id = $sourceInfo['pop_id'];
+        
+        // Insert ODC with source_type = 'pon'
+        $stmt = $pdo->prepare("
+            INSERT INTO odc (name, lat, lng, location, capacity, used_ports, description, 
+                           source_type, source_id, pon_id, pon_port_number, olt_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['name'],
@@ -239,13 +299,27 @@ function createODC() {
             $data['lng'],
             $data['location'] ?? '',
             $data['capacity'] ?? 24,
-            $data['description'] ?? ''
+            0,
+            $data['description'] ?? '',
+            'pon',
+            $pop_id,
+            $data['pon_id'],
+            $data['pon_port_number'],
+            $olt_id
         ]);
         
-        $id = $pdo->lastInsertId();
+        $odc_id = $pdo->lastInsertId();
+        
+        // Update status port PON menjadi 'used'
+        $stmt = $pdo->prepare("
+            UPDATE pon_ports 
+            SET status = 'used', target_odc_id = ?, updated_at = NOW()
+            WHERE pon_id = ? AND port_number = ?
+        ");
+        $stmt->execute([$odc_id, $data['pon_id'], $data['pon_port_number']]);
         
         $pdo->commit();
-        sendResponse(['id' => $id, 'message' => 'ODC created successfully']);
+        sendResponse(['id' => $odc_id, 'message' => 'ODC created successfully']);
     } catch(PDOException $e) {
         $pdo->rollBack();
         sendResponse(['error' => $e->getMessage()], 500);
@@ -264,6 +338,13 @@ function updateODC($id) {
     $data = getRequestData();
     
     try {
+        $pdo->beginTransaction();
+        
+        // Get old data
+        $stmt = $pdo->prepare("SELECT * FROM odc WHERE id = ?");
+        $stmt->execute([$id]);
+        $oldData = $stmt->fetch();
+        
         $fields = [];
         $values = [];
         
@@ -283,8 +364,10 @@ function updateODC($id) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($values);
         
+        $pdo->commit();
         sendResponse(['message' => 'ODC updated successfully']);
     } catch(PDOException $e) {
+        $pdo->rollBack();
         sendResponse(['error' => $e->getMessage()], 500);
     }
 }
@@ -301,9 +384,26 @@ function deleteODC($id) {
     try {
         $pdo->beginTransaction();
         
+        // Get pon_id and pon_port_number before delete
+        $stmt = $pdo->prepare("SELECT pon_id, pon_port_number FROM odc WHERE id = ?");
+        $stmt->execute([$id]);
+        $odc = $stmt->fetch();
+        
+        if ($odc && $odc['pon_id'] && $odc['pon_port_number']) {
+            // Update port PON back to available
+            $stmt = $pdo->prepare("
+                UPDATE pon_ports 
+                SET status = 'available', target_odc_id = NULL 
+                WHERE pon_id = ? AND port_number = ?
+            ");
+            $stmt->execute([$odc['pon_id'], $odc['pon_port_number']]);
+        }
+        
+        // Delete ODP connections
         $stmt = $pdo->prepare("DELETE FROM odc_odp_connections WHERE odc_id = ?");
         $stmt->execute([$id]);
         
+        // Delete ODC
         $stmt = $pdo->prepare("DELETE FROM odc WHERE id = ?");
         $stmt->execute([$id]);
         

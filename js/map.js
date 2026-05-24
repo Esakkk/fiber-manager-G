@@ -315,6 +315,21 @@ function createPopupContent(device) {
     let content = `<div style="min-width: 220px;"><h4 style="margin: 0 0 10px 0;">${device.name}</h4><p><strong>Tipe:</strong> ${type}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
 
     if (isODC) {
+            let sourceHtml = '';
+    if (device.source_path) {
+        sourceHtml = `
+            <div style="background: #ebf8ff; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4299e1;">
+                <strong><i class="fas fa-project-diagram"></i> Jalur Sumber:</strong><br>
+                <span style="font-family: monospace; font-size: 13px;">${device.source_path}</span>
+            </div>
+        `;
+    } else {
+        sourceHtml = `
+            <div style="background: #fefcbf; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ecc94b;">
+                <strong><i class="fas fa-info-circle"></i> Sumber:</strong> Tidak terhubung ke POP/OLT/PON
+            </div>
+        `;
+    }
         content += `<p><strong>Kapasitas:</strong> ${device.capacity} Port</p><p><strong>Terpakai:</strong> ${device.used_ports || 0} Port</p><p><strong>ODP Terhubung:</strong> ${device.connected_odps || 0}</p>`;
     } else {
         const available = device.available_ports || 0;

@@ -559,6 +559,14 @@ body {
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 
+.coordinate-picker-map {
+    width: 100%;
+    height: 60vh;
+    min-height: 360px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
 .modal-small {
     max-width: 400px;
 }
@@ -575,6 +583,11 @@ body {
 
 .modal-header h2, .modal-header h3 {
     font-size: 1.1em;
+}
+
+/* Ensure coordinate picker modal appears above other modals */
+#coordinatePickerModal {
+    z-index: 5001;
 }
 
 .close {
@@ -1069,6 +1082,24 @@ form {
 .form-row .form-group {
     flex: 1;
     margin-bottom: 0;
+}
+/* Info Card */
+.info-card {
+    background: #ebf8ff;
+    border: 1px solid #bee3f8;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.info-card i {
+    color: #3182ce;
+    margin-right: 8px;
+}
+
+/* Dropdown hierarchy */
+#odcOltGroup, #odcPonGroup, #odcPortGroup {
+    transition: all 0.3s ease;
 }
 
 /* Warna tombol hierarchy */

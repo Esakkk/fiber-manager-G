@@ -47,6 +47,142 @@ function formatCoordinates(lat, lng) {
     return `${lat}, ${lng}`;
 }
 
+let coordinatePickerTargetId = null;
+let coordinatePickerMap = null;
+let coordinatePickerMarker = null;
+let coordinatePickerHiddenModals = [];
+
+function setCoordinateField(fieldId, latlng) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.value = formatCoordinates(latlng.lat, latlng.lng);
+}
+
+function startCoordinatePicker(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) {
+        alert('Field koordinat tidak ditemukan: ' + fieldId);
+        return;
+    }
+
+    coordinatePickerTargetId = fieldId;
+    const modal = document.getElementById('coordinatePickerModal');
+    if (!modal) {
+        alert('Modal pemilih koordinat tidak ditemukan.');
+        return;
+    }
+
+    // Hide any other open modals so picker modal sits on top and no background modal gets corrupted
+    coordinatePickerHiddenModals = [];
+    document.querySelectorAll('.modal.show').forEach(m => {
+        if (m.id && m.id !== 'coordinatePickerModal') {
+            coordinatePickerHiddenModals.push(m.id);
+            m.classList.remove('show');
+        }
+    });
+
+    modal.classList.add('show');
+    setTimeout(() => {
+        if (coordinatePickerMap) {
+            coordinatePickerMap.invalidateSize();
+        }
+    }, 100);
+
+    if (!coordinatePickerMap) {
+        const center = map ? map.getCenter() : L.latLng(-6.966409024897329, 109.6469502011238);
+        const zoom = map ? map.getZoom() : 13;
+        coordinatePickerMap = L.map('coordinatePickerMap').setView(center, zoom);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '© Google',
+            maxZoom: 22,
+            maxNativeZoom: 20
+        }).addTo(coordinatePickerMap);
+        coordinatePickerMap.on('click', function(e) {
+            setCoordinateField(coordinatePickerTargetId, e.latlng);
+            addCoordinatePickerMarker(e.latlng, 'Koordinat dipilih');
+            closeCoordinatePicker();
+        });
+    } else {
+        coordinatePickerMap.invalidateSize();
+        if (map) {
+            coordinatePickerMap.setView(map.getCenter(), map.getZoom());
+        }
+    }
+
+    const currentCoords = parseCoordinates(field.value);
+    if (currentCoords) {
+        addCoordinatePickerMarker(currentCoords, 'Koordinat saat ini');
+        coordinatePickerMap.setView(currentCoords, 17);
+    }
+}
+
+function addCoordinatePickerMarker(latlng, label) {
+    if (!coordinatePickerMap) return;
+    if (coordinatePickerMarker) {
+        coordinatePickerMap.removeLayer(coordinatePickerMarker);
+        coordinatePickerMarker = null;
+    }
+    coordinatePickerMarker = L.marker(latlng).addTo(coordinatePickerMap);
+    coordinatePickerMarker.bindPopup(label).openPopup();
+}
+
+function closeCoordinatePicker() {
+    const modal = document.getElementById('coordinatePickerModal');
+    if (modal) modal.classList.remove('show');
+    coordinatePickerTargetId = null;
+    // restore any modals that were hidden when picker opened
+    if (coordinatePickerHiddenModals && coordinatePickerHiddenModals.length) {
+        coordinatePickerHiddenModals.forEach(id => {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('show');
+        });
+        coordinatePickerHiddenModals = [];
+    }
+}
+
+function useCurrentLocation(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) {
+        alert('Field koordinat tidak ditemukan: ' + fieldId);
+        return;
+    }
+    if (!navigator.geolocation) {
+        alert('Geolocation tidak didukung oleh browser Anda.');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const latlng = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            setCoordinateField(fieldId, latlng);
+
+            if (coordinatePickerMap && document.getElementById('coordinatePickerModal')?.classList.contains('show')) {
+                addCoordinatePickerMarker(latlng, 'Lokasi saat ini');
+                coordinatePickerMap.setView(latlng, 17);
+            } else if (map) {
+                if (coordinatePickerMarker) {
+                    map.removeLayer(coordinatePickerMarker);
+                    coordinatePickerMarker = null;
+                }
+                coordinatePickerMarker = L.marker(latlng).addTo(map);
+                coordinatePickerMarker.bindPopup('Lokasi saat ini').openPopup();
+                map.setView(latlng, 17);
+            }
+        },
+        function(error) {
+            alert('Tidak dapat mengambil lokasi saat ini: ' + error.message);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
 // Search and zoom to coordinate
 function searchAndZoom() {
     const input = document.getElementById('searchCoordinate');
@@ -315,21 +451,6 @@ function createPopupContent(device) {
     let content = `<div style="min-width: 220px;"><h4 style="margin: 0 0 10px 0;">${device.name}</h4><p><strong>Tipe:</strong> ${type}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
 
     if (isODC) {
-            let sourceHtml = '';
-    if (device.source_path) {
-        sourceHtml = `
-            <div style="background: #ebf8ff; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4299e1;">
-                <strong><i class="fas fa-project-diagram"></i> Jalur Sumber:</strong><br>
-                <span style="font-family: monospace; font-size: 13px;">${device.source_path}</span>
-            </div>
-        `;
-    } else {
-        sourceHtml = `
-            <div style="background: #fefcbf; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ecc94b;">
-                <strong><i class="fas fa-info-circle"></i> Sumber:</strong> Tidak terhubung ke POP/OLT/PON
-            </div>
-        `;
-    }
         content += `<p><strong>Kapasitas:</strong> ${device.capacity} Port</p><p><strong>Terpakai:</strong> ${device.used_ports || 0} Port</p><p><strong>ODP Terhubung:</strong> ${device.connected_odps || 0}</p>`;
     } else {
         const available = device.available_ports || 0;

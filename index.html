@@ -115,6 +115,28 @@
         </div>
     </div>
     
+    <!-- Coordinate Picker Modal -->
+    <div class="modal" id="coordinatePickerModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Pilih Lokasi di Peta</h2>
+                <span class="close" onclick="closeCoordinatePicker()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="coordinatePickerMap" class="coordinate-picker-map"></div>
+                <div class="coordinate-picker-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation(coordinatePickerTargetId)">
+                        <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="closeCoordinatePicker()">
+                        Tutup
+                    </button>
+                </div>
+                <p style="margin-top: 10px; color: #4a5568;">Klik pada peta untuk memilih lokasi. Koordinat akan otomatis diisi ke kolom formulir.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Form ODP -->
     <div class="modal" id="odpModal">
         <div class="modal-content">
@@ -149,6 +171,14 @@
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odpCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('odpCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('odpCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
                     <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
                 </div>
                 
@@ -220,6 +250,14 @@
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="popCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('popCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('popCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -302,6 +340,14 @@
                 <div class="form-group">
                     <label>Koordinat (Optional):</label>
                     <input type="text" id="oltCoordinates" placeholder="Contoh: -6.208800, 106.845600">
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('oltCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('oltCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -410,6 +456,14 @@
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('odcCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('odcCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
                     <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
                 </div>
                 

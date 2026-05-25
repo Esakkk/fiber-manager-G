@@ -345,15 +345,57 @@ function updateODC($id) {
         $stmt->execute([$id]);
         $oldData = $stmt->fetch();
         
+        if (!$oldData) {
+            sendResponse(['error' => 'ODC not found'], 404);
+        }
+        
         $fields = [];
         $values = [];
-        
+        $portChanged = false;
+        $newPonId = null;
+        $newPonPort = null;
+
         if (isset($data['name'])) { $fields[] = "name = ?"; $values[] = $data['name']; }
         if (isset($data['lat'])) { $fields[] = "lat = ?"; $values[] = $data['lat']; }
         if (isset($data['lng'])) { $fields[] = "lng = ?"; $values[] = $data['lng']; }
         if (isset($data['location'])) { $fields[] = "location = ?"; $values[] = $data['location']; }
         if (isset($data['capacity'])) { $fields[] = "capacity = ?"; $values[] = $data['capacity']; }
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
+        
+        if (isset($data['pon_id']) && isset($data['pon_port_number'])) {
+            $newPonId = (int) $data['pon_id'];
+            $newPonPort = (int) $data['pon_port_number'];
+            $oldPonId = isset($oldData['pon_id']) ? (int) $oldData['pon_id'] : null;
+            $oldPonPort = isset($oldData['pon_port_number']) ? (int) $oldData['pon_port_number'] : null;
+            
+            if ($newPonId !== $oldPonId || $newPonPort !== $oldPonPort) {
+                $stmt = $pdo->prepare("SELECT status FROM pon_ports WHERE pon_id = ? AND port_number = ?");
+                $stmt->execute([$newPonId, $newPonPort]);
+                $port = $stmt->fetch();
+                
+                if (!$port) {
+                    sendResponse(['error' => 'Port PON tidak ditemukan'], 400);
+                }
+                if ($port['status'] !== 'available') {
+                    sendResponse(['error' => 'Port PON sudah tidak tersedia'], 400);
+                }
+                $portChanged = true;
+            }
+            
+            $stmt = $pdo->prepare("SELECT p.olt_id, o.pop_id FROM pon p JOIN olt o ON p.olt_id = o.id WHERE p.id = ?");
+            $stmt->execute([$newPonId]);
+            $sourceInfo = $stmt->fetch();
+            
+            if (!$sourceInfo) {
+                sendResponse(['error' => 'PON tidak valid'], 400);
+            }
+            
+            $fields[] = "pon_id = ?"; $values[] = $newPonId;
+            $fields[] = "pon_port_number = ?"; $values[] = $newPonPort;
+            $fields[] = "olt_id = ?"; $values[] = $sourceInfo['olt_id'];
+            $fields[] = "source_id = ?"; $values[] = $sourceInfo['pop_id'];
+            $fields[] = "source_type = 'pon'";
+        }
         
         if (empty($fields)) {
             sendResponse(['error' => 'No fields to update'], 400);
@@ -363,6 +405,14 @@ function updateODC($id) {
         $sql = "UPDATE odc SET " . implode(', ', $fields) . " WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($values);
+        
+        if ($portChanged) {
+            $stmt = $pdo->prepare("UPDATE pon_ports SET status = 'available', target_odc_id = NULL, updated_at = NOW() WHERE pon_id = ? AND port_number = ?");
+            $stmt->execute([$oldData['pon_id'], $oldData['pon_port_number']]);
+            
+            $stmt = $pdo->prepare("UPDATE pon_ports SET status = 'used', target_odc_id = ?, updated_at = NOW() WHERE pon_id = ? AND port_number = ?");
+            $stmt->execute([$id, $newPonId, $newPonPort]);
+        }
         
         $pdo->commit();
         sendResponse(['message' => 'ODC updated successfully']);

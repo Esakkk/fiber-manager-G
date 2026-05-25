@@ -516,30 +516,47 @@ async function loadOLTByPop() {
     const ponGroup = document.getElementById('odcPonGroup');
     const portGroup = document.getElementById('odcPortGroup');
     
+    console.log('=== loadOLTByPop ===');
+    console.log('popId:', popId);
+    
     if (!popId) {
+        console.log('No popId, hiding groups');
         if (oltGroup) oltGroup.style.display = 'none';
         if (ponGroup) ponGroup.style.display = 'none';
         if (portGroup) portGroup.style.display = 'none';
         return;
     }
     
-    if (oltGroup) oltGroup.style.display = 'block';
-    if (oltSelect) oltSelect.innerHTML = '<option value="">Loading OLT...</option>';
+    if (oltGroup) {
+        oltGroup.style.display = 'block';
+        console.log('oltGroup visible');
+    }
+    if (oltSelect) oltSelect.innerHTML = '<option value="">🔄 Loading OLT...</option>';
     
     try {
         const response = await fetch(`${API_BASE}/olt.php`, { credentials: 'include' });
+        console.log('OLT API response status:', response.status);
+        
         if (response.ok) {
             const olts = await response.json();
+            console.log('All OLTs:', olts);
+            
             const filteredOlts = olts.filter(olt => olt.pop_id == popId);
+            console.log('Filtered OLTs for pop_id', popId, ':', filteredOlts);
             
             if (oltSelect) {
                 oltSelect.innerHTML = '<option value="">Pilih OLT...</option>';
-                filteredOlts.forEach(olt => {
-                    const option = document.createElement('option');
-                    option.value = olt.id;
-                    option.textContent = `${olt.name} ${olt.model ? '(' + olt.model + ')' : ''}`;
-                    oltSelect.appendChild(option);
-                });
+                if (filteredOlts.length === 0) {
+                    oltSelect.innerHTML = '<option value="">❌ Tidak ada OLT di POP ini</option>';
+                } else {
+                    filteredOlts.forEach(olt => {
+                        const option = document.createElement('option');
+                        option.value = olt.id;
+                        option.textContent = `${olt.name} ${olt.model ? '(' + olt.model + ')' : ''}`;
+                        oltSelect.appendChild(option);
+                        console.log(`Added OLT: ${olt.name}`);
+                    });
+                }
             }
             
             if (ponGroup) ponGroup.style.display = 'none';
@@ -547,7 +564,7 @@ async function loadOLTByPop() {
         }
     } catch (error) {
         console.error('Error loading OLTs:', error);
-        if (oltSelect) oltSelect.innerHTML = '<option value="">Gagal memuat OLT</option>';
+        if (oltSelect) oltSelect.innerHTML = '<option value="">❌ Gagal memuat OLT</option>';
     }
 }
 
@@ -557,36 +574,50 @@ async function loadPONByOLT() {
     const ponSelect = document.getElementById('odcSourcePon');
     const portGroup = document.getElementById('odcPortGroup');
     
+    console.log('=== loadPONByOLT ===');
+    console.log('oltId:', oltId);
+    
     if (!oltId) {
+        console.log('No oltId, hiding groups');
         if (ponGroup) ponGroup.style.display = 'none';
         if (portGroup) portGroup.style.display = 'none';
         return;
     }
     
-    if (ponGroup) ponGroup.style.display = 'block';
-    if (ponSelect) ponSelect.innerHTML = '<option value="">Loading PON Card...</option>';
+    if (ponGroup) {
+        ponGroup.style.display = 'block';
+        console.log('ponGroup visible');
+    }
+    if (ponSelect) ponSelect.innerHTML = '<option value="">🔄 Loading PON Card...</option>';
     
     try {
         const response = await fetch(`${API_BASE}/olt.php?id=${oltId}&action=pons`, { credentials: 'include' });
+        console.log('PON API response status:', response.status);
         
         if (response.ok) {
             const pons = await response.json();
+            console.log('PONs for OLT', oltId, ':', pons);
             
             if (ponSelect) {
                 ponSelect.innerHTML = '<option value="">Pilih PON Card...</option>';
-                pons.forEach(pon => {
-                    const option = document.createElement('option');
-                    option.value = pon.id;
-                    option.textContent = `PON Card ${pon.card_number} - ${pon.name || 'Card ' + pon.card_number} (${pon.port_count || 8} port)`;
-                    ponSelect.appendChild(option);
-                });
+                if (pons.length === 0) {
+                    ponSelect.innerHTML = '<option value="">❌ Tidak ada PON di OLT ini</option>';
+                } else {
+                    pons.forEach(pon => {
+                        const option = document.createElement('option');
+                        option.value = pon.id;
+                        option.textContent = `PON Card ${pon.card_number} - ${pon.name || 'Card ' + pon.card_number} (${pon.port_count || 8} port)`;
+                        ponSelect.appendChild(option);
+                        console.log(`Added PON: Card ${pon.card_number}`);
+                    });
+                }
             }
             
             if (portGroup) portGroup.style.display = 'none';
         }
     } catch (error) {
         console.error('Error loading PONs:', error);
-        if (ponSelect) ponSelect.innerHTML = '<option value="">Gagal memuat PON</option>';
+        if (ponSelect) ponSelect.innerHTML = '<option value="">❌ Gagal memuat PON</option>';
     }
 }
 
@@ -718,14 +749,16 @@ async function showAddODCDialog() {
 async function saveODC() {
     const id = document.getElementById('odcId')?.value;
     const coordString = document.getElementById('odcCoordinates')?.value.trim();
-    const ponId = document.getElementById('odcSourcePon')?.value;
-    const ponPort = document.getElementById('odcPonPort')?.value;
+    const isEdit = !!id;
     
     const coords = parseCoordinates(coordString);
     if (!coords) {
         alert('Format koordinat tidak valid!');
         return;
     }
+    
+    const ponId = document.getElementById('odcSourcePon')?.value;
+    const ponPort = document.getElementById('odcPonPort')?.value;
     
     if (!ponId || !ponPort) {
         alert('Silakan pilih PON Card dan Port yang akan digunakan!');
@@ -1060,10 +1093,15 @@ async function editDevice(id, type) {
 
         // Populate POP/OLT/PON dropdown hierarchy and select current values
         await loadPOPsForODC();
+        
+        // Small delay to ensure DOM is updated
+        await new Promise(r => setTimeout(r, 100));
+        
         try {
             if (fullODC.source_pop_id) {
                 const popSelect = document.getElementById('odcSourcePop');
                 if (popSelect) {
+                    console.log('Setting popSelect to:', fullODC.source_pop_id);
                     popSelect.value = fullODC.source_pop_id;
                     await loadOLTByPop();
                 }
@@ -1072,6 +1110,7 @@ async function editDevice(id, type) {
             if (fullODC.source_olt_id) {
                 const oltSelect = document.getElementById('odcSourceOlt');
                 if (oltSelect) {
+                    console.log('Setting oltSelect to:', fullODC.source_olt_id);
                     oltSelect.value = fullODC.source_olt_id;
                     await loadPONByOLT();
                 }
@@ -1080,6 +1119,7 @@ async function editDevice(id, type) {
             if (fullODC.source_pon_id) {
                 const ponSelect = document.getElementById('odcSourcePon');
                 if (ponSelect) {
+                    console.log('Setting ponSelect to:', fullODC.source_pon_id);
                     ponSelect.value = fullODC.source_pon_id;
                     // Pass current port number so it appears in dropdown during edit
                     await loadPortByPON(fullODC.source_port_number);
@@ -1088,7 +1128,10 @@ async function editDevice(id, type) {
 
             if (fullODC.source_port_number) {
                 const portSelect = document.getElementById('odcPonPort');
-                if (portSelect) portSelect.value = fullODC.source_port_number;
+                if (portSelect) {
+                    console.log('Setting portSelect to:', fullODC.source_port_number);
+                    portSelect.value = fullODC.source_port_number;
+                }
             }
         } catch (e) {
             console.error('Error populating source dropdowns:', e);

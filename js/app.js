@@ -593,10 +593,11 @@ async function loadPONByOLT() {
 // =============================================
 // LOAD PORT BY PON - INI YANG MEMBUAT PORT MUNCUL
 // =============================================
-// =============================================
 // LOAD PORT BY PON - DENGAN DEBUG LENGKAP
+// Saat edit: tampilkan available + port yang sedang dipakai ODC ini
+// Saat create: hanya available
 // =============================================
-async function loadPortByPON() {
+async function loadPortByPON(currentPortNumber = null) {
     const ponId = document.getElementById('odcSourcePon')?.value;
     const portGroup = document.getElementById('odcPortGroup');
     const portSelect = document.getElementById('odcPonPort');
@@ -604,6 +605,7 @@ async function loadPortByPON() {
     
     console.log('=== loadPortByPON DEBUG ===');
     console.log('ponId:', ponId);
+    console.log('currentPortNumber (for edit):', currentPortNumber);
     console.log('portGroup element:', portGroup);
     console.log('portSelect element:', portSelect);
     
@@ -642,11 +644,13 @@ async function loadPortByPON() {
             console.log('Ports data received:', ports);
             console.log('Number of ports:', ports.length);
             
-            // Filter hanya port yang statusnya 'available'
-            const availablePorts = ports.filter(p => p.status === 'available');
-            console.log('Available ports:', availablePorts);
+            // Filter: show available ports + current port if editing
+            const selectablePorts = ports.filter(p => 
+                p.status === 'available' || (currentPortNumber && p.port_number == currentPortNumber)
+            );
+            console.log('Selectable ports:', selectablePorts);
             
-            if (availablePorts.length === 0) {
+            if (selectablePorts.length === 0) {
                 portSelect.innerHTML = '<option value="">❌ Tidak ada port tersedia</option>';
                 if (portInfo) {
                     portInfo.style.display = 'block';
@@ -655,21 +659,24 @@ async function loadPortByPON() {
                         portInfoText.innerHTML = '⚠️ Peringatan: Tidak ada port tersedia di PON Card ini. Semua port sudah terpakai.';
                     }
                 }
-                console.log('No available ports');
+                console.log('No selectable ports');
             } else {
                 portSelect.innerHTML = '<option value="">📌 Pilih port...</option>';
-                availablePorts.forEach(port => {
+                selectablePorts.forEach(port => {
                     const option = document.createElement('option');
                     option.value = port.port_number;
-                    option.textContent = `Port ${port.port_number} - ✅ Tersedia`;
+                    const label = (currentPortNumber && port.port_number == currentPortNumber) 
+                        ? `Port ${port.port_number} - 🔧 Terpakai (ODC ini)` 
+                        : `Port ${port.port_number} - ✅ Tersedia`;
+                    option.textContent = label;
                     portSelect.appendChild(option);
-                    console.log(`Added option: Port ${port.port_number}`);
+                    console.log(`Added option: ${label}`);
                 });
                 
                 if (portInfo) {
                     portInfo.style.display = 'none';
                 }
-                console.log(`Added ${availablePorts.length} ports to dropdown`);
+                console.log(`Added ${selectablePorts.length} ports to dropdown`);
             }
         } else {
             const error = await response.json();
@@ -1074,7 +1081,8 @@ async function editDevice(id, type) {
                 const ponSelect = document.getElementById('odcSourcePon');
                 if (ponSelect) {
                     ponSelect.value = fullODC.source_pon_id;
-                    await loadPortByPON();
+                    // Pass current port number so it appears in dropdown during edit
+                    await loadPortByPON(fullODC.source_port_number);
                 }
             }
 

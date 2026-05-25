@@ -374,39 +374,39 @@
                     <label>Nama ODC:</label>
                     <input type="text" id="odcName" placeholder="Contoh: ODC-CKR-001" required>
                 </div>
-<!-- Di modal ODC, pastikan ID nya seperti ini -->
-<div class="form-group">
-    <label>Sumber / Berasal dari POP:</label>
-    <select id="odcSourcePop">
-        <option value="">Pilih POP...</option>
-    </select>
-</div>
+                <!-- Di modal ODC, pastikan ID nya seperti ini -->
+                <div class="form-group">
+                    <label>Sumber / Berasal dari POP:</label>
+                    <select id="odcSourcePop">
+                        <option value="">Pilih POP...</option>
+                    </select>
+                </div>
 
-<div class="form-group" id="odcOltGroup" style="display: none;">
-    <label>Pilih OLT:</label>
-    <select id="odcSourceOlt">
-        <option value="">Pilih OLT...</option>
-    </select>
-</div>
+                <div class="form-group" id="odcOltGroup" style="display: none;">
+                    <label>Pilih OLT:</label>
+                    <select id="odcSourceOlt">
+                        <option value="">Pilih OLT...</option>
+                    </select>
+                </div>
 
-<div class="form-group" id="odcPonGroup" style="display: none;">
-    <label>Pilih PON Card:</label>
-        <select id="odcSourcePon" onchange="loadPortByPON()">
-            <option value="">Pilih PON Card...</option>
-        </select>
-</div>
+                <div class="form-group" id="odcPonGroup" style="display: none;">
+                    <label>Pilih PON Card:</label>
+                        <select id="odcSourcePon" onchange="loadPortByPON()">
+                            <option value="">Pilih PON Card...</option>
+                        </select>
+                </div>
 
-<div class="form-group" id="odcPortGroup" style="display: none;">
-    <label>Pilih Port PON:</label>
-    <select id="odcPonPort">
-        <option value="">Pilih port...</option>
-    </select>
-    <small>Pilih port PON yang tersedia</small>
-</div>
+                <div class="form-group" id="odcPortGroup" style="display: none;">
+                    <label>Pilih Port PON:</label>
+                    <select id="odcPonPort">
+                        <option value="">Pilih port...</option>
+                    </select>
+                    <small>Pilih port PON yang tersedia</small>
+                </div>
 
-<div class="info-card" id="selectedPortInfo" style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
-    <i class="fas fa-info-circle"></i> <span id="portInfoText"></span>
-</div>
+                <div class="info-card" id="selectedPortInfo" style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> <span id="portInfoText"></span>
+                </div>
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>

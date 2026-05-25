@@ -554,9 +554,12 @@ body {
     background: white;
     border-radius: 10px;
     width: 90%;
-    max-width: 600px;
+    max-width: 700px;
     margin: 20px 0;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    box-shadow: 0 14px 60px rgba(8,35,64,0.18);
+    border: 1px solid rgba(10,20,30,0.04);
+    transition: transform 160ms ease, opacity 160ms ease;
+    transform: translateY(0);
 }
 
 .coordinate-picker-map {
@@ -583,6 +586,80 @@ body {
 
 .modal-header h2, .modal-header h3 {
     font-size: 1.1em;
+}
+
+/* Modal body and form spacing */
+.modal-body {
+    padding: 18px 20px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(58,72,88,0.12);
+    border-radius: 8px;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 6px 18px rgba(66,153,225,0.12);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px 20px;
+}
+
+/* Button styles */
+.btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #1f2937;
+    border-color: rgba(15,23,42,0.04);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border-color: rgba(66,153,225,0.9);
+}
+
+/* Make photo preview items look nicer */
+.photo-preview .photo-item {
+    display: inline-block;
+    margin-right: 8px;
+    position: relative;
+}
+.photo-preview .photo-item img {
+    width: 88px;
+    height: 66px;
+    object-fit: cover;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(8,35,64,0.08);
 }
 
 /* Ensure coordinate picker modal appears above other modals */

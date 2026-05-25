@@ -363,12 +363,10 @@ function updateODC($id) {
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
         
         if (isset($data['pon_id']) && isset($data['pon_port_number'])) {
-            $newPonId = (int) $data['pon_id'];
-            $newPonPort = (int) $data['pon_port_number'];
-            $oldPonId = isset($oldData['pon_id']) ? (int) $oldData['pon_id'] : null;
-            $oldPonPort = isset($oldData['pon_port_number']) ? (int) $oldData['pon_port_number'] : null;
+            $newPonId = $data['pon_id'];
+            $newPonPort = $data['pon_port_number'];
             
-            if ($newPonId !== $oldPonId || $newPonPort !== $oldPonPort) {
+            if ($newPonId !== $oldData['pon_id'] || $newPonPort !== $oldData['pon_port_number']) {
                 $stmt = $pdo->prepare("SELECT status FROM pon_ports WHERE pon_id = ? AND port_number = ?");
                 $stmt->execute([$newPonId, $newPonPort]);
                 $port = $stmt->fetch();

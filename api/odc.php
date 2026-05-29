@@ -361,6 +361,7 @@ function updateODC($id) {
         if (isset($data['location'])) { $fields[] = "location = ?"; $values[] = $data['location']; }
         if (isset($data['capacity'])) { $fields[] = "capacity = ?"; $values[] = $data['capacity']; }
         if (isset($data['description'])) { $fields[] = "description = ?"; $values[] = $data['description']; }
+        if (isset($data['path_coordinates'])) { $fields[] = "path_coordinates = ?"; $values[] = $data['path_coordinates']; }
         
         if (isset($data['pon_id']) && isset($data['pon_port_number'])) {
             $newPonId = $data['pon_id'];

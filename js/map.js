@@ -11,6 +11,7 @@ let currentEditingDevice = null;
 let currentPortConfig = { deviceId: null, portNumber: null };
 let odpMarkers = {};
 let odpLines = {};
+let odcLines = {};
 let highlightedMarker = null;
 
 // =============================================
@@ -365,8 +366,17 @@ function createPOPIcon() {
 }
 
 function drawFeederLine(odc, sourceLatLng) {
-    const odcLatLng = [parseFloat(odc.lat), parseFloat(odc.lng)];
-    const latlngs = [sourceLatLng, odcLatLng];
+    let latlngs = [];
+    
+    if (odc.path_coordinates) {
+        try {
+            latlngs = JSON.parse(odc.path_coordinates);
+        } catch (e) {
+            latlngs = [sourceLatLng, [parseFloat(odc.lat), parseFloat(odc.lng)]];
+        }
+    } else {
+        latlngs = [sourceLatLng, [parseFloat(odc.lat), parseFloat(odc.lng)]];
+    }
     
     // Kabel Feeder: garis solid ungu tebal 4px
     const line = L.polyline(latlngs, {
@@ -376,8 +386,14 @@ function drawFeederLine(odc, sourceLatLng) {
         lineJoin: 'round'
     }).addTo(markersLayer);
     
-    const distance = map.distance(sourceLatLng, odcLatLng);
+    let distance = 0;
+    for (let i = 0; i < latlngs.length - 1; i++) {
+        distance += map.distance(latlngs[i], latlngs[i+1]);
+    }
+    
     line.bindTooltip(`Kabel Feeder (POP → ODC ${odc.name}): ${Math.round(distance)} Meter`, { sticky: true });
+    line.odcId = odc.id;
+    odcLines[odc.id] = line;
 }
 
 function createODCIcon() {
@@ -419,6 +435,7 @@ function refreshMapMarkers() {
     markersLayer.clearLayers();
     odpMarkers = {};
     odpLines = {};
+    odcLines = {};
 
     // 1. Render POP Markers
     if (devices.pop) {
@@ -564,6 +581,77 @@ function togglePathEdit(odpId) {
             }
         });
         
+        Object.values(odcLines).forEach(l => {
+            if (l.pm && l.pm.enabled()) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
+                    b.style.background = '#9b59b6';
+                }
+            }
+        });
+        
+        line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
+        btn.style.background = '#48bb78';
+        map.fitBounds(line.getBounds(), { padding: [50, 50] });
+    }
+}
+
+function toggleODCPathEdit(odcId) {
+    const line = odcLines[odcId];
+    if (!line) return;
+    
+    const btn = document.getElementById(`btnEditOdcPath-${odcId}`);
+    
+    if (line.pm && line.pm.enabled()) {
+        line.pm.disable();
+        const newLatLngs = line.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
+        const pathJson = JSON.stringify(newLatLngs);
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        btn.disabled = true;
+        
+        fetchWithAuth(`${API_BASE}/odc.php?id=${odcId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ path_coordinates: pathJson })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            alert('Jalur kabel ODC berhasil disimpan!');
+            loadDevices();
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Gagal menyimpan jalur kabel ODC: ' + err.message);
+            btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
+            btn.disabled = false;
+        });
+    } else if (line.pm) {
+        Object.values(odpLines).forEach(l => {
+            if (l.pm && l.pm.enabled()) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditPath-${l.odpId}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+                    b.style.background = '#ed8936';
+                }
+            }
+        });
+        
+        Object.values(odcLines).forEach(l => {
+            if (l.pm && l.pm.enabled()) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
+                    b.style.background = '#9b59b6';
+                }
+            }
+        });
+        
         line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
         btn.style.background = '#48bb78';
@@ -618,7 +706,18 @@ async function showDeviceInfo(device) {
     let html = `<div class="device-detail"><p><strong>Tipe:</strong> ${isODC ? 'ODC' : 'ODP'}</p><p><strong>ID:</strong> ${device.id}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
 
     if (isODC) {
-        let portsHtml = `<p><strong>Kapasitas Port:</strong> ${device.capacity}</p><p><strong>Port Terpakai:</strong> ${device.used_ports || 0}</p><p><strong>Port Tersedia:</strong> ${device.capacity - (device.used_ports || 0)}</p><hr><h4>🔌 Status Port ODC</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 6px; margin-top: 10px;">`;
+        let distanceHtml = '';
+        if (odcLines[device.id]) {
+            const line = odcLines[device.id];
+            let distance = 0;
+            const latlngs = line.getLatLngs();
+            for (let i = 0; i < latlngs.length - 1; i++) {
+                distance += map.distance(latlngs[i], latlngs[i+1]);
+            }
+            distanceHtml = `<div style="background: #f7fafc; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #e2e8f0;"><p style="margin: 0 0 5px 0;"><strong><i class="fas fa-route"></i> Jarak Kabel Feeder:</strong> ${Math.round(distance)} Meter</p>${canEdit ? `<button onclick="toggleODCPathEdit('${device.id}')" id="btnEditOdcPath-${device.id}" style="width: 100%; padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-route"></i> Edit Jalur ODC</button>` : ''}</div>`;
+        }
+        
+        let portsHtml = `${distanceHtml}<p><strong>Kapasitas Port:</strong> ${device.capacity}</p><p><strong>Port Terpakai:</strong> ${device.used_ports || 0}</p><p><strong>Port Tersedia:</strong> ${device.capacity - (device.used_ports || 0)}</p><hr><h4>🔌 Status Port ODC</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 6px; margin-top: 10px;">`;
         
         let portDetails = [];
         try {

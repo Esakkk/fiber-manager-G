@@ -6,7 +6,7 @@ const API_BASE = window.location.origin + '/fiber-manager/api';
 // Global variables
 let map;
 let markersLayer;
-let devices = { odc: [], odp: [] };
+let devices = { odc: [], odp: [], pop: [], olt: [] };
 let currentEditingDevice = null;
 let currentPortConfig = { deviceId: null, portNumber: null };
 let odpMarkers = {};
@@ -286,18 +286,24 @@ async function fetchWithAuth(url, options = {}) {
 // Load devices from API - HANYA SATU DEKLARASI
 async function loadDevices() {
     try {
-        const [odcRes, odpRes] = await Promise.all([
+        const [odcRes, odpRes, popRes, oltRes] = await Promise.all([
             fetchWithAuth(`${API_BASE}/odc.php`),
-            fetchWithAuth(`${API_BASE}/odp.php`)
+            fetchWithAuth(`${API_BASE}/odp.php`),
+            fetchWithAuth(`${API_BASE}/pop.php`),
+            fetchWithAuth(`${API_BASE}/olt.php`)
         ]);
 
-        if (!odcRes || !odpRes) return;
+        if (!odcRes || !odpRes || !popRes || !oltRes) return;
 
         const odcData = await odcRes.json();
         const odpData = await odpRes.json();
+        const popData = await popRes.json();
+        const oltData = await oltRes.json();
 
         devices.odc = Array.isArray(odcData) ? odcData : [];
         devices.odp = Array.isArray(odpData) ? odpData : [];
+        devices.pop = Array.isArray(popData) ? popData : [];
+        devices.olt = Array.isArray(oltData) ? oltData : [];
 
         refreshMapMarkers();
         refreshDeviceList();
@@ -344,6 +350,36 @@ function getStatusColor(status) {
 // FUNGSI ICON
 // =============================================
 
+function createPOPIcon() {
+    return L.divIcon({
+        html: `
+            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; border: 3px solid #9b59b6; box-shadow: 0 3px 8px rgba(155, 89, 182, 0.4); transition: transform 0.2s ease;">
+                <i class="fas fa-building" style="color: #9b59b6; font-size: 16px;"></i>
+            </div>
+        `,
+        className: 'pop-marker-icon',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18]
+    });
+}
+
+function drawFeederLine(odc, sourceLatLng) {
+    const odcLatLng = [parseFloat(odc.lat), parseFloat(odc.lng)];
+    const latlngs = [sourceLatLng, odcLatLng];
+    
+    // Kabel Feeder: garis solid ungu tebal 4px
+    const line = L.polyline(latlngs, {
+        color: '#9b59b6',
+        weight: 4,
+        opacity: 0.9,
+        lineJoin: 'round'
+    }).addTo(markersLayer);
+    
+    const distance = map.distance(sourceLatLng, odcLatLng);
+    line.bindTooltip(`Kabel Feeder (POP → ODC ${odc.name}): ${Math.round(distance)} Meter`, { sticky: true });
+}
+
 function createODCIcon() {
     return L.divIcon({
         html: `<div style="width: 40px; height: 40px; background-image: url('assets/icons/odc-icon.png'); background-size: contain; background-repeat: no-repeat; background-position: center; filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));"></div>`,
@@ -384,12 +420,67 @@ function refreshMapMarkers() {
     odpMarkers = {};
     odpLines = {};
 
+    // 1. Render POP Markers
+    if (devices.pop) {
+        devices.pop.forEach(pop => {
+            const lat = parseFloat(pop.lat);
+            const lng = parseFloat(pop.lng);
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                return; // Lewati koordinat tidak valid
+            }
+            const marker = L.marker([lat, lng], { icon: createPOPIcon() }).addTo(markersLayer);
+            marker.bindPopup(`
+                <div style="min-width: 200px;">
+                    <h4 style="margin: 0 0 10px 0; color: #9b59b6;"><i class="fas fa-building"></i> ${pop.name}</h4>
+                    <p style="margin: 4px 0;"><strong>Tipe:</strong> POP (Point of Presence)</p>
+                    <p style="margin: 4px 0;"><strong>Kode:</strong> ${pop.code || '-'}</p>
+                    <p style="margin: 4px 0;"><strong>Lokasi:</strong> ${pop.location || '-'}</p>
+                    <p style="margin: 4px 0;"><strong>Alamat:</strong> ${pop.address || '-'}</p>
+                    <p style="margin: 4px 0;"><strong>Total OLT:</strong> ${pop.olt_count || 0}</p>
+                </div>
+            `);
+        });
+    }
+
+    // 2. Render ODC Markers & Feeder Lines
     devices.odc.forEach(odc => {
         const marker = L.marker([parseFloat(odc.lat), parseFloat(odc.lng)], { icon: createODCIcon() }).addTo(markersLayer);
         marker.bindPopup(createPopupContent(odc));
         marker.on('click', () => showDeviceInfo(odc));
+
+        // Gambar Kabel Feeder dari OLT/POP ke ODC ini
+        let sourceLatLng = null;
+
+        // Cari koordinat OLT terlebih dahulu (jika ada dan valid)
+        if (odc.olt_id && devices.olt) {
+            const olt = devices.olt.find(o => o.id == odc.olt_id);
+            if (olt && olt.lat && olt.lng) {
+                const oltLat = parseFloat(olt.lat);
+                const oltLng = parseFloat(olt.lng);
+                if (!isNaN(oltLat) && !isNaN(oltLng) && oltLat >= -90 && oltLat <= 90 && oltLng >= -180 && oltLng <= 180) {
+                    sourceLatLng = [oltLat, oltLng];
+                }
+            }
+        }
+
+        // Jika OLT tidak berkoordinat, cari koordinat POP induknya
+        if (!sourceLatLng && odc.source_id && devices.pop) {
+            const pop = devices.pop.find(p => p.id == odc.source_id);
+            if (pop) {
+                const popLat = parseFloat(pop.lat);
+                const popLng = parseFloat(pop.lng);
+                if (!isNaN(popLat) && !isNaN(popLng) && popLat >= -90 && popLat <= 90 && popLng >= -180 && popLng <= 180) {
+                    sourceLatLng = [popLat, popLng];
+                }
+            }
+        }
+
+        if (sourceLatLng) {
+            drawFeederLine(odc, sourceLatLng);
+        }
     });
 
+    // 3. Render ODP Markers & Distribution Lines
     devices.odp.forEach(odp => {
         const icon = createODPIcon(odp.available_ports, odp.total_ports);
         const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon }).addTo(markersLayer);

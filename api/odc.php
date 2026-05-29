@@ -374,9 +374,7 @@ function updateODC($id) {
                 if (!$port) {
                     sendResponse(['error' => 'Port PON tidak ditemukan'], 400);
                 }
-                if ($port['status'] !== 'available') {
-                    sendResponse(['error' => 'Port PON sudah tidak tersedia'], 400);
-                }
+
                 $portChanged = true;
             }
             

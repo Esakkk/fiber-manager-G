@@ -28,6 +28,44 @@ function initMap() {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
+    
+    // Inisialisasi dukungan Drag & Drop
+    initDragAndDropSupport();
+}
+
+// Inisialisasi dukungan Drag & Drop dari Pojok Peta
+function initDragAndDropSupport() {
+    const dragItems = document.querySelectorAll('.drag-item');
+    dragItems.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', this.dataset.type);
+            this.classList.add('dragging');
+        });
+        
+        item.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+        });
+    });
+
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
+    
+    mapContainer.addEventListener('dragover', function(e) {
+        e.preventDefault(); // Diperlukan agar event drop bisa ditrigger
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    mapContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const type = e.dataTransfer.getData('text/plain');
+        if (type === 'odp' || type === 'odc') {
+            // Konversi koordinat drop event ke objek LatLng Leaflet
+            const latlng = map.mouseEventToLatLng(e);
+            if (latlng && typeof handleMapDeviceDrop === 'function') {
+                handleMapDeviceDrop(type, latlng);
+            }
+        }
+    });
 }
 
 // Parse coordinate string to lat/lng

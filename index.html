@@ -111,6 +111,27 @@
                 <button onclick="searchAndZoom()"><i class="fas fa-search"></i></button>
             </div>
             
+            <!-- Drag & Drop Quick Add Widget -->
+            <div class="map-drag-widget" id="mapDragWidget">
+                <div class="drag-widget-title">
+                    <i class="fas fa-hand-rock"></i> <span>Seret Objek</span>
+                </div>
+                <div class="drag-items">
+                    <div class="drag-item" draggable="true" data-type="odp" title="Seret ODP ke peta untuk menambah">
+                        <div class="drag-icon-wrapper odp-drag">
+                            <img src="assets/icons/odp-icon.png" alt="ODP">
+                        </div>
+                        <span class="drag-label">ODP</span>
+                    </div>
+                    <div class="drag-item" draggable="true" data-type="odc" title="Seret ODC ke peta untuk menambah">
+                        <div class="drag-icon-wrapper odc-drag">
+                            <img src="assets/icons/odc-icon.png" alt="ODC">
+                        </div>
+                        <span class="drag-label">ODC</span>
+                    </div>
+                </div>
+            </div>
+            
 
         </div>
     </div>

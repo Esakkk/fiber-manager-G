@@ -1180,6 +1180,162 @@ form {
 }
 
 /* Warna tombol hierarchy */
+/* Warna tombol hierarchy */
 .btn-pop { background: #9b59b6; }
 .btn-olt { background: #e67e22; }
 .btn-pon { background: #1abc9c; }
+
+/* =============================================
+   DRAG & DROP QUICK ADD WIDGET (GLASSMORPHISM)
+   ============================================= */
+.map-drag-widget {
+    position: absolute;
+    top: 10px;
+    left: 60px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    padding: 6px 14px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.map-drag-widget:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.16);
+    transform: translateY(1px);
+}
+
+.drag-widget-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-right: 1.5px solid var(--gray-300);
+    padding-right: 12px;
+    height: 28px;
+}
+
+.drag-widget-title i {
+    color: var(--primary);
+    animation: wiggle 2s infinite ease-in-out;
+}
+
+.drag-items {
+    display: flex;
+    gap: 10px;
+}
+
+.drag-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: grab;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.drag-item:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.18);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+.drag-item:active {
+    cursor: grabbing;
+    transform: scale(0.95) translateY(0);
+}
+
+.drag-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.drag-icon-wrapper img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+}
+
+.drag-item:hover .drag-icon-wrapper img {
+    transform: scale(1.1);
+}
+
+.drag-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+/* Dragging visual feedback helper class */
+.drag-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.9);
+    border: 1px dashed var(--primary);
+}
+
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(-8deg); }
+    30% { transform: rotate(6deg); }
+    45% { transform: rotate(-4deg); }
+    60% { transform: rotate(2deg); }
+}
+
+/* Responsivitas untuk mobile screens */
+@media (max-width: 768px) {
+    .map-drag-widget {
+        left: 60px;
+        top: 10px;
+        padding: 4px 10px;
+        gap: 8px;
+    }
+    
+    .drag-widget-title {
+        font-size: 9px;
+        padding-right: 8px;
+        gap: 4px;
+    }
+    
+    .drag-item {
+        padding: 2px 6px;
+        gap: 4px;
+    }
+    
+    .drag-icon-wrapper {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .drag-icon-wrapper img {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .drag-label {
+        font-size: 11px;
+    }
+}

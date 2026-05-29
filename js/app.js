@@ -67,8 +67,12 @@ async function loadUserInfo() {
                 window.currentUser = data.user;
                 
                 const actionButtons = document.getElementById('actionButtons');
-                if (actionButtons && data.user.role === 'viewer') {
-                    actionButtons.style.display = 'none';
+                const mapDragWidget = document.getElementById('mapDragWidget');
+                if (data.user.role === 'viewer') {
+                    if (actionButtons) actionButtons.style.display = 'none';
+                    if (mapDragWidget) mapDragWidget.style.display = 'none';
+                } else {
+                    if (mapDragWidget) mapDragWidget.style.display = 'flex';
                 }
                 
                 const btnUserManagement = document.getElementById('btnUserManagement');
@@ -176,6 +180,33 @@ if (ponSelect) {
     ponSelect.addEventListener('change', loadPortByPON);
     console.log('Event listener attached to odcSourcePon');
 }
+}
+
+// =============================================
+// DRAG & DROP HANDLER
+// =============================================
+
+async function handleMapDeviceDrop(type, latlng) {
+    if (!window.currentUser || window.currentUser.role === 'viewer') {
+        alert('Anda tidak memiliki akses untuk menambah perangkat.');
+        return;
+    }
+    
+    const coordVal = `${latlng.lat.toFixed(8)}, ${latlng.lng.toFixed(8)}`;
+    
+    if (type === 'odp') {
+        await showAddODPDialog();
+        const coordInput = document.getElementById('odpCoordinates');
+        if (coordInput) {
+            coordInput.value = coordVal;
+        }
+    } else if (type === 'odc') {
+        await showAddODCDialog();
+        const coordInput = document.getElementById('odcCoordinates');
+        if (coordInput) {
+            coordInput.value = coordVal;
+        }
+    }
 }
 
 // =============================================

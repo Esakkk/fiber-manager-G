@@ -258,6 +258,92 @@ async function populateSourceDropdown(selectedSourceId = null, selectedPort = nu
     }
 }
 
+// Called when user changes the ODC select in the ODP form
+function onODCSourceChange() {
+    const sel = document.getElementById('odpSource');
+    const val = sel?.value;
+    if (val) {
+        loadODCPortsForEdit(val);
+    } else {
+        const portGroup = document.getElementById('odpOdcPortGroup');
+        if (portGroup) portGroup.style.display = 'none';
+    }
+}
+
+// Enable selecting an ODC directly from the map for the ODP form
+function enableSelectODCOnMap() {
+    if (!map) {
+        alert('Peta belum siap. Mohon tunggu sebentar.');
+        return;
+    }
+    // Hide any open modals so map is clickable (store to restore later)
+    window._mapSelectionHiddenModals = [];
+    document.querySelectorAll('.modal.show').forEach(m => {
+        if (m.id && m.id !== 'coordinatePickerModal') {
+            window._mapSelectionHiddenModals.push(m.id);
+            m.classList.remove('show');
+        }
+    });
+
+    // Show a small banner instructing the user
+    let banner = document.getElementById('mapSelectionBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'mapSelectionBanner';
+        banner.style.position = 'fixed';
+        banner.style.top = '12px';
+        banner.style.right = '12px';
+        banner.style.zIndex = 10000;
+        banner.style.background = 'rgba(255,255,255,0.95)';
+        banner.style.padding = '10px 12px';
+        banner.style.borderRadius = '6px';
+        banner.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        banner.innerHTML = `<span style="font-weight:600;">Mode pilih ODC aktif</span><div style="margin-top:6px;">Klik ODC di peta untuk memilihnya. <button id="cancelMapSelectBtn" class="btn btn-secondary btn-sm" style="margin-left:8px;">Batal</button></div>`;
+        document.body.appendChild(banner);
+        document.getElementById('cancelMapSelectBtn').addEventListener('click', cancelSelectODC);
+    }
+
+    // Set a global callback that map.js will call when an ODC marker is clicked
+    window.mapSelectionCallback = async function(odc) {
+        try {
+            const sourceSelect = document.getElementById('odpSource');
+            if (sourceSelect) {
+                sourceSelect.value = odc.id;
+                await loadODCPortsForEdit(odc.id);
+            }
+
+            const coordInput = document.getElementById('odpCoordinates');
+            if (coordInput) coordInput.value = formatCoordinates(odc.lat, odc.lng);
+
+            // Small visual feedback
+            alert(`ODC terpilih: ${odc.name}`);
+        } catch (e) {
+            console.error('Error handling ODC selection:', e);
+        } finally {
+            // Disable selection mode and restore UI
+            cancelSelectODC();
+        }
+    };
+}
+
+function cancelSelectODC() {
+    // Remove banner
+    const banner = document.getElementById('mapSelectionBanner');
+    if (banner) banner.remove();
+
+    // Clear callback
+    window.mapSelectionCallback = null;
+
+    // Restore previously hidden modals
+    if (window._mapSelectionHiddenModals && window._mapSelectionHiddenModals.length) {
+        window._mapSelectionHiddenModals.forEach(id => {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('show');
+        });
+        window._mapSelectionHiddenModals = [];
+    }
+}
+
 async function loadODCPortsForEdit(odcId, selectedPort = null) {
     const portGroup = document.getElementById('odpOdcPortGroup');
     const portSelect = document.getElementById('odpPortInODC');

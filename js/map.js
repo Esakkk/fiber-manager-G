@@ -463,7 +463,17 @@ function refreshMapMarkers() {
     devices.odc.forEach(odc => {
         const marker = L.marker([parseFloat(odc.lat), parseFloat(odc.lng)], { icon: createODCIcon() }).addTo(markersLayer);
         marker.bindPopup(createPopupContent(odc));
-        marker.on('click', () => showDeviceInfo(odc));
+        marker.on('click', (e) => {
+            if (window.mapSelectionCallback && typeof window.mapSelectionCallback === 'function') {
+                try {
+                    window.mapSelectionCallback(odc);
+                } catch (err) {
+                    console.error('mapSelectionCallback error:', err);
+                }
+            } else {
+                showDeviceInfo(odc);
+            }
+        });
 
         // Gambar Kabel Feeder dari OLT/POP ke ODC ini
         let sourceLatLng = null;

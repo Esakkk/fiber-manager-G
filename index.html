@@ -176,9 +176,14 @@
                 <!-- Form ODP - update bagian ini -->
                 <div class="form-group">
                     <label>Berasal dari (ODC):</label>
-                    <select id="odpSource" onchange="onODCSourceChange()">
-                        <option value="">Pilih ODC sumber...</option>
-                    </select>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="odpSource" onchange="onODCSourceChange()">
+                            <option value="">Pilih ODC sumber...</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableSelectODCOnMap()" title="Pilih ODC langsung dari peta">
+                            <i class="fas fa-map-pin"></i> Pilih ODC di Peta
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group" id="odpOdcPortGroup" style="display: none;">

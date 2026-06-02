@@ -34,7 +34,7 @@ switch($method) {
 function getAllODP() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT odp.*,
                    COALESCE(odc.name, odp2.name) as source_name
             FROM odp
@@ -42,6 +42,7 @@ function getAllODP() {
             LEFT JOIN odp odp2 ON odp.source_id = odp2.id AND odp.source_type = 'odp'
             ORDER BY odp.created_at DESC
         ");
+        $stmt->execute();
         $odps = $stmt->fetchAll();
         
         foreach ($odps as &$odp) {

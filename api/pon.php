@@ -40,13 +40,14 @@ switch($method) {
 function getAllPON() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT p.*, o.name as olt_name, po.name as pop_name
             FROM pon p
             JOIN olt o ON p.olt_id = o.id
             JOIN pop po ON o.pop_id = po.id
             ORDER BY po.name, o.name, p.card_number
         ");
+        $stmt->execute();
         sendResponse($stmt->fetchAll());
     } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);

@@ -44,8 +44,7 @@ switch($method) {
 function getAllODC() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
-            SELECT o.*, 
+        $stmt = $pdo->prepare("            SELECT o.*, 
                    (SELECT COUNT(*) FROM odc_odp_connections WHERE odc_id = o.id) as connected_odps,
                    pop.name as source_pop_name,
                    olt.name as source_olt_name,
@@ -64,6 +63,7 @@ function getAllODC() {
             LEFT JOIN pon ON o.pon_id = pon.id
             ORDER BY o.created_at DESC
         ");
+        $stmt->execute();
         $odcs = $stmt->fetchAll();
         
         foreach ($odcs as &$odc) {
@@ -215,20 +215,22 @@ function getAvailableSources() {
         ];
         
         // Get POPs
-        $stmt = $pdo->query("SELECT id, name, code, location FROM pop ORDER BY name");
+        $stmt = $pdo->prepare("SELECT id, name, code, location FROM pop ORDER BY name");
+        $stmt->execute();
         $sources['pops'] = $stmt->fetchAll();
         
         // Get OLTs with POP info
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT o.id, o.name, o.model, p.id as pop_id, p.name as pop_name
             FROM olt o
             JOIN pop p ON o.pop_id = p.id
             ORDER BY p.name, o.name
         ");
+        $stmt->execute();
         $sources['olts'] = $stmt->fetchAll();
         
         // Get PONs with OLT and POP info
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT p.id, p.card_number, p.name as pon_name, p.port_count,
                    o.id as olt_id, o.name as olt_name,
                    po.id as pop_id, po.name as pop_name
@@ -238,6 +240,7 @@ function getAvailableSources() {
             WHERE p.status = 'active'
             ORDER BY po.name, o.name, p.card_number
         ");
+        $stmt->execute();
         $sources['pons'] = $stmt->fetchAll();
         
         sendResponse($sources);

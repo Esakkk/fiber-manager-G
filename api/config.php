@@ -1,5 +1,14 @@
 <?php
-// Start session
+// Secure session cookie parameters then start session
+$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => $_SERVER['HTTP_HOST'] ?? '',
+    'secure' => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -15,30 +24,39 @@ $allowed_origins = [
     'http://localhost/fiber-manager'
 ];
 
+// Determine request origin and allow only configured origins
 $origin = '';
 if (isset($_SERVER['HTTP_ORIGIN'])) {
     $origin = $_SERVER['HTTP_ORIGIN'];
 } elseif (isset($_SERVER['HTTP_REFERER'])) {
-    // Fallback ke referer
     $parsed = parse_url($_SERVER['HTTP_REFERER']);
-    $origin = $parsed['scheme'] . '://' . $parsed['host'];
-    if (isset($parsed['port'])) {
-        $origin .= ':' . $parsed['port'];
+    if ($parsed && isset($parsed['scheme']) && isset($parsed['host'])) {
+        $origin = $parsed['scheme'] . '://' . $parsed['host'];
+        if (isset($parsed['port'])) $origin .= ':' . $parsed['port'];
     }
 }
 
-// Untuk development local, izinkan semua localhost
-if ($origin && (strpos($origin, 'localhost') !== false || strpos($origin, '127.0.0.1') !== false)) {
-    header("Access-Control-Allow-Origin: $origin");
-} else {
-    // Fallback untuk production
-    header("Access-Control-Allow-Origin: http://localhost");
+// Allow only origins listed in $allowed_origins or localhost/127.0.0.1 during development
+if ($origin) {
+    if (in_array($origin, $allowed_origins) || strpos($origin, 'localhost') !== false || strpos($origin, '127.0.0.1') !== false) {
+        header("Access-Control-Allow-Origin: $origin");
+    }
 }
 
 header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
+// Basic security headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: no-referrer-when-downgrade');
+header('X-XSS-Protection: 1; mode=block');
+if ($secure) {
+    // Recommend HSTS only when served over HTTPS
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
@@ -58,9 +76,13 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    // Use native prepared statements when possible
+    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 } catch(PDOException $e) {
+    // Do not leak DB error details to clients; log instead
+    error_log('Database connection failed: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Connection failed: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Connection failed']);
     exit();
 }
 

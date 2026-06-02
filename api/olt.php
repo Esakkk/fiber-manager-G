@@ -37,12 +37,13 @@ switch($method) {
 function getAllOLT() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT o.*, p.name as pop_name
             FROM olt o
             JOIN pop p ON o.pop_id = p.id
             ORDER BY o.created_at DESC
         ");
+        $stmt->execute();
         $olts = $stmt->fetchAll();
         
         sendResponse($olts);

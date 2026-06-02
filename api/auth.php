@@ -55,11 +55,15 @@ function login() {
         
         if ($user && password_verify($password, $user['password'])) {
             // Login berhasil
+            // Regenerate session id to prevent session fixation
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['full_name'] = $user['full_name'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['logged_in'] = true;
+            // Record user agent for basic session binding
+            $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
             
             // Update last login
             $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
@@ -95,8 +99,10 @@ function login() {
             
             sendResponse(['error' => 'Username atau password salah'], 401);
         }
-    } catch(PDOException $e) {
-        sendResponse(['error' => 'Login failed: ' . $e->getMessage()], 500);
+        } catch(PDOException $e) {
+        // Log error but don't expose internal details to client
+        error_log('Login error: ' . $e->getMessage());
+        sendResponse(['error' => 'Login failed'], 500);
     }
 }
 

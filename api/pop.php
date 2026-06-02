@@ -36,12 +36,13 @@ switch($method) {
 function getAllPOP() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT p.*, 
                    (SELECT COUNT(*) FROM olt WHERE pop_id = p.id) as olt_count
             FROM pop p 
             ORDER BY p.created_at DESC
         ");
+        $stmt->execute();
         $pops = $stmt->fetchAll();
         
         sendResponse($pops);

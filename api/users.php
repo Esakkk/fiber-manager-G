@@ -43,12 +43,13 @@ switch($method) {
 function getAllUsers() {
     global $pdo;
     try {
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT id, username, full_name, email, phone, role, is_active, 
                    last_login, created_at, updated_at
             FROM users 
             ORDER BY created_at DESC
         ");
+        $stmt->execute();
         $users = $stmt->fetchAll();
         sendResponse($users);
     } catch(PDOException $e) {

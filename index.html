@@ -533,20 +533,63 @@
     
     <!-- Modal Konfigurasi Port (hanya untuk pelanggan) -->
     <div class="modal" id="portDirectionModal">
-        <div class="modal-content modal-small">
+        <div class="modal-content modal-md">
             <div class="modal-header">
                 <h3>Konfigurasi Port untuk Pelanggan</h3>
                 <span class="close" onclick="closeModal('portDirectionModal')">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nomor Port:</label>
-                    <input type="text" id="displayPortNumber" readonly>
+                <input type="hidden" id="portDbId">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Nomor Port:</label>
+                        <input type="text" id="displayPortNumber" readonly>
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label>Nama Pelanggan:</label>
+                        <input type="text" id="customerName" placeholder="Masukkan nama pelanggan" required>
+                    </div>
                 </div>
+                
                 <div class="form-group">
-                    <label>Nama Pelanggan:</label>
-                    <input type="text" id="customerName" placeholder="Masukkan nama pelanggan" required>
+                    <label>Koordinat Pelanggan (lat, lng):</label>
+                    <input type="text" id="portCoordinates" placeholder="Contoh: -6.208800, 106.845600">
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('portCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('portCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
                 </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nomor ONU / SN:</label>
+                        <input type="text" id="portOnuNumber" placeholder="Contoh: ZTEGC1234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Modem / ONT:</label>
+                        <input type="text" id="portModemType" placeholder="Contoh: ZTE F609">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan Tambahan:</label>
+                    <textarea id="portDescription" rows="2" placeholder="Catatan tambahan..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Foto Instalasi (Maksimal 5):</label>
+                    <input type="file" id="portPhotos" accept="image/*" multiple style="display: none;" onchange="previewPortPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('portPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="portPhotoPreview" class="photo-preview"></div>
+                </div>
+
                 <div class="form-group">
                     <label>Status:</label>
                     <select id="portStatus">
@@ -554,8 +597,10 @@
                         <option value="maintenance">Maintenance</option>
                     </select>
                 </div>
-                <button class="btn btn-primary btn-block" onclick="savePortCustomer()">Simpan</button>
-                <button class="btn btn-secondary btn-block" style="margin-top:5px;" onclick="clearPort()">Kosongkan Port</button>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="clearPort()">Kosongkan Port</button>
+                    <button class="btn btn-primary" onclick="savePortCustomer()">Simpan</button>
+                </div>
             </div>
         </div>
     </div>

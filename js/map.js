@@ -12,6 +12,7 @@ let currentPortConfig = { deviceId: null, portNumber: null };
 let odpMarkers = {};
 let odpLines = {};
 let odcLines = {};
+let portLines = {};
 let highlightedMarker = null;
 
 // =============================================
@@ -521,6 +522,80 @@ function refreshMapMarkers() {
                 drawConnectionLine(odp, source);
             }
         }
+        
+        // Render Customer (Port) Markers & Drop Wire Lines
+        if (odp.ports && odp.ports.length > 0) {
+            odp.ports.forEach(port => {
+                if (port.status === 'used' && port.lat && port.lng) {
+                    const cLat = parseFloat(port.lat);
+                    const cLng = parseFloat(port.lng);
+                    if (!isNaN(cLat) && !isNaN(cLng) && cLat >= -90 && cLat <= 90 && cLng >= -180 && cLng <= 180) {
+                        // Create customer marker
+                        const customerIcon = L.divIcon({
+                            html: '<div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; border: 2px solid #3182ce; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"><i class="fas fa-home" style="color: #3182ce; font-size: 12px;"></i></div>',
+                            className: 'customer-marker-icon',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12],
+                            popupAnchor: [0, -12]
+                        });
+                        
+                        const customerMarker = L.marker([cLat, cLng], { icon: customerIcon }).addTo(markersLayer);
+                        
+                        // Prepare path coordinates - check if custom path exists
+                        let latlngs = [];
+                        if (port.path_coordinates) {
+                            try {
+                                latlngs = JSON.parse(port.path_coordinates);
+                            } catch (e) {
+                                latlngs = [[parseFloat(odp.lat), parseFloat(odp.lng)], [cLat, cLng]];
+                            }
+                        } else {
+                            latlngs = [[parseFloat(odp.lat), parseFloat(odp.lng)], [cLat, cLng]];
+                        }
+                        
+                        // Calculate total distance
+                        let distance = 0;
+                        for (let i = 0; i < latlngs.length - 1; i++) {
+                            distance += map.distance(latlngs[i], latlngs[i+1]);
+                        }
+                        
+                        // Add button to popup only if user is admin or operator
+                        const currentUser = window.currentUser;
+                        const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+                        const portKey = `${odp.id}_${port.port_number}`;
+                        const editButtonHtml = canEdit ? `<button onclick="togglePortPathEdit('${portKey}')" id="btnEditPortPath-${portKey}" style="width: 100%; margin-top: 10px; padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-route"></i> Edit Jalur Kabel</button>` : '';
+                        
+                        customerMarker.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <h4 style="margin: 0 0 10px 0; color: #3182ce;"><i class="fas fa-user"></i> ${port.target || 'Pelanggan'}</h4>
+                                <p style="margin: 4px 0;"><strong>ODP:</strong> ${odp.name}</p>
+                                <p style="margin: 4px 0;"><strong>Port:</strong> ${port.port_number}</p>
+                                ${port.onu_number ? `<p style="margin: 4px 0;"><strong>ONU/SN:</strong> ${port.onu_number}</p>` : ''}
+                                ${port.modem_type ? `<p style="margin: 4px 0;"><strong>Modem:</strong> ${port.modem_type}</p>` : ''}
+                                <p style="margin: 4px 0; font-size: 11px; color: #718096;">Koord: ${cLat.toFixed(6)}, ${cLng.toFixed(6)}</p>
+                                ${editButtonHtml}
+                            </div>
+                        `);
+                        
+                        // Draw line to customer (Kabel Drop / Drop Wire)
+                        const line = L.polyline(latlngs, {
+                            color: '#3182ce',
+                            weight: 2,
+                            opacity: 0.7,
+                            dashArray: '4, 4'
+                        }).addTo(markersLayer);
+                        
+                        line.bindTooltip(`Kabel Drop: ${port.target || 'Pelanggan'} (Port ${port.port_number}) - ${Math.round(distance)}m`, { sticky: true });
+                        
+                        // Store line reference for editing
+                        line.portKey = portKey;
+                        line.odpId = odp.id;
+                        line.portNumber = port.port_number;
+                        portLines[portKey] = line;
+                    }
+                }
+            });
+        }
     });
 }
 
@@ -658,6 +733,78 @@ function toggleODCPathEdit(odcId) {
                 if(b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
                     b.style.background = '#9b59b6';
+                }
+            }
+        });
+        
+        line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
+        btn.style.background = '#48bb78';
+        map.fitBounds(line.getBounds(), { padding: [50, 50] });
+    }
+}
+
+function togglePortPathEdit(portKey) {
+    const line = portLines[portKey];
+    if (!line) return;
+    
+    const btn = document.getElementById(`btnEditPortPath-${portKey}`);
+    
+    if (line.pm && line.pm.enabled()) {
+        line.pm.disable();
+        const newLatLngs = line.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
+        const pathJson = JSON.stringify(newLatLngs);
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        btn.disabled = true;
+        
+        fetchWithAuth(`${API_BASE}/ports.php?odp_id=${line.odpId}&port=${line.portNumber}`, {
+            method: 'PUT',
+            body: JSON.stringify({ path_coordinates: pathJson })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            alert('Jalur kabel pelanggan berhasil disimpan!');
+            loadDevices();
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Gagal menyimpan jalur kabel pelanggan: ' + err.message);
+            btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+            btn.disabled = false;
+        });
+    } else if (line.pm) {
+        // Disable other editing modes first
+        Object.values(odpLines).forEach(l => {
+            if (l.pm && l.pm.enabled()) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditPath-${l.odpId}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+                    b.style.background = '#ed8936';
+                }
+            }
+        });
+        
+        Object.values(odcLines).forEach(l => {
+            if (l.pm && l.pm.enabled()) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
+                    b.style.background = '#9b59b6';
+                }
+            }
+        });
+        
+        Object.values(portLines).forEach(l => {
+            if (l.pm && l.pm.enabled() && l.portKey !== portKey) {
+                l.pm.disable();
+                const b = document.getElementById(`btnEditPortPath-${l.portKey}`);
+                if(b) {
+                    b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+                    b.style.background = '#3182ce';
                 }
             }
         });

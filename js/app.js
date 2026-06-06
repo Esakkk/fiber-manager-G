@@ -441,13 +441,39 @@ function configurePort(portNumber) {
     const device = devices.odp.find(d => d.id == deviceId);
     const existingPort = device?.ports?.find(p => p.port_number === portNumber);
     
+    const portDbId = document.getElementById('portDbId');
     const displayPortNumber = document.getElementById('displayPortNumber');
     const customerName = document.getElementById('customerName');
     const portStatus = document.getElementById('portStatus');
+    const portCoordinates = document.getElementById('portCoordinates');
+    const portOnuNumber = document.getElementById('portOnuNumber');
+    const portModemType = document.getElementById('portModemType');
+    const portDescription = document.getElementById('portDescription');
+    const portPhotos = document.getElementById('portPhotos');
+    const portPhotoPreview = document.getElementById('portPhotoPreview');
     
+    if (portDbId) portDbId.value = existingPort?.id || '';
     if (displayPortNumber) displayPortNumber.value = portNumber;
     if (customerName) customerName.value = existingPort?.target || '';
     if (portStatus) portStatus.value = (existingPort?.status === 'maintenance') ? 'maintenance' : 'active';
+    
+    if (portCoordinates) {
+        if (existingPort?.lat && existingPort?.lng) {
+            portCoordinates.value = `${existingPort.lat}, ${existingPort.lng}`;
+        } else {
+            portCoordinates.value = '';
+        }
+    }
+    if (portOnuNumber) portOnuNumber.value = existingPort?.onu_number || '';
+    if (portModemType) portModemType.value = existingPort?.modem_type || '';
+    if (portDescription) portDescription.value = existingPort?.description || '';
+    
+    if (portPhotos) portPhotos.value = '';
+    if (portPhotoPreview) portPhotoPreview.innerHTML = '';
+    
+    if (existingPort?.has_photo == 1 && existingPort?.id) {
+        loadPortPhotos(existingPort.id);
+    }
     
     const portModal = document.getElementById('portDirectionModal');
     if (portModal) portModal.classList.add('show');
@@ -464,10 +490,27 @@ async function savePortCustomer() {
     
     const finalStatus = (statusSelect === 'active') ? 'used' : 'maintenance';
     
+    const coordString = document.getElementById('portCoordinates')?.value.trim();
+    let lat = null, lng = null;
+    if (coordString) {
+        const coords = parseCoordinates(coordString);
+        if (!coords) {
+            alert('Format koordinat tidak valid!');
+            return;
+        }
+        lat = coords.lat;
+        lng = coords.lng;
+    }
+    
     const data = {
         status: finalStatus,
         target: finalStatus === 'used' ? customerName : null,
-        connection_type: 'drop'
+        connection_type: 'drop',
+        lat: lat,
+        lng: lng,
+        onu_number: document.getElementById('portOnuNumber')?.value,
+        modem_type: document.getElementById('portModemType')?.value,
+        description: document.getElementById('portDescription')?.value
     };
     
     try {
@@ -479,10 +522,16 @@ async function savePortCustomer() {
         });
         
         if (response.ok) {
-            closeModal('portDirectionModal');
             await loadDevices();
-            
             const device = devices.odp.find(d => d.id == currentPortConfig.deviceId);
+            const updatedPort = device?.ports?.find(p => p.port_number === currentPortConfig.portNumber);
+            
+            if (updatedPort && updatedPort.id) {
+                await uploadPhotos(updatedPort.id, 'port');
+            }
+            
+            closeModal('portDirectionModal');
+            
             if (device) {
                 generatePortStatusInputs(device.ports);
                 const infoTitle = document.getElementById('infoTitle');
@@ -1043,6 +1092,67 @@ function previewODPPhotos() {
     }
 }
 
+function previewPortPhotos() {
+    const files = document.getElementById('portPhotos')?.files;
+    const preview = document.getElementById('portPhotoPreview');
+    if (!files || !preview) return;
+    
+    const existingCount = preview.querySelectorAll('.photo-item').length;
+    if (existingCount + files.length > 5) {
+        alert('Maksimal 5 foto!');
+        if (document.getElementById('portPhotos')) document.getElementById('portPhotos').value = '';
+        return;
+    }
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) {
+            alert(`File ${file.name} bukan gambar!`);
+            continue;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`File ${file.name} terlalu besar (max 5MB)!`);
+            continue;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-item new-photo';
+            div.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="delete-photo" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function loadPortPhotos(portId) {
+    const preview = document.getElementById('portPhotoPreview');
+    if (!preview) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/upload.php?type=port&device_id=${portId}`);
+        if (response.ok) {
+            const photos = await response.json();
+            preview.innerHTML = '';
+            
+            photos.forEach(photo => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.innerHTML = `
+                    <img src="${photo.url}" alt="Foto Port" onclick="openLightbox('${photo.url}')" style="cursor:pointer">
+                    <button type="button" class="delete-photo" onclick="deletePhoto(${photo.id}, 'port', ${portId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading port photos:', error);
+    }
+}
+
 function previewODCPhotos() {
     const files = document.getElementById('odcPhotos')?.files;
     const preview = document.getElementById('odcPhotoPreview');
@@ -1065,7 +1175,13 @@ function previewODCPhotos() {
 }
 
 async function uploadPhotos(deviceId, type) {
-    const fileInput = document.getElementById(type === 'odc' ? 'odcPhotos' : 'odpPhotos');
+    let fileInputId = 'odpPhotos';
+    if (type === 'odc') fileInputId = 'odcPhotos';
+    if (type === 'port') fileInputId = 'portPhotos';
+    if (type === 'olt') fileInputId = 'oltPhotos';
+    if (type === 'pop') fileInputId = 'popPhotos';
+
+    const fileInput = document.getElementById(fileInputId);
     const files = fileInput?.files;
     if (!files || files.length === 0) return [];
     

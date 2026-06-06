@@ -26,10 +26,10 @@ switch($method) {
 function uploadPhoto() {
     global $pdo;
     
-    $type = $_POST['type'] ?? ''; // 'pop', 'olt', 'odc', 'odp'
+    $type = $_POST['type'] ?? ''; // 'pop', 'olt', 'odc', 'odp', 'port'
     $deviceId = isset($_POST['device_id']) ? (int)$_POST['device_id'] : 0;
     
-    if (!in_array($type, ['pop', 'olt', 'odc', 'odp'])) {
+    if (!in_array($type, ['pop', 'olt', 'odc', 'odp', 'port'])) {
         sendResponse(['error' => 'Tipe device tidak valid'], 400);
     }
     
@@ -64,6 +64,12 @@ function uploadPhoto() {
             'photo_table' => 'odp_photos',
             'id_column' => 'odp_id',
             'upload_dir' => 'odp'
+        ],
+        'port' => [
+            'table' => 'odp_ports',
+            'photo_table' => 'port_photos',
+            'id_column' => 'port_id',
+            'upload_dir' => 'port'
         ]
     ];
     
@@ -229,7 +235,7 @@ function deletePhoto() {
     $photoId = isset($data['photo_id']) ? (int)$data['photo_id'] : 0;
     $type = $data['type'] ?? '';
     
-    if (!in_array($type, ['pop', 'olt', 'odc', 'odp'])) {
+    if (!in_array($type, ['pop', 'olt', 'odc', 'odp', 'port'])) {
         sendResponse(['error' => 'Tipe device tidak valid'], 400);
     }
     
@@ -244,7 +250,8 @@ function deletePhoto() {
         'pop' => ['photo_table' => 'pop_photos', 'main_table' => 'pop', 'id_column' => 'pop_id', 'dir' => 'pop'],
         'olt' => ['photo_table' => 'olt_photos', 'main_table' => 'olt', 'id_column' => 'olt_id', 'dir' => 'olt'],
         'odc' => ['photo_table' => 'odc_photos', 'main_table' => 'odc', 'id_column' => 'odc_id', 'dir' => 'odc'],
-        'odp' => ['photo_table' => 'odp_photos', 'main_table' => 'odp', 'id_column' => 'odp_id', 'dir' => 'odp']
+        'odp' => ['photo_table' => 'odp_photos', 'main_table' => 'odp', 'id_column' => 'odp_id', 'dir' => 'odp'],
+        'port' => ['photo_table' => 'port_photos', 'main_table' => 'odp_ports', 'id_column' => 'port_id', 'dir' => 'port']
     ];
     
     $map = $tableMap[$type];
@@ -310,7 +317,7 @@ function getPhotos() {
     $type = $_GET['type'] ?? '';
     $deviceId = isset($_GET['device_id']) ? (int)$_GET['device_id'] : 0;
     
-    if (!in_array($type, ['odc', 'odp'])) {
+    if (!in_array($type, ['odc', 'odp', 'port'])) {
         sendResponse(['error' => 'Tipe device tidak valid'], 400);
     }
     
@@ -318,8 +325,8 @@ function getPhotos() {
         sendResponse(['error' => 'Device ID harus diisi'], 400);
     }
     
-    $photoTable = $type === 'odc' ? 'odc_photos' : 'odp_photos';
-    $idColumn = $type === 'odc' ? 'odc_id' : 'odp_id';
+    $photoTable = $type === 'odc' ? 'odc_photos' : ($type === 'odp' ? 'odp_photos' : 'port_photos');
+    $idColumn = $type === 'odc' ? 'odc_id' : ($type === 'odp' ? 'odp_id' : 'port_id');
     
     try {
         $stmt = $pdo->prepare("

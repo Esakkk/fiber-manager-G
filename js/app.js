@@ -427,8 +427,8 @@ function generatePortStatusInputs(existingPorts = null) {
     updateAvailablePortsCount();
 }
 
-function configurePort(portNumber) {
-    const deviceId = document.getElementById('odpId')?.value;
+function configurePort(portNumber, providedDeviceId = null) {
+    const deviceId = providedDeviceId || document.getElementById('odpId')?.value;
     
     if (!deviceId) {
         alert('Simpan ODP terlebih dahulu sebelum mengkonfigurasi port');

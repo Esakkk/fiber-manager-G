@@ -970,7 +970,7 @@ async function showDeviceInfo(device) {
                 let bgColor = '#c6f6d5';
                 if (port.status === 'used') bgColor = '#fed7d7';
                 else if (port.status === 'maintenance') bgColor = '#fefcbf';
-                html += `<div style="padding: 5px; text-align: center; background: ${bgColor}; border-radius: 3px; font-size: 12px; cursor: pointer;" onclick="configurePort(${port.port_number})" title="Port ${port.port_number}: ${port.status === 'used' ? port.target : port.status}">${port.port_number}</div>`;
+                html += `<div style="padding: 5px; text-align: center; background: ${bgColor}; border-radius: 3px; font-size: 12px; cursor: pointer;" onclick="configurePort(${port.port_number}, ${device.id})" title="Port ${port.port_number}: ${port.status === 'used' ? port.target : port.status}">${port.port_number}</div>`;
             });
         }
         html += `</div>`;
@@ -1036,6 +1036,37 @@ function showCustomerInfo(customerData) {
         <p style="margin: 4px 0; padding: 8px; background: #fffaf0; border-left: 3px solid #ed8936; border-radius: 3px;">${port.description}</p>
         <hr>`;
     }
+
+    if (port.has_photo == 1 && port.id) {
+        html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-camera"></i> Foto Pelanggan</h4>
+        <div id="customerPhotoPreview-${port.id}" class="photo-preview" style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px;">
+            <div style="width: 100%; text-align: center; color: #718096; font-size: 12px; padding: 10px;"><i class="fas fa-spinner fa-spin"></i> Memuat foto...</div>
+        </div>
+        <hr>`;
+        
+        // Fetch photos asynchronously
+        setTimeout(() => {
+            fetch(`${API_BASE}/upload.php?type=port&device_id=${port.id}`)
+                .then(res => res.json())
+                .then(photos => {
+                    const container = document.getElementById(`customerPhotoPreview-${port.id}`);
+                    if (!container) return;
+                    if (photos && photos.length > 0) {
+                        let photoHtml = '';
+                        photos.forEach(photo => {
+                            photoHtml += `<img src="${photo.url}" alt="Foto Pelanggan" onclick="openLightbox('${photo.url}')" style="cursor:pointer; max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #ccc; object-fit: cover;">`;
+                        });
+                        container.innerHTML = photoHtml;
+                    } else {
+                        container.innerHTML = '<div style="width: 100%; text-align: center; color:#718096; font-size: 12px; padding: 10px;">Tidak ada foto.</div>';
+                    }
+                })
+                .catch(err => {
+                    const container = document.getElementById(`customerPhotoPreview-${port.id}`);
+                    if (container) container.innerHTML = '<div style="width: 100%; text-align: center; color:red; font-size: 12px; padding: 10px;">Gagal memuat foto.</div>';
+                });
+        }, 100);
+    }
     
     html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">`;
     
@@ -1048,6 +1079,12 @@ function showCustomerInfo(customerData) {
     html += `<button onclick="highlightODP(${odp.id})" style="padding: 8px; background: #48bb78; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
         <i class="fas fa-map"></i> Ke ODP
     </button>`;
+
+    if (canEdit) {
+        html += `<button onclick="configurePort(${port.port_number}, ${odp.id})" style="padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; grid-column: span 2;">
+            <i class="fas fa-user-edit"></i> Edit Pelanggan
+        </button>`;
+    }
     
     html += `</div></div>`;
     

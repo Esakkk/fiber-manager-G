@@ -1,34 +1,36 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen ODP & ODC - GIS Fiber Optik</title>
-    
+
     <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <!-- Leaflet Geoman -->
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
     <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- ✅ Toggle Sidebar Button (Mobile) -->
         <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
-        
+
         <!-- ✅ Overlay untuk mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-        
+
         <!-- ✅ SIDEBAR - PASTIKAN id="sidebar" ADA -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -40,8 +42,8 @@
                 <div class="user-info">
                     <span id="userDisplayName">Loading...</span>
                     <div style="display: flex; gap: 5px;">
-                        <button id="btnUserManagement" class="btn-logout" onclick="window.location.href='users.html'" 
-                                style="display: none;" title="Manajemen User">
+                        <button id="btnUserManagement" class="btn-logout" onclick="window.location.href='users.html'"
+                            style="display: none;" title="Manajemen User">
                             <i class="fas fa-users-cog"></i>
                         </button>
                         <button class="btn-logout" onclick="logout()" title="Logout">
@@ -50,11 +52,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="sidebar-content">
                 <!-- Tombol Tambah -->
                 <div class="action-buttons" id="actionButtons">
-                    <button class="btn btn-primary" onclick="window.location.href='pop-management.html'" style="background: #9b59b6;">
+                    <button class="btn btn-primary" onclick="window.location.href='pop-management.html'"
+                        style="background: #9b59b6;">
                         <i class="fas fa-building"></i> Kelola POP
                     </button>
                     <button class="btn btn-primary" onclick="showAddODPDialog()">
@@ -83,17 +86,17 @@
                     </div>
                     <div id="customerSearchResults" class="customer-results"></div>
                 </div>
-                
+
                 <!-- Daftar Perangkat -->
                 <div class="device-list" id="deviceList"></div>
             </div>
         </div>
         <!-- ✅ END SIDEBAR -->
-        
+
         <!-- Map Container -->
         <div class="map-container">
             <div id="map"></div>
-            
+
             <!-- Info Panel -->
             <div class="info-panel" id="infoPanel">
                 <div class="info-header">
@@ -104,13 +107,13 @@
                     Pilih perangkat di peta atau daftar
                 </div>
             </div>
-            
+
             <!-- Pencarian Koordinat -->
             <div class="coordinate-search">
                 <input type="text" id="searchCoordinate" placeholder="Cari koordinat... (-6.2088, 106.8456)">
                 <button onclick="searchAndZoom()"><i class="fas fa-search"></i></button>
             </div>
-            
+
             <!-- Drag & Drop Quick Add Widget -->
             <div class="map-drag-widget" id="mapDragWidget">
                 <div class="drag-widget-title">
@@ -131,11 +134,11 @@
                     </div>
                 </div>
             </div>
-            
+
 
         </div>
     </div>
-    
+
     <!-- Coordinate Picker Modal -->
     <div class="modal" id="coordinatePickerModal">
         <div class="modal-content" style="max-width: 900px;">
@@ -145,15 +148,18 @@
             </div>
             <div class="modal-body">
                 <div id="coordinatePickerMap" class="coordinate-picker-map"></div>
-                <div class="coordinate-picker-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation(coordinatePickerTargetId)">
+                <div class="coordinate-picker-footer"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="useCurrentLocation(coordinatePickerTargetId)">
                         <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="closeCoordinatePicker()">
                         Tutup
                     </button>
                 </div>
-                <p style="margin-top: 10px; color: #4a5568;">Klik pada peta untuk memilih lokasi. Koordinat akan otomatis diisi ke kolom formulir.</p>
+                <p style="margin-top: 10px; color: #4a5568;">Klik pada peta untuk memilih lokasi. Koordinat akan
+                    otomatis diisi ke kolom formulir.</p>
             </div>
         </div>
     </div>
@@ -167,12 +173,12 @@
             </div>
             <form id="odpForm">
                 <input type="hidden" id="odpId">
-                
+
                 <div class="form-group">
                     <label>Nama ODP:</label>
                     <input type="text" id="odpName" placeholder="Contoh: ODP-FT-001" required>
                 </div>
-                
+
                 <!-- Form ODP - update bagian ini -->
                 <div class="form-group">
                     <label>Berasal dari (ODC):</label>
@@ -180,7 +186,8 @@
                         <select id="odpSource" onchange="onODCSourceChange()">
                             <option value="">Pilih ODC sumber...</option>
                         </select>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableSelectODCOnMap()" title="Pilih ODC langsung dari peta">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableSelectODCOnMap()"
+                            title="Pilih ODC langsung dari peta">
                             <i class="fas fa-map-pin"></i> Pilih ODC di Peta
                         </button>
                     </div>
@@ -193,41 +200,43 @@
                     </select>
                     <small id="odpPortInfoText">Pilih port ODC yang akan dihubungkan ke ODP ini</small>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odpCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('odpCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('odpCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('odpCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('odpCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>
                     <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Alamat Lokasi:</label>
                     <input type="text" id="odpLocation" placeholder="Contoh: Jl. Raya Cikarang No. 123">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Jumlah Port:</label>
                     <input type="number" id="odpTotalPorts" min="1" max="48" value="8" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Port Tersedia:</label>
                     <input type="number" id="odpAvailablePorts" min="0" readonly>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Status Port:</label>
                     <div class="port-management" id="odpPortStatus"></div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Keterangan:</label>
                     <textarea id="odpDescription" rows="3" placeholder="Tambahkan keterangan..."></textarea>
@@ -236,14 +245,16 @@
                 <!-- Upload Foto -->
                 <div class="form-group">
                     <label>Foto (Maksimal 5):</label>
-                    <input type="file" id="odpPhotos" accept="image/*" multiple style="display: none;" onchange="previewODPPhotos()">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('odpPhotos').click()">
+                    <input type="file" id="odpPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewODPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('odpPhotos').click()">
                         <i class="fas fa-camera"></i> Pilih Foto
                     </button>
                     <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
                     <div id="odpPhotoPreview" class="photo-preview"></div>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('odpModal')">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
@@ -251,7 +262,7 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Modal POP -->
     <div class="modal" id="popModal">
         <div class="modal-content modal-lg">
@@ -261,7 +272,7 @@
             </div>
             <form id="popForm">
                 <input type="hidden" id="popId">
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nama POP:</label>
@@ -272,45 +283,49 @@
                         <input type="text" id="popCode" placeholder="Contoh: CK-01">
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="popCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('popCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('popCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('popCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('popCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Lokasi:</label>
                     <input type="text" id="popLocation" placeholder="Nama area/kecamatan" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Alamat Lengkap:</label>
                     <textarea id="popAddress" rows="2" placeholder="Alamat lengkap POP"></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Keterangan:</label>
                     <textarea id="popDescription" rows="2" placeholder="Informasi tambahan..."></textarea>
                 </div>
-                
+
                 <!-- Upload Foto -->
                 <div class="form-group">
                     <label>Foto (Maksimal 5):</label>
-                    <input type="file" id="popPhotos" accept="image/*" multiple style="display: none;" onchange="previewPOPPhotos()">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('popPhotos').click()">
+                    <input type="file" id="popPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewPOPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('popPhotos').click()">
                         <i class="fas fa-camera"></i> Pilih Foto
                     </button>
                     <div id="popPhotoPreview" class="photo-preview"></div>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('popModal')">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan POP</button>
@@ -327,7 +342,7 @@
             </div>
             <form id="oltForm">
                 <input type="hidden" id="oltId">
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Pilih POP:</label>
@@ -340,7 +355,7 @@
                         <input type="text" id="oltName" placeholder="Contoh: OLT-CK-01" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Model:</label>
@@ -351,7 +366,7 @@
                         <input type="text" id="oltIpAddress" placeholder="192.168.1.100">
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Management Port:</label>
@@ -362,40 +377,44 @@
                         <input type="number" id="oltTotalPonPorts" min="1" max="64" value="16">
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Koordinat (Optional):</label>
                     <input type="text" id="oltCoordinates" placeholder="Contoh: -6.208800, 106.845600">
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('oltCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('oltCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('oltCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('oltCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Lokasi:</label>
                     <input type="text" id="oltLocation" placeholder="Lokasi fisik OLT">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Keterangan:</label>
                     <textarea id="oltDescription" rows="2"></textarea>
                 </div>
-                
+
                 <!-- Upload Foto -->
                 <div class="form-group">
                     <label>Foto (Maksimal 5):</label>
-                    <input type="file" id="oltPhotos" accept="image/*" multiple style="display: none;" onchange="previewOLTPhotos()">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('oltPhotos').click()">
+                    <input type="file" id="oltPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewOLTPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('oltPhotos').click()">
                         <i class="fas fa-camera"></i> Pilih Foto
                     </button>
                     <div id="oltPhotoPreview" class="photo-preview"></div>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('oltModal')">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan OLT</button>
@@ -404,34 +423,34 @@
         </div>
     </div>
     <!-- Modal PON (untuk edit) -->
-<div class="modal" id="ponModal">
-    <div class="modal-content modal-small">
-        <div class="modal-header">
-            <h3>Edit PON</h3>
-            <span class="close" onclick="closeModal('ponModal')">&times;</span>
-        </div>
-        <div class="modal-body">
-            <input type="hidden" id="ponId">
-            <div class="form-group">
-                <label>Nama PON:</label>
-                <input type="text" id="ponName" placeholder="Contoh: PON-1 (Rumah Sakit)">
+    <div class="modal" id="ponModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Edit PON</h3>
+                <span class="close" onclick="closeModal('ponModal')">&times;</span>
             </div>
-            <div class="form-group">
-                <label>Status:</label>
-                <select id="ponStatus">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="maintenance">Maintenance</option>
-                </select>
+            <div class="modal-body">
+                <input type="hidden" id="ponId">
+                <div class="form-group">
+                    <label>Nama PON:</label>
+                    <input type="text" id="ponName" placeholder="Contoh: PON-1 (Rumah Sakit)">
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="ponStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="ponDescription" rows="2"></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="savePON()">Simpan</button>
             </div>
-            <div class="form-group">
-                <label>Keterangan:</label>
-                <textarea id="ponDescription" rows="2"></textarea>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="savePON()">Simpan</button>
         </div>
     </div>
-</div>
     <!-- Modal Form ODC -->
     <div class="modal" id="odcModal">
         <div class="modal-content">
@@ -441,7 +460,7 @@
             </div>
             <form id="odcForm">
                 <input type="hidden" id="odcId">
-                
+
                 <div class="form-group">
                     <label>Nama ODC:</label>
                     <input type="text" id="odcName" placeholder="Contoh: ODC-CKR-001" required>
@@ -463,9 +482,9 @@
 
                 <div class="form-group" id="odcPonGroup" style="display: none;">
                     <label>Pilih PON Card:</label>
-                        <select id="odcSourcePon" onchange="loadPortByPON()">
-                            <option value="">Pilih PON Card...</option>
-                        </select>
+                    <select id="odcSourcePon" onchange="loadPortByPON()">
+                        <option value="">Pilih PON Card...</option>
+                    </select>
                 </div>
 
                 <div class="form-group" id="odcPortGroup" style="display: none;">
@@ -476,28 +495,31 @@
                     <small>Pilih port PON yang tersedia</small>
                 </div>
 
-                <div class="info-card" id="selectedPortInfo" style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
+                <div class="info-card" id="selectedPortInfo"
+                    style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
                     <i class="fas fa-info-circle"></i> <span id="portInfoText"></span>
                 </div>
                 <div class="form-group">
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('odcCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('odcCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('odcCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('odcCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>
                     <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Alamat Lokasi:</label>
                     <input type="text" id="odcLocation" placeholder="Contoh: Jl. Raya Cikarang No. 123">
                 </div>
-                
+
                 <div class="form-group">
                     <label>Kapasitas Port:</label>
                     <input type="number" id="odcCapacity" min="1" max="288" value="24" required>
@@ -515,14 +537,16 @@
                 <!-- Upload Foto -->
                 <div class="form-group">
                     <label>Foto (Maksimal 5):</label>
-                    <input type="file" id="odcPhotos" accept="image/*" multiple style="display: none;" onchange="previewODCPhotos()">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('odcPhotos').click()">
+                    <input type="file" id="odcPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewODCPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('odcPhotos').click()">
                         <i class="fas fa-camera"></i> Pilih Foto
                     </button>
                     <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
                     <div id="odcPhotoPreview" class="photo-preview"></div>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('odcModal')">Batal</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
@@ -530,7 +554,7 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Modal Konfigurasi Port (hanya untuk pelanggan) -->
     <div class="modal" id="portDirectionModal">
         <div class="modal-content modal-md">
@@ -550,20 +574,22 @@
                         <input type="text" id="customerName" placeholder="Masukkan nama pelanggan" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Koordinat Pelanggan (lat, lng):</label>
                     <input type="text" id="portCoordinates" placeholder="Contoh: -6.208800, 106.845600">
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('portCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('portCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('portCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('portCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nomor ONU / SN:</label>
@@ -579,11 +605,13 @@
                     <label>Keterangan Tambahan:</label>
                     <textarea id="portDescription" rows="2" placeholder="Catatan tambahan..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Foto Instalasi (Maksimal 5):</label>
-                    <input type="file" id="portPhotos" accept="image/*" multiple style="display: none;" onchange="previewPortPhotos()">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('portPhotos').click()">
+                    <input type="file" id="portPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewPortPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('portPhotos').click()">
                         <i class="fas fa-camera"></i> Pilih Foto
                     </button>
                     <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
@@ -609,9 +637,10 @@
         <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
         <img src="" alt="Foto" id="lightboxImg">
     </div>
-    
+
     <!-- JavaScript -->
     <script src="js/map.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

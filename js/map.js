@@ -30,7 +30,7 @@ function initMap() {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
-    
+
     // Inisialisasi dukungan Drag & Drop
     initDragAndDropSupport();
 }
@@ -39,25 +39,25 @@ function initMap() {
 function initDragAndDropSupport() {
     const dragItems = document.querySelectorAll('.drag-item');
     dragItems.forEach(item => {
-        item.addEventListener('dragstart', function(e) {
+        item.addEventListener('dragstart', function (e) {
             e.dataTransfer.setData('text/plain', this.dataset.type);
             this.classList.add('dragging');
         });
-        
-        item.addEventListener('dragend', function() {
+
+        item.addEventListener('dragend', function () {
             this.classList.remove('dragging');
         });
     });
 
     const mapContainer = document.getElementById('map');
     if (!mapContainer) return;
-    
-    mapContainer.addEventListener('dragover', function(e) {
+
+    mapContainer.addEventListener('dragover', function (e) {
         e.preventDefault(); // Diperlukan agar event drop bisa ditrigger
         e.dataTransfer.dropEffect = 'copy';
     });
 
-    mapContainer.addEventListener('drop', function(e) {
+    mapContainer.addEventListener('drop', function (e) {
         e.preventDefault();
         const type = e.dataTransfer.getData('text/plain');
         if (type === 'odp' || type === 'odc') {
@@ -137,7 +137,7 @@ function startCoordinatePicker(fieldId) {
             maxZoom: 22,
             maxNativeZoom: 20
         }).addTo(coordinatePickerMap);
-        coordinatePickerMap.on('click', function(e) {
+        coordinatePickerMap.on('click', function (e) {
             setCoordinateField(coordinatePickerTargetId, e.latlng);
             addCoordinatePickerMarker(e.latlng, 'Koordinat dipilih');
             closeCoordinatePicker();
@@ -192,7 +192,7 @@ function useCurrentLocation(fieldId) {
     }
 
     navigator.geolocation.getCurrentPosition(
-        function(position) {
+        function (position) {
             const latlng = {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
@@ -212,7 +212,7 @@ function useCurrentLocation(fieldId) {
                 map.setView(latlng, 17);
             }
         },
-        function(error) {
+        function (error) {
             alert('Tidak dapat mengambil lokasi saat ini: ' + error.message);
         },
         {
@@ -368,7 +368,7 @@ function createPOPIcon() {
 
 function drawFeederLine(odc, sourceLatLng) {
     let latlngs = [];
-    
+
     if (odc.path_coordinates) {
         try {
             latlngs = JSON.parse(odc.path_coordinates);
@@ -378,7 +378,7 @@ function drawFeederLine(odc, sourceLatLng) {
     } else {
         latlngs = [sourceLatLng, [parseFloat(odc.lat), parseFloat(odc.lng)]];
     }
-    
+
     // Kabel Feeder: garis solid ungu tebal 4px
     const line = L.polyline(latlngs, {
         color: '#9b59b6',
@@ -386,12 +386,12 @@ function drawFeederLine(odc, sourceLatLng) {
         opacity: 0.9,
         lineJoin: 'round'
     }).addTo(markersLayer);
-    
+
     let distance = 0;
     for (let i = 0; i < latlngs.length - 1; i++) {
-        distance += map.distance(latlngs[i], latlngs[i+1]);
+        distance += map.distance(latlngs[i], latlngs[i + 1]);
     }
-    
+
     line.bindTooltip(`Kabel Feeder (POP → ODC ${odc.name}): ${Math.round(distance)} Meter`, { sticky: true });
     line.odcId = odc.id;
     odcLines[odc.id] = line;
@@ -522,7 +522,7 @@ function refreshMapMarkers() {
                 drawConnectionLine(odp, source);
             }
         }
-        
+
         // Render Customer (Port) Markers & Drop Wire Lines
         if (odp.ports && odp.ports.length > 0) {
             odp.ports.forEach(port => {
@@ -538,9 +538,9 @@ function refreshMapMarkers() {
                             iconAnchor: [12, 12],
                             popupAnchor: [0, -12]
                         });
-                        
+
                         const customerMarker = L.marker([cLat, cLng], { icon: customerIcon }).addTo(markersLayer);
-                        
+
                         // Prepare path coordinates - check if custom path exists
                         let latlngs = [];
                         if (port.path_coordinates) {
@@ -552,13 +552,13 @@ function refreshMapMarkers() {
                         } else {
                             latlngs = [[parseFloat(odp.lat), parseFloat(odp.lng)], [cLat, cLng]];
                         }
-                        
+
                         // Calculate total distance
                         let distance = 0;
                         for (let i = 0; i < latlngs.length - 1; i++) {
-                            distance += map.distance(latlngs[i], latlngs[i+1]);
+                            distance += map.distance(latlngs[i], latlngs[i + 1]);
                         }
-                        
+
                         // Store customer data for side panel display
                         const customerData = {
                             odp: odp,
@@ -568,13 +568,13 @@ function refreshMapMarkers() {
                             customerLng: cLng
                         };
                         customerMarker.on('click', () => showCustomerInfo(customerData));
-                        
+
                         // Add button to popup only if user is admin or operator
                         const currentUser = window.currentUser;
                         const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
                         const portKey = `${odp.id}_${port.port_number}`;
                         const editButtonHtml = canEdit ? `<button onclick="togglePortPathEdit('${portKey}')" id="btnEditPortPath-${portKey}" style="width: 100%; margin-top: 10px; padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-route"></i> Edit Jalur Kabel</button>` : '';
-                        
+
                         customerMarker.bindPopup(`
                             <div style="min-width: 200px;">
                                 <h4 style="margin: 0 0 10px 0; color: #3182ce;"><i class="fas fa-user"></i> ${port.target || 'Pelanggan'}</h4>
@@ -586,7 +586,7 @@ function refreshMapMarkers() {
                                 ${editButtonHtml}
                             </div>
                         `);
-                        
+
                         // Draw line to customer (Kabel Drop / Drop Wire)
                         const line = L.polyline(latlngs, {
                             color: '#3182ce',
@@ -594,9 +594,9 @@ function refreshMapMarkers() {
                             opacity: 0.7,
                             dashArray: '4, 4'
                         }).addTo(markersLayer);
-                        
+
                         line.bindTooltip(`Kabel Drop: ${port.target || 'Pelanggan'} (Port ${port.port_number}) - ${Math.round(distance)}m`, { sticky: true });
-                        
+
                         // Store line reference for editing
                         line.portKey = portKey;
                         line.odpId = odp.id;
@@ -611,7 +611,7 @@ function refreshMapMarkers() {
 
 function drawConnectionLine(odp, source) {
     let latlngs = [];
-    
+
     if (odp.path_coordinates) {
         try {
             latlngs = JSON.parse(odp.path_coordinates);
@@ -623,13 +623,13 @@ function drawConnectionLine(odp, source) {
     }
 
     const line = L.polyline(latlngs, { color: '#48bb78', weight: 3, opacity: 0.8, dashArray: '5, 5' }).addTo(markersLayer);
-    
+
     let distance = 0;
     for (let i = 0; i < latlngs.length - 1; i++) {
-        distance += map.distance(latlngs[i], latlngs[i+1]);
+        distance += map.distance(latlngs[i], latlngs[i + 1]);
     }
-    
-    line.bindTooltip(`Jarak Kabel: ${Math.round(distance)} Meter`, {sticky: true});
+
+    line.bindTooltip(`Jarak Kabel: ${Math.round(distance)} Meter`, { sticky: true });
     line.odpId = odp.id;
     odpLines[odp.id] = line;
 }
@@ -637,56 +637,56 @@ function drawConnectionLine(odp, source) {
 function togglePathEdit(odpId) {
     const line = odpLines[odpId];
     if (!line) return;
-    
+
     const btn = document.getElementById(`btnEditPath-${odpId}`);
-    
+
     if (line.pm && line.pm.enabled()) {
         line.pm.disable();
         const newLatLngs = line.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
         const pathJson = JSON.stringify(newLatLngs);
-        
+
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
-        
+
         fetchWithAuth(`${API_BASE}/odp.php?id=${odpId}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            alert('Jalur kabel berhasil disimpan!');
-            loadDevices();
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Gagal menyimpan jalur kabel: ' + err.message);
-            btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
-            btn.disabled = false;
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                alert('Jalur kabel berhasil disimpan!');
+                loadDevices();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Gagal menyimpan jalur kabel: ' + err.message);
+                btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+                btn.disabled = false;
+            });
     } else if (line.pm) {
         Object.values(odpLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditPath-${l.odpId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
                     b.style.background = '#ed8936';
                 }
             }
         });
-        
+
         Object.values(odcLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
                     b.style.background = '#9b59b6';
                 }
             }
         });
-        
+
         line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
         btn.style.background = '#48bb78';
@@ -697,56 +697,56 @@ function togglePathEdit(odpId) {
 function toggleODCPathEdit(odcId) {
     const line = odcLines[odcId];
     if (!line) return;
-    
+
     const btn = document.getElementById(`btnEditOdcPath-${odcId}`);
-    
+
     if (line.pm && line.pm.enabled()) {
         line.pm.disable();
         const newLatLngs = line.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
         const pathJson = JSON.stringify(newLatLngs);
-        
+
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
-        
+
         fetchWithAuth(`${API_BASE}/odc.php?id=${odcId}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            alert('Jalur kabel ODC berhasil disimpan!');
-            loadDevices();
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Gagal menyimpan jalur kabel ODC: ' + err.message);
-            btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
-            btn.disabled = false;
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                alert('Jalur kabel ODC berhasil disimpan!');
+                loadDevices();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Gagal menyimpan jalur kabel ODC: ' + err.message);
+                btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
+                btn.disabled = false;
+            });
     } else if (line.pm) {
         Object.values(odpLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditPath-${l.odpId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
                     b.style.background = '#ed8936';
                 }
             }
         });
-        
+
         Object.values(odcLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
                     b.style.background = '#9b59b6';
                 }
             }
         });
-        
+
         line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
         btn.style.background = '#48bb78';
@@ -757,68 +757,68 @@ function toggleODCPathEdit(odcId) {
 function togglePortPathEdit(portKey) {
     const line = portLines[portKey];
     if (!line) return;
-    
+
     const btn = document.getElementById(`btnEditPortPath-${portKey}`);
-    
+
     if (line.pm && line.pm.enabled()) {
         line.pm.disable();
         const newLatLngs = line.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
         const pathJson = JSON.stringify(newLatLngs);
-        
+
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
-        
+
         fetchWithAuth(`${API_BASE}/ports.php?odp_id=${line.odpId}&port=${line.portNumber}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            alert('Jalur kabel pelanggan berhasil disimpan!');
-            loadDevices();
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Gagal menyimpan jalur kabel pelanggan: ' + err.message);
-            btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
-            btn.disabled = false;
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                alert('Jalur kabel pelanggan berhasil disimpan!');
+                loadDevices();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Gagal menyimpan jalur kabel pelanggan: ' + err.message);
+                btn.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
+                btn.disabled = false;
+            });
     } else if (line.pm) {
         // Disable other editing modes first
         Object.values(odpLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditPath-${l.odpId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
                     b.style.background = '#ed8936';
                 }
             }
         });
-        
+
         Object.values(odcLines).forEach(l => {
             if (l.pm && l.pm.enabled()) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditOdcPath-${l.odcId}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur ODC';
                     b.style.background = '#9b59b6';
                 }
             }
         });
-        
+
         Object.values(portLines).forEach(l => {
             if (l.pm && l.pm.enabled() && l.portKey !== portKey) {
                 l.pm.disable();
                 const b = document.getElementById(`btnEditPortPath-${l.portKey}`);
-                if(b) {
+                if (b) {
                     b.innerHTML = '<i class="fas fa-route"></i> Edit Jalur Kabel';
                     b.style.background = '#3182ce';
                 }
             }
         });
-        
+
         line.pm.enable({ allowSelfIntersection: true, preventMarkerRemoval: false });
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Jalur';
         btn.style.background = '#48bb78';
@@ -879,23 +879,23 @@ async function showDeviceInfo(device) {
             let distance = 0;
             const latlngs = line.getLatLngs();
             for (let i = 0; i < latlngs.length - 1; i++) {
-                distance += map.distance(latlngs[i], latlngs[i+1]);
+                distance += map.distance(latlngs[i], latlngs[i + 1]);
             }
             distanceHtml = `<div style="background: #f7fafc; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #e2e8f0;"><p style="margin: 0 0 5px 0;"><strong><i class="fas fa-route"></i> Jarak Kabel Feeder:</strong> ${Math.round(distance)} Meter</p>${canEdit ? `<button onclick="toggleODCPathEdit('${device.id}')" id="btnEditOdcPath-${device.id}" style="width: 100%; padding: 8px; background: #9b59b6; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-route"></i> Edit Jalur ODC</button>` : ''}</div>`;
         }
-        
+
         let portsHtml = `${distanceHtml}<p><strong>Kapasitas Port:</strong> ${device.capacity}</p><p><strong>Port Terpakai:</strong> ${device.used_ports || 0}</p><p><strong>Port Tersedia:</strong> ${device.capacity - (device.used_ports || 0)}</p><hr><h4>🔌 Status Port ODC</h4><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 6px; margin-top: 10px;">`;
-        
+
         let portDetails = [];
         try {
             const portRes = await fetch(`${API_BASE}/odc.php?id=${device.id}&ports=true`, { credentials: 'include' });
             if (portRes.ok) {
                 portDetails = await portRes.json();
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to load port details', e);
         }
-        
+
         for (let i = 1; i <= device.capacity; i++) {
             const portDetail = portDetails.find(p => p.port_number === i);
             let status = 'available', odpName = '', odpId = null;
@@ -940,11 +940,11 @@ async function showDeviceInfo(device) {
             let distance = 0;
             const latlngs = line.getLatLngs();
             for (let i = 0; i < latlngs.length - 1; i++) {
-                distance += map.distance(latlngs[i], latlngs[i+1]);
+                distance += map.distance(latlngs[i], latlngs[i + 1]);
             }
             distanceHtml = `<div style="background: #f7fafc; padding: 10px; border-radius: 5px; margin: 10px 0; border: 1px solid #e2e8f0;"><p style="margin: 0 0 5px 0;"><strong><i class="fas fa-route"></i> Jarak Kabel:</strong> ${Math.round(distance)} Meter</p>${canEdit ? `<button onclick="togglePathEdit('${device.id}')" id="btnEditPath-${device.id}" style="width: 100%; padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="fas fa-route"></i> Edit Jalur Kabel</button>` : ''}</div>`;
         }
-        
+
         html += `<p><strong>Sumber ODC:</strong> ${device.source_name || 'Tidak terhubung'}</p>${distanceHtml}<p><strong>Total Port:</strong> ${total}</p><div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span><strong>Port Terpakai:</strong> ${used} dari ${total}</span><span style="color: ${statusColor}; font-weight: bold;">${percentage}%</span></div><div style="background: #e2e8f0; border-radius: 10px; height: 20px; overflow: hidden;"><div style="width: ${percentage}%; height: 100%; background: ${statusColor}; border-radius: 10px; transition: width 0.5s ease;"></div></div><p style="color: ${statusColor}; font-weight: bold; margin-top: 5px;">${statusText}</p></div><hr><h4>📋 Daftar Pelanggan Terhubung</h4>`;
 
         if (device.ports && device.ports.length > 0) {
@@ -991,14 +991,14 @@ function showCustomerInfo(customerData) {
     const panel = document.getElementById('infoPanel');
     const title = document.getElementById('infoTitle');
     const content = document.getElementById('infoContent');
-    
+
     const { odp, port, distance, customerLat, customerLng } = customerData;
     const currentUser = window.currentUser;
     const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
     const portKey = `${odp.id}_${port.port_number}`;
-    
+
     title.textContent = port.target || 'Pelanggan';
-    
+
     let html = `<div class="device-detail">
         <p style="margin: 0 0 10px 0;"><strong><i class="fas fa-user"></i> Nama Pelanggan:</strong> ${port.target || 'Tidak Tersedia'}</p>
         <p style="margin: 4px 0;"><strong>Status:</strong> <span style="color: #48bb78; font-weight: bold;">✓ Aktif</span></p>
@@ -1016,7 +1016,7 @@ function showCustomerInfo(customerData) {
         <p style="margin: 8px 0 4px 0;"><strong>Jarak Kabel Drop:</strong></p>
         <p style="margin: 4px 0; padding: 8px; background: #3182ce; color: white; border-radius: 3px; font-weight: bold; text-align: center;">⟶ ${Math.round(distance)} Meter</p>
         <hr>`;
-    
+
     if (port.onu_number || port.modem_type || port.connection_type) {
         html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-microchip"></i> Perangkat</h4>`;
         if (port.onu_number) {
@@ -1030,7 +1030,7 @@ function showCustomerInfo(customerData) {
         }
         html += `<hr>`;
     }
-    
+
     if (port.description) {
         html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-sticky-note"></i> Keterangan</h4>
         <p style="margin: 4px 0; padding: 8px; background: #fffaf0; border-left: 3px solid #ed8936; border-radius: 3px;">${port.description}</p>
@@ -1043,7 +1043,7 @@ function showCustomerInfo(customerData) {
             <div style="width: 100%; text-align: center; color: #718096; font-size: 12px; padding: 10px;"><i class="fas fa-spinner fa-spin"></i> Memuat foto...</div>
         </div>
         <hr>`;
-        
+
         // Fetch photos asynchronously
         setTimeout(() => {
             fetch(`${API_BASE}/upload.php?type=port&device_id=${port.id}`)
@@ -1067,15 +1067,15 @@ function showCustomerInfo(customerData) {
                 });
         }, 100);
     }
-    
+
     html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">`;
-    
+
     if (canEdit) {
         html += `<button onclick="togglePortPathEdit('${portKey}')" id="btnEditPortPath-${portKey}" style="padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
             <i class="fas fa-route"></i> Edit Jalur
         </button>`;
     }
-    
+
     html += `<button onclick="highlightODP(${odp.id})" style="padding: 8px; background: #48bb78; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
         <i class="fas fa-map"></i> Ke ODP
     </button>`;
@@ -1085,9 +1085,9 @@ function showCustomerInfo(customerData) {
             <i class="fas fa-user-edit"></i> Edit Pelanggan
         </button>`;
     }
-    
+
     html += `</div></div>`;
-    
+
     content.innerHTML = html;
     panel.classList.add('show');
 }

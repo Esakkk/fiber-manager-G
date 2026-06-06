@@ -559,6 +559,16 @@ function refreshMapMarkers() {
                             distance += map.distance(latlngs[i], latlngs[i+1]);
                         }
                         
+                        // Store customer data for side panel display
+                        const customerData = {
+                            odp: odp,
+                            port: port,
+                            distance: distance,
+                            customerLat: cLat,
+                            customerLng: cLng
+                        };
+                        customerMarker.on('click', () => showCustomerInfo(customerData));
+                        
                         // Add button to popup only if user is admin or operator
                         const currentUser = window.currentUser;
                         const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
@@ -973,6 +983,74 @@ async function showDeviceInfo(device) {
 
     html += `<div style="margin-top: 15px;"><button onclick="editDevice('${device.id}', '${isODC ? 'odc' : 'odp'}')" class="btn-icon btn-edit"><i class="fas fa-edit"></i> Edit</button><button onclick="deleteDevice('${device.id}', '${isODC ? 'odc' : 'odp'}')" class="btn-icon btn-delete"><i class="fas fa-trash"></i> Hapus</button></div></div>`;
 
+    content.innerHTML = html;
+    panel.classList.add('show');
+}
+
+function showCustomerInfo(customerData) {
+    const panel = document.getElementById('infoPanel');
+    const title = document.getElementById('infoTitle');
+    const content = document.getElementById('infoContent');
+    
+    const { odp, port, distance, customerLat, customerLng } = customerData;
+    const currentUser = window.currentUser;
+    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+    const portKey = `${odp.id}_${port.port_number}`;
+    
+    title.textContent = port.target || 'Pelanggan';
+    
+    let html = `<div class="device-detail">
+        <p style="margin: 0 0 10px 0;"><strong><i class="fas fa-user"></i> Nama Pelanggan:</strong> ${port.target || 'Tidak Tersedia'}</p>
+        <p style="margin: 4px 0;"><strong>Status:</strong> <span style="color: #48bb78; font-weight: bold;">✓ Aktif</span></p>
+        <hr>
+        <h4 style="margin: 10px 0 8px 0;"><i class="fas fa-sitemap"></i> Terhubung Ke</h4>
+        <p style="margin: 4px 0; padding: 8px; background: #f7fafc; border-left: 3px solid #3182ce; border-radius: 3px;">
+            <strong>ODP:</strong> ${odp.name}<br>
+            <strong>Port:</strong> ${port.port_number}<br>
+            <strong>Lokasi ODP:</strong> ${odp.location}
+        </p>
+        <hr>
+        <h4 style="margin: 10px 0 8px 0;"><i class="fas fa-map-pin"></i> Informasi Lokasi</h4>
+        <p style="margin: 4px 0;"><strong>Koordinat Pelanggan:</strong></p>
+        <p style="margin: 4px 0; padding: 6px; background: #f7fafc; border-radius: 3px; font-family: monospace; font-size: 12px;">${customerLat.toFixed(8)}, ${customerLng.toFixed(8)}</p>
+        <p style="margin: 8px 0 4px 0;"><strong>Jarak Kabel Drop:</strong></p>
+        <p style="margin: 4px 0; padding: 8px; background: #3182ce; color: white; border-radius: 3px; font-weight: bold; text-align: center;">⟶ ${Math.round(distance)} Meter</p>
+        <hr>`;
+    
+    if (port.onu_number || port.modem_type || port.connection_type) {
+        html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-microchip"></i> Perangkat</h4>`;
+        if (port.onu_number) {
+            html += `<p style="margin: 4px 0;"><strong>ONU/SN:</strong> ${port.onu_number}</p>`;
+        }
+        if (port.modem_type) {
+            html += `<p style="margin: 4px 0;"><strong>Jenis Modem:</strong> ${port.modem_type}</p>`;
+        }
+        if (port.connection_type) {
+            html += `<p style="margin: 4px 0;"><strong>Jenis Koneksi:</strong> ${port.connection_type}</p>`;
+        }
+        html += `<hr>`;
+    }
+    
+    if (port.description) {
+        html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-sticky-note"></i> Keterangan</h4>
+        <p style="margin: 4px 0; padding: 8px; background: #fffaf0; border-left: 3px solid #ed8936; border-radius: 3px;">${port.description}</p>
+        <hr>`;
+    }
+    
+    html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">`;
+    
+    if (canEdit) {
+        html += `<button onclick="togglePortPathEdit('${portKey}')" id="btnEditPortPath-${portKey}" style="padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fas fa-route"></i> Edit Jalur
+        </button>`;
+    }
+    
+    html += `<button onclick="highlightODP(${odp.id})" style="padding: 8px; background: #48bb78; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <i class="fas fa-map"></i> Ke ODP
+    </button>`;
+    
+    html += `</div></div>`;
+    
     content.innerHTML = html;
     panel.classList.add('show');
 }

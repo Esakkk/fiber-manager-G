@@ -61,11 +61,11 @@ function clearSelectedDeviceLines() {
 function highlightLinesForDevice(device) {
     clearSelectedDeviceLines();
     if (!device) return;
-    
+
     const isODC = devices.odc.some(d => d.id == device.id);
     const isPOP = devices.pop.some(p => p.id == device.id);
     const isODP = devices.odp.some(d => d.id == device.id);
-    
+
     if (isPOP) {
         Object.values(odcLines).forEach(line => {
             const odc = devices.odc.find(o => o.id == line.odcId);
@@ -98,7 +98,7 @@ function highlightLinesForDevice(device) {
             selectedDeviceLines.push(portLines[portKey]);
         }
     }
-    
+
     selectedDeviceLines.forEach(line => {
         highlightLine(line);
     });
@@ -109,10 +109,10 @@ function getDistanceToPolyline(clickLatLng, polyline) {
     const clickPoint = map.latLngToLayerPoint(clickLatLng);
     const latlngs = polyline.getLatLngs();
     if (!latlngs || latlngs.length === 0) return Infinity;
-    
+
     let minDistance = Infinity;
     const points = latlngs.map(ll => map.latLngToLayerPoint(ll));
-    
+
     for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i];
         const p2 = points[i + 1];
@@ -121,7 +121,7 @@ function getDistanceToPolyline(clickLatLng, polyline) {
             minDistance = dist;
         }
     }
-    
+
     return Math.sqrt(minDistance);
 }
 
@@ -139,16 +139,16 @@ function distSq(v, w) {
 
 function handleLineClick(e) {
     const clickLatLng = e.latlng;
-    
+
     const allLines = [
         ...Object.values(odcLines),
         ...Object.values(odpLines),
         ...Object.values(portLines)
     ];
-    
+
     const tolerance = 15; // pixels
     const nearbyLines = [];
-    
+
     allLines.forEach(line => {
         if (!map.hasLayer(line)) return;
         const dist = getDistanceToPolyline(clickLatLng, line);
@@ -156,27 +156,27 @@ function handleLineClick(e) {
             nearbyLines.push({ line, dist });
         }
     });
-    
+
     nearbyLines.sort((a, b) => a.dist - b.dist);
-    
+
     if (nearbyLines.length === 0) return;
-    
+
     if (nearbyLines.length === 1) {
         showLineDetails(nearbyLines[0].line);
         return;
     }
-    
+
     let popupContent = `<div style="min-width: 250px; font-family: sans-serif;">
         <h5 style="margin: 0 0 8px 0; font-size: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #4a5568;"><i class="fas fa-project-diagram"></i> Kabel di Titik Ini (${nearbyLines.length})</h5>
         <ul style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">`;
-        
+
     nearbyLines.forEach((item, index) => {
         const line = item.line;
         let label = 'Kabel';
         let iconClass = 'fa-route';
         let iconColor = '#a0aec0';
         let onClickAction = '';
-        
+
         if (line.lineType === 'feeder') {
             const odc = devices.odc.find(o => o.id == line.odcId);
             label = `Feeder: POP → ODC ${odc ? odc.name : line.odcId}`;
@@ -210,7 +210,7 @@ function handleLineClick(e) {
                 onClickAction = `showCustomerInfo(${JSON.stringify(customerData).replace(/"/g, '&quot;')})`;
             }
         }
-        
+
         popupContent += `
             <li 
                 onmouseover="window.highlightLineByIndex(${index})" 
@@ -223,21 +223,21 @@ function handleLineClick(e) {
                 <i class="fas fa-chevron-right" style="font-size: 10px; color: #cbd5e0;"></i>
             </li>`;
     });
-    
+
     popupContent += `</ul></div>`;
-    
+
     window.activeNearbyLines = nearbyLines.map(item => item.line);
-    window.highlightLineByIndex = function(idx) {
+    window.highlightLineByIndex = function (idx) {
         if (window.activeNearbyLines && window.activeNearbyLines[idx]) {
             highlightLine(window.activeNearbyLines[idx]);
         }
     };
-    window.resetLineByIndex = function(idx) {
+    window.resetLineByIndex = function (idx) {
         if (window.activeNearbyLines && window.activeNearbyLines[idx]) {
             resetLineStyle(window.activeNearbyLines[idx]);
         }
     };
-    
+
     L.popup()
         .setLatLng(clickLatLng)
         .setContent(popupContent)
@@ -284,19 +284,19 @@ function addLineHoverHandlers(line) {
 function toggleMapType() {
     const cb = document.getElementById('toggleMapType');
     const isSatellite = cb ? cb.checked : true;
-    
+
     if (baseTileLayer && map) {
         map.removeLayer(baseTileLayer);
     }
-    
+
     const url = isSatellite ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
-    
+
     baseTileLayer = L.tileLayer(url, {
         attribution: '© Google',
         maxZoom: 22,
         maxNativeZoom: 20
     }).addTo(map);
-    
+
     baseTileLayer.bringToBack();
 }
 
@@ -327,7 +327,7 @@ function initMap() {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
-    
+
     // Inisialisasi Marker Cluster untuk performa tinggi
     if (typeof L.markerClusterGroup !== 'undefined') {
         window.markerClusterGroup = L.markerClusterGroup({
@@ -716,7 +716,7 @@ function drawFeederLine(odc, sourceLatLng) {
     line.odcId = odc.id;
     line.sourceId = odc.source_id;
     line.oltId = odc.olt_id;
-    
+
     addLineHoverHandlers(line);
 
     let distance = 0;
@@ -1256,6 +1256,10 @@ async function showDeviceInfo(device) {
 
     let html = `<div class="device-detail"><p><strong>Tipe:</strong> ${isODC ? 'ODC' : 'ODP'}</p><p><strong>ID:</strong> ${device.id}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
 
+    html += `
+<p><strong>Dibuat:</strong> ${device.created_at ? new Date(device.created_at).toLocaleString() : ''}</p>
+<p><strong>Terakhir diedit:</strong> ${device.updated_at ? new Date(device.updated_at).toLocaleString() : ''}</p>
+`;
     if (isODC) {
         let distanceHtml = '';
         if (odcLines[device.id]) {
@@ -1318,7 +1322,7 @@ async function showDeviceInfo(device) {
         else if (percentage > 50) { statusColor = '#ecc94b'; statusText = '🟡 Hampir Penuh - Monitor penggunaan'; }
         else { statusColor = '#48bb78'; statusText = '🟢 Normal - Port masih banyak tersedia'; }
 
-        let distanceHtml = '';
+
         if (device.source_id && odpLines[device.id]) {
             const line = odpLines[device.id];
             let distance = 0;
@@ -1392,7 +1396,9 @@ function showCustomerInfo(customerData) {
         <p style="margin: 4px 0; padding: 8px; background: #f7fafc; border-left: 3px solid #3182ce; border-radius: 3px;">
             <strong>ODP:</strong> ${odp.name}<br>
             <strong>Port:</strong> ${port.port_number}<br>
-            <strong>Lokasi ODP:</strong> ${odp.location}
+            <strong>Lokasi ODP:</strong> ${odp.location}<br>
+            <strong>Dibuat:</strong> ${customerData.created_at ? new Date(customerData.created_at).toLocaleString() : ''}<br>
+            <strong>Terakhir diedit:</strong> ${customerData.updated_at ? new Date(customerData.updated_at).toLocaleString() : ''}
         </p>
         <hr>
         <h4 style="margin: 10px 0 8px 0;"><i class="fas fa-map-pin"></i> Informasi Lokasi</h4>
@@ -1552,25 +1558,25 @@ function refreshDeviceList() {
     currentDeviceRenderIndex = 0;
     const container = document.getElementById('deviceList');
     if (container) container.innerHTML = '';
-    
+
     renderMoreDevices();
 }
 
 function renderMoreDevices() {
     const container = document.getElementById('deviceList');
     if (!container) return;
-    
+
     const loadMoreBtn = document.getElementById('loadMoreDevicesBtn');
     if (loadMoreBtn) loadMoreBtn.remove();
 
     const currentUser = window.currentUser;
     const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
-    
+
     const endIndex = Math.min(currentDeviceRenderIndex + DEVICES_PER_PAGE, filteredDevicesList.length);
-    
+
     for (let i = currentDeviceRenderIndex; i < endIndex; i++) {
         const device = filteredDevicesList[i];
-        
+
         const div = document.createElement('div');
         div.className = `device-item ${device.type}`;
         div.onclick = () => {
@@ -1604,21 +1610,21 @@ function renderMoreDevices() {
         div.innerHTML = `<div class="device-header"><span class="device-name">${device.name} ${statusIndicator}</span><span class="device-type">${device.type.toUpperCase()}</span></div><div class="device-info">${infoHtml}</div><div class="device-info">${device.location}</div>${actionsHtml}`;
         container.appendChild(div);
     }
-    
+
     currentDeviceRenderIndex = endIndex;
-    
+
     if (currentDeviceRenderIndex < filteredDevicesList.length) {
         const btnContainer = document.createElement('div');
         btnContainer.id = 'loadMoreDevicesBtn';
         btnContainer.style.textAlign = 'center';
         btnContainer.style.padding = '10px';
-        
+
         const btn = document.createElement('button');
         btn.className = 'btn btn-secondary';
         btn.style.width = '100%';
         btn.textContent = `Muat Lebih Banyak (${filteredDevicesList.length - currentDeviceRenderIndex} tersisa)`;
         btn.onclick = renderMoreDevices;
-        
+
         btnContainer.appendChild(btn);
         container.appendChild(btnContainer);
     }

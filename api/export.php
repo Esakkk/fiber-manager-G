@@ -55,7 +55,9 @@ try {
                 'port' => ['header' => 'Port ODP', 'select' => 'odp_ports.port_number'],
                 'onu' => ['header' => 'Nomor ONU / SN', 'select' => 'odp_ports.onu_number'],
                 'modem' => ['header' => 'Jenis Modem / ONT', 'select' => 'odp_ports.modem_type'],
-                'keterangan' => ['header' => 'Keterangan Port', 'select' => 'odp_ports.description AS port_desc']
+                'keterangan' => ['header' => 'Keterangan Port', 'select' => 'odp_ports.description AS port_desc'],
+                'created_at' => ['header' => 'Waktu Dibuat', 'select' => 'odp_ports.created_at'],
+                'updated_at' => ['header' => 'Terakhir Diedit', 'select' => 'odp_ports.updated_at']
             ];
             
             // Build query selects
@@ -119,7 +121,9 @@ try {
                 'port_terpakai' => ['header' => 'Port Terpakai', 'select' => '(SELECT COUNT(*) FROM odp_ports WHERE odp_ports.odp_id = odp.id AND odp_ports.status = \'used\') AS used_ports'],
                 'port_tersedia' => ['header' => 'Port Tersedia', 'select' => 'odp.available_ports'],
                 'ms_terhubung' => ['header' => 'Terhubung ke MS', 'select' => 'odc.name AS ms_name'],
-                'keterangan' => ['header' => 'Keterangan ODP', 'select' => 'odp.description AS odp_desc']
+                'keterangan' => ['header' => 'Keterangan ODP', 'select' => 'odp.description AS odp_desc'],
+                'created_at' => ['header' => 'Waktu Dibuat', 'select' => 'odp.created_at'],
+                'updated_at' => ['header' => 'Terakhir Diedit', 'select' => 'odp.updated_at']
             ];
             
             $select_fields = [];
@@ -186,7 +190,9 @@ try {
                         WHEN odc.source_type = \'pon\' THEN (SELECT CONCAT(\'PON Card \', pon.card_number, \' (\', olt.name, \')\') FROM pon JOIN olt ON pon.olt_id = olt.id WHERE pon.id = odc.pon_id)
                         ELSE \'Tidak Ada\'
                     END AS source_name'],
-                'keterangan' => ['header' => 'Keterangan ODC', 'select' => 'odc.description AS odc_desc']
+                'keterangan' => ['header' => 'Keterangan ODC', 'select' => 'odc.description AS odc_desc'],
+                'created_at' => ['header' => 'Waktu Dibuat', 'select' => 'odc.created_at'],
+                'updated_at' => ['header' => 'Terakhir Diedit', 'select' => 'odc.updated_at']
             ];
             
             $select_fields = [];
@@ -244,7 +250,9 @@ try {
                 'koordinat' => ['header' => 'Koordinat POP', 'select' => 'pop.lat, pop.lng'],
                 'location' => ['header' => 'Lokasi', 'select' => 'pop.location'],
                 'address' => ['header' => 'Alamat Lengkap', 'select' => 'pop.address'],
-                'keterangan' => ['header' => 'Keterangan POP', 'select' => 'pop.description AS pop_desc']
+                'keterangan' => ['header' => 'Keterangan POP', 'select' => 'pop.description AS pop_desc'],
+                'created_at' => ['header' => 'Waktu Dibuat', 'select' => 'pop.created_at'],
+                'updated_at' => ['header' => 'Terakhir Diedit', 'select' => 'pop.updated_at']
             ];
             
             $select_fields = [];

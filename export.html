@@ -276,6 +276,9 @@
                 <button class="tab-btn" onclick="switchTab('pop')">
                     <i class="fas fa-building"></i> POP
                 </button>
+                <button class="tab-btn" onclick="switchTab('kml')">
+                    <i class="fas fa-map"></i> Peta KML (My Maps)
+                </button>
             </div>
 
             <!-- Pelanggan Tab Content -->
@@ -554,6 +557,54 @@
                 </div>
             </div>
 
+            <!-- KML Tab Content -->
+            <div class="tab-content" id="content-kml">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport data geografis berupa lokasi perangkat dan jalur kabel (path/polyline) dalam format KML. File ini dapat diimpor langsung ke Google My Maps untuk memvisualisasikan peta jaringan secara instan.</span>
+                </div>
+
+                <div class="column-grid">
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="pop" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Point of Presence (POP)</span>
+                            <span class="col-option-desc">Titik lokasi pusat POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="odc" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">ODC (MS) &amp; Kabel Feeder</span>
+                            <span class="col-option-desc">Titik ODC dan penarikan kabel feeder</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="odp" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">ODP &amp; Kabel Distribusi</span>
+                            <span class="col-option-desc">Titik ODP dan penarikan kabel distribusi</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="pelanggan" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Pelanggan &amp; Kabel Drop</span>
+                            <span class="col-option-desc">Titik rumah pelanggan dan kabel drop core</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleLayersAll()">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExportKml()">
+                        <i class="fas fa-download"></i> Export KML Map
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -567,6 +618,13 @@
                 window.location.href = 'login.html';
                 return;
             }
+            
+            // Prevent label click event from double toggling checkbox if checkbox itself was clicked
+            document.querySelectorAll('.col-option input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            });
         }
 
         async function checkAuth() {
@@ -590,7 +648,7 @@
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(btn => {
                 btn.classList.remove('active');
-                if(btn.getAttribute('onclick').includes(type)) {
+                if(btn.getAttribute('onclick').includes(`'${type}'`)) {
                     btn.classList.add('active');
                 }
             });
@@ -611,16 +669,19 @@
             }
         }
 
-        // Prevent label click event from double toggling checkbox if checkbox itself was clicked
-        document.querySelectorAll('.col-option input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-        });
-
         // Toggle select all
         function toggleAll(type) {
             const checkboxes = document.querySelectorAll(`input[name="col-${type}"]:not(:disabled)`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+        }
+
+        // Toggle select all layers for KML
+        function toggleLayersAll() {
+            const checkboxes = document.querySelectorAll('input[name="layer-kml"]');
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
             
             checkboxes.forEach(cb => {
@@ -644,6 +705,27 @@
             queryParams.append('type', type);
             columns.forEach(col => {
                 queryParams.append('columns[]', col);
+            });
+
+            // Redirect to backend trigger
+            window.location.href = `${API_BASE}/export.php?${queryParams.toString()}`;
+        }
+
+        // Trigger KML download
+        function doExportKml() {
+            const checkboxes = document.querySelectorAll('input[name="layer-kml"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Pilih minimal satu layer untuk dieksport!');
+                return;
+            }
+
+            const layers = Array.from(checkboxes).map(cb => cb.value);
+            
+            // Build query params
+            const queryParams = new URLSearchParams();
+            queryParams.append('type', 'kml');
+            layers.forEach(l => {
+                queryParams.append('layers[]', l);
             });
 
             // Redirect to backend trigger

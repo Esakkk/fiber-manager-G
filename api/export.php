@@ -14,21 +14,23 @@ if (empty($type)) {
     exit();
 }
 
-if (empty($selected_cols) || !is_array($selected_cols)) {
+if ($type !== 'kml' && (empty($selected_cols) || !is_array($selected_cols))) {
     http_response_code(400);
     echo json_encode(['error' => 'Kolom export tidak boleh kosong']);
     exit();
 }
 
-// Konfigurasi header download
-$filename = "export_" . $type . "_" . date('Ymd_His') . ".csv";
-header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+if ($type !== 'kml') {
+    // Konfigurasi header download
+    $filename = "export_" . $type . "_" . date('Ymd_His') . ".csv";
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-// Tambahkan UTF-8 BOM untuk kompatibilitas Excel
-echo "\xEF\xBB\xBF";
-// Tentukan pemisah kolom titik koma agar Excel langsung memformat dengan benar di Windows
-echo "sep=;\n";
+    // Tambahkan UTF-8 BOM untuk kompatibilitas Excel
+    echo "\xEF\xBB\xBF";
+    // Tentukan pemisah kolom titik koma agar Excel langsung memformat dengan benar di Windows
+    echo "sep=;\n";
+}
 
 // Helper untuk format teks CSV (escape semicolon dan double quote)
 function formatCsvCell($val) {
@@ -291,9 +293,168 @@ try {
             }
             break;
             
-        default:
-            http_response_code(400);
-            echo json_encode(['error' => 'Tipe export tidak valid']);
+        case 'kml':
+            $selected_layers = isset($_GET['layers']) ? $_GET['layers'] : [];
+            if (empty($selected_layers)) {
+                $selected_layers = ['pop', 'odc', 'odp', 'pelanggan'];
+            }
+            
+            // Set headers for KML
+            $filename = "fiber_map_" . date('Ymd_His') . ".kml";
+            header('Content-Type: application/vnd.google-earth.kml+xml');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            
+            echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            echo '<kml xmlns="http://www.opengis.net/kml/2.2">' . "\n";
+            echo '  <Document>' . "\n";
+            echo '    <name>Peta Fiber Optik</name>' . "\n";
+            echo '    <description>Exported from Fiber Manager on ' . date('Y-m-d H:i:s') . '</description>' . "\n";
+            
+            // Styles
+            echo '    <Style id="popStyle"><IconStyle><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/info_circle.png</href></Icon></IconStyle></Style>' . "\n";
+            echo '    <Style id="odcStyle"><IconStyle><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/orange-stars.png</href></Icon></IconStyle></Style>' . "\n";
+            echo '    <Style id="odpStyle"><IconStyle><scale>1.0</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/grn-circle.png</href></Icon></IconStyle></Style>' . "\n";
+            echo '    <Style id="customerStyle"><IconStyle><scale>0.8</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/home.png</href></Icon></IconStyle></Style>' . "\n";
+            echo '    <Style id="feederCable"><LineStyle><color>ff0080ff</color><width>4</width></LineStyle></Style>' . "\n"; // Orange
+            echo '    <Style id="distCable"><LineStyle><color>ff00ff00</color><width>3</width></LineStyle></Style>' . "\n"; // Green
+            echo '    <Style id="dropCable"><LineStyle><color>ff0000ff</color><width>2</width></LineStyle></Style>' . "\n"; // Red
+            
+            // 1. POP Layer
+            if (in_array('pop', $selected_layers)) {
+                echo '    <Folder>' . "\n";
+                echo '      <name>Point of Presence (POP)</name>' . "\n";
+                $stmt = $pdo->query("SELECT * FROM pop ORDER BY name ASC");
+                while ($row = $stmt->fetch()) {
+                    echo '      <Placemark>' . "\n";
+                    echo '        <name>' . htmlspecialchars($row['name']) . '</name>' . "\n";
+                    echo '        <description>' . htmlspecialchars("Code: " . $row['code'] . "\nLokasi: " . $row['location'] . "\nAlamat: " . $row['address'] . "\nKet: " . $row['description']) . '</description>' . "\n";
+                    echo '        <styleUrl>#popStyle</styleUrl>' . "\n";
+                    echo '        <Point>' . "\n";
+                    echo '          <coordinates>' . $row['lng'] . ',' . $row['lat'] . ',0</coordinates>' . "\n";
+                    echo '        </Point>' . "\n";
+                    echo '      </Placemark>' . "\n";
+                }
+                echo '    </Folder>' . "\n";
+            }
+            
+            // 2. ODC Layer
+            if (in_array('odc', $selected_layers)) {
+                echo '    <Folder>' . "\n";
+                echo '      <name>ODC (MS)</name>' . "\n";
+                $stmt = $pdo->query("SELECT * FROM odc ORDER BY name ASC");
+                while ($row = $stmt->fetch()) {
+                    // Marker point
+                    echo '      <Placemark>' . "\n";
+                    echo '        <name>' . htmlspecialchars($row['name']) . '</name>' . "\n";
+                    echo '        <description>' . htmlspecialchars("Kapasitas: " . $row['capacity'] . "\nPort Terpakai: " . $row['used_ports'] . "\nLokasi: " . $row['location'] . "\nKet: " . $row['description']) . '</description>' . "\n";
+                    echo '        <styleUrl>#odcStyle</styleUrl>' . "\n";
+                    echo '        <Point>' . "\n";
+                    echo '          <coordinates>' . $row['lng'] . ',' . $row['lat'] . ',0</coordinates>' . "\n";
+                    echo '        </Point>' . "\n";
+                    echo '      </Placemark>' . "\n";
+                    
+                    // Cable Line (Feeder)
+                    if (!empty($row['path_coordinates'])) {
+                        $coords = json_decode($row['path_coordinates'], true);
+                        if (is_array($coords) && count($coords) > 1) {
+                            $kml_coords = [];
+                            foreach ($coords as $c) {
+                                if (count($c) >= 2) $kml_coords[] = $c[1] . ',' . $c[0] . ',0';
+                            }
+                            echo '      <Placemark>' . "\n";
+                            echo '        <name>Kabel Feeder - ' . htmlspecialchars($row['name']) . '</name>' . "\n";
+                            echo '        <styleUrl>#feederCable</styleUrl>' . "\n";
+                            echo '        <LineString>' . "\n";
+                            echo '          <tessellate>1</tessellate>' . "\n";
+                            echo '          <coordinates>' . implode(' ', $kml_coords) . '</coordinates>' . "\n";
+                            echo '        </LineString>' . "\n";
+                            echo '      </Placemark>' . "\n";
+                        }
+                    }
+                }
+                echo '    </Folder>' . "\n";
+            }
+            
+            // 3. ODP Layer
+            if (in_array('odp', $selected_layers)) {
+                echo '    <Folder>' . "\n";
+                echo '      <name>ODP</name>' . "\n";
+                $stmt = $pdo->query("SELECT odp.*, odc.name AS odc_name FROM odp LEFT JOIN odc ON odp.source_id = odc.id ORDER BY odp.name ASC");
+                while ($row = $stmt->fetch()) {
+                    // Marker point
+                    echo '      <Placemark>' . "\n";
+                    echo '        <name>' . htmlspecialchars($row['name']) . '</name>' . "\n";
+                    echo '        <description>' . htmlspecialchars("MS Terhubung: " . ($row['odc_name'] ?: 'Tidak Terhubung') . "\nTotal Port: " . $row['total_ports'] . "\nPort Tersedia: " . $row['available_ports'] . "\nLokasi: " . $row['location'] . "\nKet: " . $row['description']) . '</description>' . "\n";
+                    echo '        <styleUrl>#odpStyle</styleUrl>' . "\n";
+                    echo '        <Point>' . "\n";
+                    echo '          <coordinates>' . $row['lng'] . ',' . $row['lat'] . ',0</coordinates>' . "\n";
+                    echo '        </Point>' . "\n";
+                    echo '      </Placemark>' . "\n";
+                    
+                    // Cable Line (Distribution)
+                    if (!empty($row['path_coordinates'])) {
+                        $coords = json_decode($row['path_coordinates'], true);
+                        if (is_array($coords) && count($coords) > 1) {
+                            $kml_coords = [];
+                            foreach ($coords as $c) {
+                                if (count($c) >= 2) $kml_coords[] = $c[1] . ',' . $c[0] . ',0';
+                            }
+                            echo '      <Placemark>' . "\n";
+                            echo '        <name>Kabel Distribusi - ' . htmlspecialchars($row['name']) . '</name>' . "\n";
+                            echo '        <styleUrl>#distCable</styleUrl>' . "\n";
+                            echo '        <LineString>' . "\n";
+                            echo '          <tessellate>1</tessellate>' . "\n";
+                            echo '          <coordinates>' . implode(' ', $kml_coords) . '</coordinates>' . "\n";
+                            echo '        </LineString>' . "\n";
+                            echo '      </Placemark>' . "\n";
+                        }
+                    }
+                }
+                echo '    </Folder>' . "\n";
+            }
+            
+            // 4. Pelanggan Layer
+            if (in_array('pelanggan', $selected_layers)) {
+                echo '    <Folder>' . "\n";
+                echo '      <name>Pelanggan &amp; Drop Cable</name>' . "\n";
+                $stmt = $pdo->query("SELECT odp_ports.*, odp.name AS odp_name FROM odp_ports JOIN odp ON odp_ports.odp_id = odp.id WHERE odp_ports.status = 'used' AND odp_ports.target IS NOT NULL AND odp_ports.target != ''");
+                while ($row = $stmt->fetch()) {
+                    // Marker point if coordinates exist
+                    if ($row['lat'] && $row['lng']) {
+                        echo '      <Placemark>' . "\n";
+                        echo '        <name>' . htmlspecialchars($row['target']) . '</name>' . "\n";
+                        echo '        <description>' . htmlspecialchars("ODP: " . $row['odp_name'] . " Port: " . $row['port_number'] . "\nONU/SN: " . $row['onu_number'] . "\nModem: " . $row['modem_type'] . "\nKet: " . $row['description']) . '</description>' . "\n";
+                        echo '        <styleUrl>#customerStyle</styleUrl>' . "\n";
+                        echo '        <Point>' . "\n";
+                        echo '          <coordinates>' . $row['lng'] . ',' . $row['lat'] . ',0</coordinates>' . "\n";
+                        echo '        </Point>' . "\n";
+                        echo '      </Placemark>' . "\n";
+                    }
+                    
+                    // Cable Line (Drop Core)
+                    if (!empty($row['path_coordinates'])) {
+                        $coords = json_decode($row['path_coordinates'], true);
+                        if (is_array($coords) && count($coords) > 1) {
+                            $kml_coords = [];
+                            foreach ($coords as $c) {
+                                if (count($c) >= 2) $kml_coords[] = $c[1] . ',' . $c[0] . ',0';
+                            }
+                            echo '      <Placemark>' . "\n";
+                            echo '        <name>Kabel Drop - ' . htmlspecialchars($row['target']) . '</name>' . "\n";
+                            echo '        <styleUrl>#dropCable</styleUrl>' . "\n";
+                            echo '        <LineString>' . "\n";
+                            echo '          <tessellate>1</tessellate>' . "\n";
+                            echo '          <coordinates>' . implode(' ', $kml_coords) . '</coordinates>' . "\n";
+                            echo '        </LineString>' . "\n";
+                            echo '      </Placemark>' . "\n";
+                        }
+                    }
+                }
+                echo '    </Folder>' . "\n";
+            }
+            
+            echo '  </Document>' . "\n";
+            echo '</kml>' . "\n";
             exit();
     }
 } catch (PDOException $e) {

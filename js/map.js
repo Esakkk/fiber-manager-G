@@ -15,13 +15,37 @@ let odcLines = {};
 let portLines = {};
 let highlightedMarker = null;
 let isClusteringEnabled = true;
+let isLinesEnabled = true;
+let baseTileLayer = null;
+
+function toggleMapType() {
+    const cb = document.getElementById('toggleMapType');
+    const isSatellite = cb ? cb.checked : true;
+    
+    if (baseTileLayer && map) {
+        map.removeLayer(baseTileLayer);
+    }
+    
+    const url = isSatellite ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+    
+    baseTileLayer = L.tileLayer(url, {
+        attribution: '© Google',
+        maxZoom: 22,
+        maxNativeZoom: 20
+    }).addTo(map);
+    
+    baseTileLayer.bringToBack();
+}
 
 function toggleMapClustering() {
     const cb = document.getElementById('toggleClustering');
     isClusteringEnabled = cb ? cb.checked : true;
-    
-    // Create or remove markerClusterGroup depending on state, 
-    // but the easiest is just let refreshMapMarkers clear and repopulate.
+    refreshMapMarkers();
+}
+
+function toggleMapLines() {
+    const cb = document.getElementById('toggleLines');
+    isLinesEnabled = cb ? cb.checked : true;
     refreshMapMarkers();
 }
 
@@ -32,8 +56,8 @@ function toggleMapClustering() {
 // Initialize map
 function initMap() {
     map = L.map('map', { preferCanvas: true }).setView([-6.966409024897329, 109.6469502011238], 13);
-    // Google Satellite Hybrid (satelit + label jalan)
-    L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    // Google Satellite (lyrs=s) atau Mode Standar (lyrs=m)
+    baseTileLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         attribution: '© Google',
         maxZoom: 22,
         maxNativeZoom: 20
@@ -524,7 +548,7 @@ function refreshMapMarkers() {
             }
         }
 
-        if (sourceLatLng) {
+        if (sourceLatLng && isLinesEnabled) {
             drawFeederLine(odc, sourceLatLng);
         }
     });
@@ -544,7 +568,7 @@ function refreshMapMarkers() {
 
         if (odp.source_id && odp.source_type === 'odc') {
             const source = devices.odc.find(d => d.id == odp.source_id);
-            if (source) {
+            if (source && isLinesEnabled) {
                 drawConnectionLine(odp, source);
             }
         }
@@ -618,21 +642,23 @@ function refreshMapMarkers() {
                             </div>
                         `);
 
-                        // Draw line to customer (Kabel Drop / Drop Wire)
-                        const line = L.polyline(latlngs, {
-                            color: '#3182ce',
-                            weight: 2,
-                            opacity: 0.7,
-                            dashArray: '4, 4'
-                        }).addTo(markersLayer);
+                        if (isLinesEnabled) {
+                            // Draw line to customer (Kabel Drop / Drop Wire)
+                            const line = L.polyline(latlngs, {
+                                color: '#3182ce',
+                                weight: 2,
+                                opacity: 0.7,
+                                dashArray: '4, 4'
+                            }).addTo(markersLayer);
 
-                        line.bindTooltip(`Kabel Drop: ${port.target || 'Pelanggan'} (Port ${port.port_number}) - ${Math.round(distance)}m`, { sticky: true });
+                            line.bindTooltip(`Kabel Drop: ${port.target || 'Pelanggan'} (Port ${port.port_number}) - ${Math.round(distance)}m`, { sticky: true });
 
-                        // Store line reference for editing
-                        line.portKey = portKey;
-                        line.odpId = odp.id;
-                        line.portNumber = port.port_number;
-                        portLines[portKey] = line;
+                            // Store line reference for editing
+                            line.portKey = portKey;
+                            line.odpId = odp.id;
+                            line.portNumber = port.port_number;
+                            portLines[portKey] = line;
+                        }
                     }
                 }
             });

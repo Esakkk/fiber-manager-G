@@ -14,6 +14,16 @@ let odpLines = {};
 let odcLines = {};
 let portLines = {};
 let highlightedMarker = null;
+let isClusteringEnabled = true;
+
+function toggleMapClustering() {
+    const cb = document.getElementById('toggleClustering');
+    isClusteringEnabled = cb ? cb.checked : true;
+    
+    // Create or remove markerClusterGroup depending on state, 
+    // but the easiest is just let refreshMapMarkers clear and repopulate.
+    refreshMapMarkers();
+}
 
 // =============================================
 // FUNGSI-FUNGSI MAP
@@ -523,7 +533,7 @@ function refreshMapMarkers() {
     devices.odp.forEach(odp => {
         const icon = createODPIcon(odp.available_ports, odp.total_ports);
         const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon });
-        if (window.markerClusterGroup) {
+        if (window.markerClusterGroup && isClusteringEnabled) {
             marker.addTo(window.markerClusterGroup);
         } else {
             marker.addTo(markersLayer);
@@ -556,7 +566,7 @@ function refreshMapMarkers() {
                         });
 
                         const customerMarker = L.marker([cLat, cLng], { icon: customerIcon });
-                        if (window.markerClusterGroup) {
+                        if (window.markerClusterGroup && isClusteringEnabled) {
                             customerMarker.addTo(window.markerClusterGroup);
                         } else {
                             customerMarker.addTo(markersLayer);

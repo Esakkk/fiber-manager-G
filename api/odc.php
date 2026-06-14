@@ -64,18 +64,30 @@ function getAllODC() {
             ORDER BY o.created_at DESC
         ");
         $stmt->execute();
-        $odcs = $stmt->fetchAll();
+        $odcs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        foreach ($odcs as &$odc) {
+        if (!empty($odcs)) {
+            $odcIds = array_column($odcs, 'id');
+            $inClause = implode(',', array_fill(0, count($odcIds), '?'));
+            
             $stmt2 = $pdo->prepare("
-                SELECT id, filename, original_name, is_primary,
+                SELECT odc_id, id, filename, original_name, is_primary,
                        CONCAT('uploads/odc/', filename) as url
                 FROM odc_photos 
-                WHERE odc_id = ? 
-                ORDER BY is_primary DESC
+                WHERE odc_id IN ($inClause) 
+                ORDER BY odc_id, is_primary DESC
             ");
-            $stmt2->execute([$odc['id']]);
-            $odc['photos'] = $stmt2->fetchAll();
+            $stmt2->execute($odcIds);
+            $allPhotos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+            
+            $photosByOdc = [];
+            foreach ($allPhotos as $photo) {
+                $photosByOdc[$photo['odc_id']][] = $photo;
+            }
+            
+            foreach ($odcs as &$odc) {
+                $odc['photos'] = $photosByOdc[$odc['id']] ?? [];
+            }
         }
         
         sendResponse($odcs);

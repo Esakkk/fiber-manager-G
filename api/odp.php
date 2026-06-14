@@ -43,31 +43,50 @@ function getAllODP() {
             ORDER BY odp.created_at DESC
         ");
         $stmt->execute();
-        $odps = $stmt->fetchAll();
+        $odps = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        foreach ($odps as &$odp) {
-            // Get ports
-            $stmt2 = $pdo->prepare("SELECT * FROM odp_ports WHERE odp_id = ? ORDER BY port_number");
-            $stmt2->execute([$odp['id']]);
-            $odp['ports'] = $stmt2->fetchAll();
+        if (!empty($odps)) {
+            $odpIds = array_column($odps, 'id');
+            $inClause = implode(',', array_fill(0, count($odpIds), '?'));
             
-            // Calculate available ports
-            $available = 0;
-            foreach ($odp['ports'] as $port) {
-                if ($port['status'] === 'available') $available++;
+            // Fetch all ports at once
+            $stmt2 = $pdo->prepare("SELECT * FROM odp_ports WHERE odp_id IN ($inClause) ORDER BY odp_id, port_number");
+            $stmt2->execute($odpIds);
+            $allPorts = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+            
+            $portsByOdp = [];
+            foreach ($allPorts as $port) {
+                $portsByOdp[$port['odp_id']][] = $port;
             }
-            $odp['available_ports'] = $available;
             
-            // Get photos
+            // Fetch all photos at once
             $stmt3 = $pdo->prepare("
-                SELECT id, filename, original_name, is_primary, file_size, created_at,
+                SELECT odp_id, id, filename, original_name, is_primary, file_size, created_at,
                        CONCAT('uploads/odp/', filename) as url
                 FROM odp_photos 
-                WHERE odp_id = ? 
-                ORDER BY is_primary DESC, created_at ASC
+                WHERE odp_id IN ($inClause) 
+                ORDER BY odp_id, is_primary DESC, created_at ASC
             ");
-            $stmt3->execute([$odp['id']]);
-            $odp['photos'] = $stmt3->fetchAll();
+            $stmt3->execute($odpIds);
+            $allPhotos = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+            
+            $photosByOdp = [];
+            foreach ($allPhotos as $photo) {
+                $photosByOdp[$photo['odp_id']][] = $photo;
+            }
+            
+            // Merge data
+            foreach ($odps as &$odp) {
+                $odp['ports'] = $portsByOdp[$odp['id']] ?? [];
+                
+                $available = 0;
+                foreach ($odp['ports'] as $port) {
+                    if ($port['status'] === 'available') $available++;
+                }
+                $odp['available_ports'] = $available;
+                
+                $odp['photos'] = $photosByOdp[$odp['id']] ?? [];
+            }
         }
         
         sendResponse($odps);

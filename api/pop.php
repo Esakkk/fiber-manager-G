@@ -82,49 +82,59 @@ function getPOPOLTs($pop_id) {
             ORDER BY o.name
         ");
         $stmt->execute([$pop_id]);
-        $olts = $stmt->fetchAll();
+        $olts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Untuk setiap OLT, ambil data portnya
-        foreach ($olts as &$olt) {
-            // Ambil semua port untuk OLT ini
+        if (!empty($olts)) {
+            $oltIds = array_column($olts, 'id');
+            $inClause = implode(',', array_fill(0, count($oltIds), '?'));
+            
             $stmt2 = $pdo->prepare("
                 SELECT * FROM olt_ports 
-                WHERE olt_id = ? 
-                ORDER BY port_number
+                WHERE olt_id IN ($inClause) 
+                ORDER BY olt_id, port_number
             ");
-            $stmt2->execute([$olt['id']]);
-            $ports = $stmt2->fetchAll();
+            $stmt2->execute($oltIds);
+            $allPorts = $stmt2->fetchAll(PDO::FETCH_ASSOC);
             
-            // Jika tidak ada port, buat port sesuai total_ports
-            if (empty($ports)) {
-                $totalPorts = $olt['total_ports'] ?? 16;
-                $ports = [];
-                for ($i = 1; $i <= $totalPorts; $i++) {
-                    $ports[] = [
-                        'port_number' => $i,
-                        'status' => 'available',
-                        'target_odc_id' => null,
-                        'description' => null
-                    ];
+            $portsByOlt = [];
+            foreach ($allPorts as $port) {
+                $portsByOlt[$port['olt_id']][] = $port;
+            }
+            
+            foreach ($olts as &$olt) {
+                $ports = $portsByOlt[$olt['id']] ?? [];
+                
+                // Jika tidak ada port, buat port sesuai total_ports
+                if (empty($ports)) {
+                    $totalPorts = $olt['total_ports'] ?? 16;
+                    $ports = [];
+                    for ($i = 1; $i <= $totalPorts; $i++) {
+                        $ports[] = [
+                            'port_number' => $i,
+                            'status' => 'available',
+                            'target_odc_id' => null,
+                            'description' => null
+                        ];
+                    }
                 }
+                
+                $olt['ports'] = $ports;
+                
+                // Hitung statistik port
+                $usedCount = 0;
+                $availableCount = 0;
+                $maintenanceCount = 0;
+                
+                foreach ($ports as $port) {
+                    if ($port['status'] === 'used') $usedCount++;
+                    elseif ($port['status'] === 'available') $availableCount++;
+                    elseif ($port['status'] === 'maintenance') $maintenanceCount++;
+                }
+                
+                $olt['used_ports'] = $usedCount;
+                $olt['available_ports'] = $availableCount;
+                $olt['maintenance_ports'] = $maintenanceCount;
             }
-            
-            $olt['ports'] = $ports;
-            
-            // Hitung statistik port
-            $usedCount = 0;
-            $availableCount = 0;
-            $maintenanceCount = 0;
-            
-            foreach ($ports as $port) {
-                if ($port['status'] === 'used') $usedCount++;
-                elseif ($port['status'] === 'available') $availableCount++;
-                elseif ($port['status'] === 'maintenance') $maintenanceCount++;
-            }
-            
-            $olt['used_ports'] = $usedCount;
-            $olt['available_ports'] = $availableCount;
-            $olt['maintenance_ports'] = $maintenanceCount;
         }
         
         sendResponse($olts);

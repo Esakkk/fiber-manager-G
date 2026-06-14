@@ -21,7 +21,7 @@ let highlightedMarker = null;
 
 // Initialize map
 function initMap() {
-    map = L.map('map').setView([-6.966409024897329, 109.6469502011238], 13);
+    map = L.map('map', { preferCanvas: true }).setView([-6.966409024897329, 109.6469502011238], 13);
     // Google Satellite Hybrid (satelit + label jalan)
     L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         attribution: '© Google',
@@ -30,6 +30,14 @@ function initMap() {
     }).addTo(map);
 
     markersLayer = L.layerGroup().addTo(map);
+    
+    // Inisialisasi Marker Cluster untuk performa tinggi
+    if (typeof L.markerClusterGroup !== 'undefined') {
+        window.markerClusterGroup = L.markerClusterGroup({
+            disableClusteringAtZoom: 18,
+            maxClusterRadius: 50
+        }).addTo(map);
+    }
 
     // Inisialisasi dukungan Drag & Drop
     initDragAndDropSupport();
@@ -434,6 +442,9 @@ function createODPIcon(availablePorts = null, totalPorts = null) {
 
 function refreshMapMarkers() {
     markersLayer.clearLayers();
+    if (window.markerClusterGroup) {
+        window.markerClusterGroup.clearLayers();
+    }
     odpMarkers = {};
     odpLines = {};
     odcLines = {};
@@ -511,7 +522,12 @@ function refreshMapMarkers() {
     // 3. Render ODP Markers & Distribution Lines
     devices.odp.forEach(odp => {
         const icon = createODPIcon(odp.available_ports, odp.total_ports);
-        const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon }).addTo(markersLayer);
+        const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon });
+        if (window.markerClusterGroup) {
+            marker.addTo(window.markerClusterGroup);
+        } else {
+            marker.addTo(markersLayer);
+        }
         marker.bindPopup(createPopupContent(odp));
         marker.on('click', () => showDeviceInfo(odp));
         odpMarkers[odp.id] = marker;
@@ -539,7 +555,12 @@ function refreshMapMarkers() {
                             popupAnchor: [0, -12]
                         });
 
-                        const customerMarker = L.marker([cLat, cLng], { icon: customerIcon }).addTo(markersLayer);
+                        const customerMarker = L.marker([cLat, cLng], { icon: customerIcon });
+                        if (window.markerClusterGroup) {
+                            customerMarker.addTo(window.markerClusterGroup);
+                        } else {
+                            customerMarker.addTo(markersLayer);
+                        }
 
                         // Prepare path coordinates - check if custom path exists
                         let latlngs = [];
@@ -1145,24 +1166,47 @@ function highlightODP(odpId) {
     }, 8000);
 }
 
+let filteredDevicesList = [];
+let currentDeviceRenderIndex = 0;
+const DEVICES_PER_PAGE = 50;
+
 function refreshDeviceList() {
-    const container = document.getElementById('deviceList');
     const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
     const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-    const currentUser = window.currentUser;
-    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
 
     const allDevices = [
         ...devices.odc.map(d => ({ ...d, type: 'odc' })),
         ...devices.odp.map(d => ({ ...d, type: 'odp' }))
     ];
 
-    container.innerHTML = '';
+    filteredDevicesList = allDevices.filter(device => {
+        if (activeFilter !== 'all' && device.type !== activeFilter) return false;
+        if (searchTerm && !device.name.toLowerCase().includes(searchTerm) && !device.location.toLowerCase().includes(searchTerm)) return false;
+        return true;
+    });
 
-    allDevices.forEach(device => {
-        if (activeFilter !== 'all' && device.type !== activeFilter) return;
-        if (searchTerm && !device.name.toLowerCase().includes(searchTerm) && !device.location.toLowerCase().includes(searchTerm)) return;
+    currentDeviceRenderIndex = 0;
+    const container = document.getElementById('deviceList');
+    if (container) container.innerHTML = '';
+    
+    renderMoreDevices();
+}
 
+function renderMoreDevices() {
+    const container = document.getElementById('deviceList');
+    if (!container) return;
+    
+    const loadMoreBtn = document.getElementById('loadMoreDevicesBtn');
+    if (loadMoreBtn) loadMoreBtn.remove();
+
+    const currentUser = window.currentUser;
+    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+    
+    const endIndex = Math.min(currentDeviceRenderIndex + DEVICES_PER_PAGE, filteredDevicesList.length);
+    
+    for (let i = currentDeviceRenderIndex; i < endIndex; i++) {
+        const device = filteredDevicesList[i];
+        
         const div = document.createElement('div');
         div.className = `device-item ${device.type}`;
         div.onclick = () => {
@@ -1195,7 +1239,25 @@ function refreshDeviceList() {
 
         div.innerHTML = `<div class="device-header"><span class="device-name">${device.name} ${statusIndicator}</span><span class="device-type">${device.type.toUpperCase()}</span></div><div class="device-info">${infoHtml}</div><div class="device-info">${device.location}</div>${actionsHtml}`;
         container.appendChild(div);
-    });
+    }
+    
+    currentDeviceRenderIndex = endIndex;
+    
+    if (currentDeviceRenderIndex < filteredDevicesList.length) {
+        const btnContainer = document.createElement('div');
+        btnContainer.id = 'loadMoreDevicesBtn';
+        btnContainer.style.textAlign = 'center';
+        btnContainer.style.padding = '10px';
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.width = '100%';
+        btn.textContent = `Muat Lebih Banyak (${filteredDevicesList.length - currentDeviceRenderIndex} tersisa)`;
+        btn.onclick = renderMoreDevices;
+        
+        btnContainer.appendChild(btn);
+        container.appendChild(btnContainer);
+    }
 }
 
 // =============================================

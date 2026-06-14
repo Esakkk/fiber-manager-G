@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
     <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 
+    <!-- Leaflet MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -74,6 +79,10 @@
                         <button class="filter-btn active" data-filter="all">Semua</button>
                         <button class="filter-btn" data-filter="odc">ODC</button>
                         <button class="filter-btn" data-filter="odp">ODP</button>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #4a5568;">
+                        <label for="toggleClustering" style="cursor: pointer;"><i class="fas fa-layer-group"></i> Kelompokkan Marker (Cluster)</label>
+                        <input type="checkbox" id="toggleClustering" checked onchange="toggleMapClustering()" style="cursor: pointer;">
                     </div>
                 </div>
 

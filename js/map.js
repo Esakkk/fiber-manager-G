@@ -17,6 +17,97 @@ let highlightedMarker = null;
 let isClusteringEnabled = true;
 let isLinesEnabled = true;
 let baseTileLayer = null;
+let selectedDeviceLines = [];
+
+function highlightLine(line) {
+    if (!line) return;
+    const style = line.originalStyle || { color: '#3182ce', weight: 2, opacity: 0.7 };
+    line.setStyle({
+        color: style.color,
+        weight: (style.weight || 2) + 3,
+        opacity: 1.0,
+        dashArray: null
+    });
+    if (typeof line.bringToFront === 'function') {
+        line.bringToFront();
+    }
+}
+
+function resetLineStyle(line) {
+    if (!line) return;
+    if (selectedDeviceLines.includes(line)) return;
+    const style = line.originalStyle || { color: '#3182ce', weight: 2, opacity: 0.7, dashArray: null };
+    line.setStyle({
+        color: style.color,
+        weight: style.weight,
+        opacity: style.opacity,
+        dashArray: style.dashArray
+    });
+}
+
+function clearSelectedDeviceLines() {
+    selectedDeviceLines.forEach(line => {
+        const style = line.originalStyle || { color: '#3182ce', weight: 2, opacity: 0.7, dashArray: null };
+        line.setStyle({
+            color: style.color,
+            weight: style.weight,
+            opacity: style.opacity,
+            dashArray: style.dashArray
+        });
+    });
+    selectedDeviceLines = [];
+}
+
+function highlightLinesForDevice(device) {
+    clearSelectedDeviceLines();
+    if (!device) return;
+    
+    const isODC = devices.odc.some(d => d.id == device.id);
+    const isPOP = devices.pop.some(p => p.id == device.id);
+    const isODP = devices.odp.some(d => d.id == device.id);
+    
+    if (isPOP) {
+        Object.values(odcLines).forEach(line => {
+            const odc = devices.odc.find(o => o.id == line.odcId);
+            if (line.sourceId == device.id || (odc && odc.source_id == device.id)) {
+                selectedDeviceLines.push(line);
+            }
+        });
+    } else if (isODC) {
+        if (odcLines[device.id]) {
+            selectedDeviceLines.push(odcLines[device.id]);
+        }
+        Object.values(odpLines).forEach(line => {
+            const odp = devices.odp.find(o => o.id == line.odpId);
+            if (line.odcId == device.id || (odp && odp.source_id == device.id)) {
+                selectedDeviceLines.push(line);
+            }
+        });
+    } else if (isODP) {
+        if (odpLines[device.id]) {
+            selectedDeviceLines.push(odpLines[device.id]);
+        }
+        Object.values(portLines).forEach(line => {
+            if (line.odpId == device.id) {
+                selectedDeviceLines.push(line);
+            }
+        });
+    } else if (device.port && device.odp) {
+        const portKey = `${device.odp.id}_${device.port.port_number}`;
+        if (portLines[portKey]) {
+            selectedDeviceLines.push(portLines[portKey]);
+        }
+    }
+    
+    selectedDeviceLines.forEach(line => {
+        highlightLine(line);
+    });
+}
+
+function addLineHoverHandlers(line) {
+    line.on('mouseover', () => highlightLine(line));
+    line.on('mouseout', () => resetLineStyle(line));
+}
 
 function toggleMapType() {
     const cb = document.getElementById('toggleMapType');
@@ -75,6 +166,10 @@ function initMap() {
 
     // Inisialisasi dukungan Drag & Drop
     initDragAndDropSupport();
+
+    map.on('click', function () {
+        clearSelectedDeviceLines();
+    });
 }
 
 // Inisialisasi dukungan Drag & Drop dari Pojok Peta
@@ -429,13 +524,20 @@ function drawFeederLine(odc, sourceLatLng) {
         lineJoin: 'round'
     }).addTo(markersLayer);
 
+    line.originalStyle = { color: '#9b59b6', weight: 4, opacity: 0.9, dashArray: null };
+    line.lineType = 'feeder';
+    line.odcId = odc.id;
+    line.sourceId = odc.source_id;
+    line.oltId = odc.olt_id;
+    
+    addLineHoverHandlers(line);
+
     let distance = 0;
     for (let i = 0; i < latlngs.length - 1; i++) {
         distance += map.distance(latlngs[i], latlngs[i + 1]);
     }
 
     line.bindTooltip(`Kabel Feeder (POP → ODC ${odc.name}): ${Math.round(distance)} Meter`, { sticky: true });
-    line.odcId = odc.id;
     odcLines[odc.id] = line;
 }
 
@@ -492,6 +594,9 @@ function refreshMapMarkers() {
                 return; // Lewati koordinat tidak valid
             }
             const marker = L.marker([lat, lng], { icon: createPOPIcon() }).addTo(markersLayer);
+            marker.on('click', () => {
+                highlightLinesForDevice(pop);
+            });
             marker.bindPopup(`
                 <div style="min-width: 200px;">
                     <h4 style="margin: 0 0 10px 0; color: #9b59b6;"><i class="fas fa-building"></i> ${pop.name}</h4>
@@ -654,10 +759,14 @@ function refreshMapMarkers() {
                             line.bindTooltip(`Kabel Drop: ${port.target || 'Pelanggan'} (Port ${port.port_number}) - ${Math.round(distance)}m`, { sticky: true });
 
                             // Store line reference for editing
+                            line.originalStyle = { color: '#3182ce', weight: 2, opacity: 0.7, dashArray: '4, 4' };
+                            line.lineType = 'drop';
                             line.portKey = portKey;
                             line.odpId = odp.id;
                             line.portNumber = port.port_number;
                             portLines[portKey] = line;
+
+                            addLineHoverHandlers(line);
                         }
                     }
                 }
@@ -681,13 +790,19 @@ function drawConnectionLine(odp, source) {
 
     const line = L.polyline(latlngs, { color: '#48bb78', weight: 3, opacity: 0.8, dashArray: '5, 5' }).addTo(markersLayer);
 
+    line.originalStyle = { color: '#48bb78', weight: 3, opacity: 0.8, dashArray: '5, 5' };
+    line.lineType = 'connection';
+    line.odpId = odp.id;
+    line.odcId = odp.source_id;
+
+    addLineHoverHandlers(line);
+
     let distance = 0;
     for (let i = 0; i < latlngs.length - 1; i++) {
         distance += map.distance(latlngs[i], latlngs[i + 1]);
     }
 
     line.bindTooltip(`Jarak Kabel: ${Math.round(distance)} Meter`, { sticky: true });
-    line.odpId = odp.id;
     odpLines[odp.id] = line;
 }
 
@@ -917,6 +1032,7 @@ function createPopupContent(device) {
 // =============================================
 
 async function showDeviceInfo(device) {
+    highlightLinesForDevice(device);
     const panel = document.getElementById('infoPanel');
     const title = document.getElementById('infoTitle');
     const content = document.getElementById('infoContent');
@@ -1045,6 +1161,7 @@ async function showDeviceInfo(device) {
 }
 
 function showCustomerInfo(customerData) {
+    highlightLinesForDevice(customerData);
     const panel = document.getElementById('infoPanel');
     const title = document.getElementById('infoTitle');
     const content = document.getElementById('infoContent');

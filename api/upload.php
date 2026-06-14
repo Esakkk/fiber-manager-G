@@ -1,13 +1,15 @@
 <?php
 require_once 'config.php';
 
-// Proteksi: harus login
+// Proteksi: harus login untuk semua method
 requireAuth();
 
-// Upload hanya untuk admin dan operator
-checkRole(['admin', 'operator']);
-
 $method = $_SERVER['REQUEST_METHOD'];
+
+// POST dan DELETE (tambah/hapus foto) hanya untuk admin dan operator. GET (lihat foto) bisa untuk viewer.
+if ($method === 'POST' || $method === 'DELETE') {
+    checkRole(['admin', 'operator']);
+}
 
 switch($method) {
     case 'POST':

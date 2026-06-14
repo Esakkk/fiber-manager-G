@@ -342,6 +342,21 @@ function initMap() {
     map.on('click', function () {
         clearSelectedDeviceLines();
     });
+
+    const updateTooltipVisibility = () => {
+        const currentZoom = map.getZoom();
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            if (currentZoom >= 16) {
+                mapContainer.classList.remove('hide-marker-tooltip-labels');
+            } else {
+                mapContainer.classList.add('hide-marker-tooltip-labels');
+            }
+        }
+    };
+
+    map.on('zoomend', updateTooltipVisibility);
+    setTimeout(updateTooltipVisibility, 500);
 }
 
 // Inisialisasi dukungan Drag & Drop dari Pojok Peta
@@ -769,6 +784,12 @@ function refreshMapMarkers() {
             marker.on('click', () => {
                 highlightLinesForDevice(pop);
             });
+            marker.bindTooltip(pop.name, {
+                permanent: true,
+                direction: 'top',
+                className: 'marker-tooltip-label',
+                offset: [0, -20]
+            });
             marker.bindPopup(`
                 <div style="min-width: 200px;">
                     <h4 style="margin: 0 0 10px 0; color: #9b59b6;"><i class="fas fa-building"></i> ${pop.name}</h4>
@@ -785,6 +806,12 @@ function refreshMapMarkers() {
     // 2. Render ODC Markers & Feeder Lines
     devices.odc.forEach(odc => {
         const marker = L.marker([parseFloat(odc.lat), parseFloat(odc.lng)], { icon: createODCIcon() }).addTo(markersLayer);
+        marker.bindTooltip(odc.name, {
+            permanent: true,
+            direction: 'top',
+            className: 'marker-tooltip-label',
+            offset: [0, -40]
+        });
         marker.bindPopup(createPopupContent(odc));
         marker.on('click', (e) => {
             if (window.mapSelectionCallback && typeof window.mapSelectionCallback === 'function') {
@@ -834,6 +861,12 @@ function refreshMapMarkers() {
     devices.odp.forEach(odp => {
         const icon = createODPIcon(odp.available_ports, odp.total_ports);
         const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon });
+        marker.bindTooltip(odp.name, {
+            permanent: true,
+            direction: 'top',
+            className: 'marker-tooltip-label',
+            offset: [0, -40]
+        });
         if (window.markerClusterGroup && isClusteringEnabled) {
             marker.addTo(window.markerClusterGroup);
         } else {
@@ -867,6 +900,12 @@ function refreshMapMarkers() {
                         });
 
                         const customerMarker = L.marker([cLat, cLng], { icon: customerIcon });
+                        customerMarker.bindTooltip(port.target || 'Pelanggan', {
+                            permanent: true,
+                            direction: 'top',
+                            className: 'marker-tooltip-label',
+                            offset: [0, -15]
+                        });
                         if (window.markerClusterGroup && isClusteringEnabled) {
                             customerMarker.addTo(window.markerClusterGroup);
                         } else {

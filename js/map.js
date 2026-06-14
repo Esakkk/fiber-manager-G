@@ -104,9 +104,181 @@ function highlightLinesForDevice(device) {
     });
 }
 
+function getDistanceToPolyline(clickLatLng, polyline) {
+    if (!map) return Infinity;
+    const clickPoint = map.latLngToLayerPoint(clickLatLng);
+    const latlngs = polyline.getLatLngs();
+    if (!latlngs || latlngs.length === 0) return Infinity;
+    
+    let minDistance = Infinity;
+    const points = latlngs.map(ll => map.latLngToLayerPoint(ll));
+    
+    for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const dist = getSqSegDist(clickPoint, p1, p2);
+        if (dist < minDistance) {
+            minDistance = dist;
+        }
+    }
+    
+    return Math.sqrt(minDistance);
+}
+
+function getSqSegDist(p, v, w) {
+    const l2 = distSq(v, w);
+    if (l2 === 0) return distSq(p, v);
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    return distSq(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) });
+}
+
+function distSq(v, w) {
+    return (v.x - w.x) * (v.x - w.x) + (v.y - w.y) * (v.y - w.y);
+}
+
+function handleLineClick(e) {
+    const clickLatLng = e.latlng;
+    
+    const allLines = [
+        ...Object.values(odcLines),
+        ...Object.values(odpLines),
+        ...Object.values(portLines)
+    ];
+    
+    const tolerance = 15; // pixels
+    const nearbyLines = [];
+    
+    allLines.forEach(line => {
+        if (!map.hasLayer(line)) return;
+        const dist = getDistanceToPolyline(clickLatLng, line);
+        if (dist <= tolerance) {
+            nearbyLines.push({ line, dist });
+        }
+    });
+    
+    nearbyLines.sort((a, b) => a.dist - b.dist);
+    
+    if (nearbyLines.length === 0) return;
+    
+    if (nearbyLines.length === 1) {
+        showLineDetails(nearbyLines[0].line);
+        return;
+    }
+    
+    let popupContent = `<div style="min-width: 250px; font-family: sans-serif;">
+        <h5 style="margin: 0 0 8px 0; font-size: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; color: #4a5568;"><i class="fas fa-project-diagram"></i> Kabel di Titik Ini (${nearbyLines.length})</h5>
+        <ul style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">`;
+        
+    nearbyLines.forEach((item, index) => {
+        const line = item.line;
+        let label = 'Kabel';
+        let iconClass = 'fa-route';
+        let iconColor = '#a0aec0';
+        let onClickAction = '';
+        
+        if (line.lineType === 'feeder') {
+            const odc = devices.odc.find(o => o.id == line.odcId);
+            label = `Feeder: POP → ODC ${odc ? odc.name : line.odcId}`;
+            iconColor = '#9b59b6';
+            if (odc) onClickAction = `showDeviceInfo(${JSON.stringify(odc).replace(/"/g, '&quot;')})`;
+        } else if (line.lineType === 'connection') {
+            const odp = devices.odp.find(o => o.id == line.odpId);
+            label = `Distribusi: ODC → ODP ${odp ? odp.name : line.odpId}`;
+            iconColor = '#48bb78';
+            if (odp) onClickAction = `showDeviceInfo(${JSON.stringify(odp).replace(/"/g, '&quot;')})`;
+        } else if (line.lineType === 'drop') {
+            const odp = devices.odp.find(o => o.id == line.odpId);
+            const port = odp && odp.ports ? odp.ports.find(p => p.port_number == line.portNumber) : null;
+            let distance = 0;
+            if (line.getLatLngs) {
+                const latlngs = line.getLatLngs();
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    distance += map.distance(latlngs[i], latlngs[i + 1]);
+                }
+            }
+            label = `Drop: ODP ${odp ? odp.name : line.odpId} → Port ${line.portNumber} (${port && port.target ? port.target : 'Pelanggan'})`;
+            iconColor = '#3182ce';
+            if (odp && port) {
+                const customerData = {
+                    odp: odp,
+                    port: port,
+                    distance: distance,
+                    customerLat: parseFloat(port.lat),
+                    customerLng: parseFloat(port.lng)
+                };
+                onClickAction = `showCustomerInfo(${JSON.stringify(customerData).replace(/"/g, '&quot;')})`;
+            }
+        }
+        
+        popupContent += `
+            <li 
+                onmouseover="window.highlightLineByIndex(${index})" 
+                onmouseout="window.resetLineByIndex(${index})"
+                onclick="${onClickAction}; map.closePopup();"
+                style="padding: 6px 8px; margin-bottom: 4px; background: #f7fafc; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; border: 1px solid #e2e8f0; font-size: 12px;"
+            >
+                <i class="fas ${iconClass}" style="color: ${iconColor};"></i>
+                <span style="flex: 1; font-weight: 500; color: #2d3748; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
+                <i class="fas fa-chevron-right" style="font-size: 10px; color: #cbd5e0;"></i>
+            </li>`;
+    });
+    
+    popupContent += `</ul></div>`;
+    
+    window.activeNearbyLines = nearbyLines.map(item => item.line);
+    window.highlightLineByIndex = function(idx) {
+        if (window.activeNearbyLines && window.activeNearbyLines[idx]) {
+            highlightLine(window.activeNearbyLines[idx]);
+        }
+    };
+    window.resetLineByIndex = function(idx) {
+        if (window.activeNearbyLines && window.activeNearbyLines[idx]) {
+            resetLineStyle(window.activeNearbyLines[idx]);
+        }
+    };
+    
+    L.popup()
+        .setLatLng(clickLatLng)
+        .setContent(popupContent)
+        .openOn(map);
+}
+
+function showLineDetails(line) {
+    if (line.lineType === 'feeder') {
+        const odc = devices.odc.find(o => o.id == line.odcId);
+        if (odc) showDeviceInfo(odc);
+    } else if (line.lineType === 'connection') {
+        const odp = devices.odp.find(o => o.id == line.odpId);
+        if (odp) showDeviceInfo(odp);
+    } else if (line.lineType === 'drop') {
+        const odp = devices.odp.find(o => o.id == line.odpId);
+        const port = odp && odp.ports ? odp.ports.find(p => p.port_number == line.portNumber) : null;
+        if (odp && port) {
+            const customerData = {
+                odp: odp,
+                port: port,
+                distance: 0,
+                customerLat: parseFloat(port.lat),
+                customerLng: parseFloat(port.lng)
+            };
+            if (line.getLatLngs) {
+                const latlngs = line.getLatLngs();
+                let distance = 0;
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    distance += map.distance(latlngs[i], latlngs[i + 1]);
+                }
+                customerData.distance = distance;
+            }
+            showCustomerInfo(customerData);
+        }
+    }
+}
+
 function addLineHoverHandlers(line) {
     line.on('mouseover', () => highlightLine(line));
     line.on('mouseout', () => resetLineStyle(line));
+    line.on('click', handleLineClick);
 }
 
 function toggleMapType() {

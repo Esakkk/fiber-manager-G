@@ -1396,9 +1396,7 @@ function showCustomerInfo(customerData) {
         <p style="margin: 4px 0; padding: 8px; background: #f7fafc; border-left: 3px solid #3182ce; border-radius: 3px;">
             <strong>ODP:</strong> ${odp.name}<br>
             <strong>Port:</strong> ${port.port_number}<br>
-            <strong>Lokasi ODP:</strong> ${odp.location}<br>
-            <strong>Dibuat:</strong> ${customerData.created_at ? new Date(customerData.created_at).toLocaleString() : ''}<br>
-            <strong>Terakhir diedit:</strong> ${customerData.updated_at ? new Date(customerData.updated_at).toLocaleString() : ''}
+            <strong>Lokasi ODP:</strong> ${odp.location}
         </p>
         <hr>
         <h4 style="margin: 10px 0 8px 0;"><i class="fas fa-map-pin"></i> Informasi Lokasi</h4>

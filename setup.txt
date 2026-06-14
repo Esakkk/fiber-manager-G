@@ -1,0 +1,94 @@
+========================================================================
+                 PANDUAN DEPLOYMENT - FIBER MANAGER APP
+========================================================================
+
+Dokumen ini berisi panduan langkah demi langkah untuk melakukan instalasi
+dan deployment aplikasi Fiber Manager ke server produksi atau lokal (staging).
+
+------------------------------------------------------------------------
+1. SPESIFIKASI & KEBUTUHAN SISTEM
+------------------------------------------------------------------------
+- Web Server  : Apache / Nginx (Rekomendasi: Apache dengan Module rewrite aktif)
+- PHP Version : PHP >= 7.4 (Rekomendasi PHP 8.x) dengan ekstensi aktif:
+                * pdo_mysql
+                * fileinfo (untuk validasi upload foto)
+                * session
+                * json
+- Database    : MySQL atau MariaDB >= 10.4
+
+------------------------------------------------------------------------
+2. PERSIAPAN DATABASE
+------------------------------------------------------------------------
+1. Buka database manager Anda (phpMyAdmin, DBeaver, Navicat, atau terminal).
+2. Buat database baru dengan nama `fiber_manager`.
+3. Import file database yang sudah disediakan di root folder:
+   - File sql: `fiber_manager.sql` atau `fiber_manager (2).sql`
+4. Pastikan seluruh tabel (users, pop, olt, odc, odp, odp_ports, dll.) 
+   berhasil dibuat beserta relasi foreign key-nya.
+
+------------------------------------------------------------------------
+3. KONFIGURASI APLIKASI
+------------------------------------------------------------------------
+Buka file konfigurasi backend di lokasi `api/config.php` dan sesuaikan:
+
+1. Konfigurasi Database (Baris 70-73):
+   --------------------------------------------------
+   $host = 'localhost';          // Host database
+   $dbname = 'fiber_manager';    // Nama database
+   $username = 'root';           // Username database
+   $password = '';               // Password database
+   --------------------------------------------------
+
+2. Konfigurasi CORS (Cross-Origin Resource Sharing) (Baris 20-25):
+   Jika Anda mendeploy frontend dan backend di server berbeda atau menggunakan
+   domain tertentu, tambahkan domain Anda ke dalam array `$allowed_origins`:
+   --------------------------------------------------
+   $allowed_origins = [
+       'http://localhost',
+       'https://domain-anda.com',
+       'https://subdomain.domain-anda.com'
+   ];
+   --------------------------------------------------
+
+------------------------------------------------------------------------
+4. PENGATURAN DIREKTORI UPLOAD (PENTING!)
+------------------------------------------------------------------------
+Aplikasi membutuhkan folder penyimpanan foto perangkat/pelanggan yang dapat
+ditulisi oleh server.
+
+1. Pastikan folder berikut ada pada root project:
+   - `uploads/`
+   - `uploads/pop/`
+   - `uploads/olt/`
+   - `uploads/odc/`
+   - `uploads/odp/`
+   - `uploads/port/`
+
+2. Untuk deployment di server Linux (Ubuntu/Debian/CentOS):
+   Berikan izin akses tulis (write permission) agar web server (seperti www-data)
+   dapat mengunggah berkas. Jalankan perintah berikut di terminal server:
+   --------------------------------------------------
+   sudo chown -R www-data:www-data /path/ke/folder/fiber-manager/uploads
+   sudo chmod -R 775 /path/ke/folder/fiber-manager/uploads
+   --------------------------------------------------
+
+------------------------------------------------------------------------
+5. AKUN LOGIN BAWAAN (DEFAULT CREDENTIALS)
+------------------------------------------------------------------------
+Berikut adalah daftar akun default hasil import database untuk pengujian:
+
+1. Akun Administrator (Akses Penuh):
+   - Username: `admin`
+   - Password: `password`
+
+2. Akun Operator Lapangan (Manajemen Data & Jalur):
+   - Username: `operator`
+   - Password: `password`
+
+3. Akun Viewer (Hanya Lihat Peta & Foto Pelanggan):
+   - Username: `viewer`
+   - Password: `password` (atau `viewer`)
+
+*CATATAN KEAMANAN: Segera ganti password default setelah login pertama kali 
+melalui panel manajemen user demi menjaga keamanan data jaringan Anda.*
+========================================================================

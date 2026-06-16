@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 14 Jun 2026 pada 09.31
+-- Waktu pembuatan: 16 Jun 2026 pada 11.38
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.0.30
 
@@ -63,7 +63,55 @@ INSERT INTO `login_logs` (`id`, `user_id`, `login_time`, `ip_address`, `user_age
 (20, 1, '2026-06-14 01:01:24', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
 (21, 1, '2026-06-14 01:40:23', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
 (22, 3, '2026-06-14 03:06:47', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
-(23, 1, '2026-06-14 04:56:02', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success');
+(23, 1, '2026-06-14 04:56:02', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(24, 3, '2026-06-14 07:36:35', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(25, 1, '2026-06-14 07:55:31', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(26, 1, '2026-06-14 08:40:36', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(27, 1, '2026-06-14 12:26:27', '192.168.101.3', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(28, 1, '2026-06-14 12:45:53', '192.168.101.3', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(29, 1, '2026-06-15 03:36:27', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(30, 1, '2026-06-15 03:51:58', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(31, 1, '2026-06-15 08:27:32', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(32, 3, '2026-06-15 08:28:15', '::1', 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(33, 3, '2026-06-15 09:51:10', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(34, 1, '2026-06-16 04:30:37', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(35, 1, '2026-06-16 04:30:40', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(36, 1, '2026-06-16 04:30:41', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(37, 1, '2026-06-16 04:30:41', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(38, 1, '2026-06-16 04:30:41', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(39, 1, '2026-06-16 04:30:42', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(40, 1, '2026-06-16 04:30:42', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(41, 1, '2026-06-16 04:30:42', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(42, 1, '2026-06-16 04:30:42', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(43, 1, '2026-06-16 04:30:42', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(44, 1, '2026-06-16 04:30:43', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(45, 1, '2026-06-16 04:30:43', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(46, 1, '2026-06-16 04:30:43', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(47, 1, '2026-06-16 04:30:43', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(48, 1, '2026-06-16 04:30:43', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(49, 1, '2026-06-16 04:30:44', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(50, 1, '2026-06-16 04:30:44', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(51, 1, '2026-06-16 04:30:44', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(52, 1, '2026-06-16 04:30:44', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(53, 1, '2026-06-16 04:30:44', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(54, 1, '2026-06-16 04:30:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(55, 1, '2026-06-16 04:30:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(56, 1, '2026-06-16 04:30:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(57, 1, '2026-06-16 04:30:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(58, 1, '2026-06-16 04:30:45', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(59, 1, '2026-06-16 04:30:46', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(60, 1, '2026-06-16 04:30:46', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(61, 1, '2026-06-16 04:30:46', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(62, 1, '2026-06-16 04:30:46', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(63, 1, '2026-06-16 04:34:46', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(64, 1, '2026-06-16 04:34:53', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(65, 1, '2026-06-16 04:34:56', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(66, 3, '2026-06-16 04:45:37', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(67, 1, '2026-06-16 06:56:05', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'failed'),
+(68, 1, '2026-06-16 06:56:10', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'failed'),
+(69, 1, '2026-06-16 06:56:16', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(70, 1, '2026-06-16 07:43:59', '192.168.101.23', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(71, 3, '2026-06-16 08:05:32', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success');
 
 -- --------------------------------------------------------
 
@@ -95,9 +143,8 @@ CREATE TABLE `odc` (
 --
 
 INSERT INTO `odc` (`id`, `name`, `lat`, `lng`, `location`, `capacity`, `used_ports`, `description`, `source_type`, `source_id`, `pon_id`, `pon_port_number`, `olt_id`, `created_at`, `updated_at`, `path_coordinates`) VALUES
-(1, 'MS 1', -6.96620894, 109.64642968, 'Gembong1', 8, 5, 'odc gembong 1', 'pon', 3, 3, 2, 3, '2026-05-22 05:34:38', '2026-06-14 02:38:19', '[[-6.9653655,109.64786202],[-6.965221154071955,109.64734867215158],[-6.965129300774344,109.64653730392457],[-6.96620894,109.64642968]]'),
-(8, 'MS 2', -6.96838481, 109.64623421, 'gembong', 8, 0, '', 'pon', 3, 3, 1, 3, '2026-05-29 09:06:02', '2026-06-06 09:36:40', '[[-6.9653655,109.64786202],[-6.965221154071955,109.64734867215158],[-6.965129300774344,109.64653730392457],[-6.96562321624204,109.64648806795151],[-6.96620894,109.64642968],[-6.9666788235604695,109.64637771248819],[-6.96838481,109.64623421]]'),
-(11, 'MS 1', -6.96222726, 109.64476839, 'Gembong', 16, 0, '', 'pon', 3, 9, 1, 3, '2026-05-31 11:12:00', '2026-06-14 02:38:19', '[[-6.9653655,109.64786202],[-6.965221154071955,109.64734867215158],[-6.965129300774344,109.64653730392457],[-6.96423460539801,109.64667382557923],[-6.961700098126731,109.6470844745636],[-6.96169112,109.64694212],[-6.961724045182384,109.64688164653437],[-6.961843869548597,109.64586675167084],[-6.962016927683166,109.6450835466385],[-6.962114106453814,109.64493669569494],[-6.96222726,109.64476839]]');
+(12, 'MS 1', -6.96172473, 109.64688526, 'lampu merah podo', 8, 8, '', 'pon', 5, 10, 1, 6, '2026-06-14 12:48:50', '2026-06-15 09:00:31', '[[-6.9617693,109.6469443],[-6.961687118760083,109.64694131165744],[-6.96172473,109.64688526]]'),
+(13, 'MS2 Pekajangan', -6.95417866, 109.64993834, 'pekajangan', 16, 0, 'pekajangan', 'pon', 5, 10, 2, 6, '2026-06-16 08:02:16', '2026-06-16 08:03:33', '[[-6.9617693,109.6469443],[-6.961489765782033,109.64697718620302],[-6.961532364745541,109.64712738990785],[-6.960802856961672,109.6474036574364],[-6.95964203201878,109.64829415082933],[-6.958292170046093,109.64906930923463],[-6.957674480432785,109.64927315711977],[-6.957184588092675,109.64944481849672],[-6.955895955801034,109.65012073516847],[-6.955203713853808,109.65035676956178],[-6.954745768620296,109.65024948120119],[-6.95417866,109.64993834]]');
 
 -- --------------------------------------------------------
 
@@ -118,11 +165,14 @@ CREATE TABLE `odc_odp_connections` (
 --
 
 INSERT INTO `odc_odp_connections` (`id`, `odc_id`, `odp_id`, `port_number`, `created_at`) VALUES
-(25, 1, 4, 3, '2026-06-14 02:10:03'),
-(26, 1, 5, 4, '2026-06-14 02:10:11'),
-(27, 1, 7, 5, '2026-06-14 02:10:15'),
-(28, 1, 2, 1, '2026-06-14 02:10:26'),
-(30, 1, 3, 2, '2026-06-14 02:38:19');
+(32, 12, 11, 1, '2026-06-14 12:50:28'),
+(33, 12, 13, 2, '2026-06-14 12:51:23'),
+(43, 12, 14, 3, '2026-06-15 04:09:22'),
+(44, 12, 15, 4, '2026-06-15 04:13:12'),
+(45, 12, 16, 5, '2026-06-15 04:13:31'),
+(46, 12, 18, 6, '2026-06-15 04:13:39'),
+(47, 12, 19, 7, '2026-06-15 04:13:45'),
+(48, 12, 20, 8, '2026-06-15 04:13:51');
 
 -- --------------------------------------------------------
 
@@ -145,7 +195,8 @@ CREATE TABLE `odc_photos` (
 --
 
 INSERT INTO `odc_photos` (`id`, `odc_id`, `filename`, `original_name`, `file_size`, `is_primary`, `created_at`) VALUES
-(1, 1, 'odc_1_1779428081_6a0feaf10a428.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 0, '2026-05-22 05:34:41');
+(2, 12, 'odc_12_1781441337_140db83dec1c4999.jpg', '44359.jpg', 5040979, 1, '2026-06-14 12:48:57'),
+(3, 12, 'odc_12_1781441365_08871acb4f2094ca.jpg', '44359.jpg', 5040979, 0, '2026-06-14 12:49:25');
 
 -- --------------------------------------------------------
 
@@ -175,12 +226,14 @@ CREATE TABLE `odp` (
 --
 
 INSERT INTO `odp` (`id`, `name`, `source_id`, `port_number_in_odc`, `source_type`, `lat`, `lng`, `path_coordinates`, `location`, `total_ports`, `available_ports`, `description`, `created_at`, `updated_at`) VALUES
-(2, 'ODP 1', 1, 1, 'odc', -6.96634459, 109.64808979, '[[-6.96634459,109.64808979],[-6.966354342730768,109.64805576950313],[-6.966276800099248,109.64784353971483],[-6.966259494445827,109.6476222574711],[-6.966298099364121,109.64737348258497],[-6.966312742608155,109.64726351201534],[-6.966308748996194,109.64713945984842],[-6.96620894,109.64642968]]', 'gembong', 8, 8, 'trest', '2026-05-22 05:56:34', '2026-06-01 03:46:18'),
-(3, 'ODP 2', 1, 2, 'odc', -6.96695389, 109.64733756, '[[-6.96695389,109.64733756],[-6.966737396486303,109.64668080210689],[-6.9666788235604695,109.64637771248819],[-6.96620894,109.64642968]]', 'gembong', 8, 6, '', '2026-05-22 06:01:10', '2026-06-14 02:38:19'),
-(4, 'ODP 3', 1, 3, 'odc', -6.96535633, 109.64782979, '[[-6.96535633,109.64782979],[-6.965221154071955,109.64734867215158],[-6.965129300774344,109.64653730392457],[-6.96620894,109.64642968]]', 'test', 8, 8, '', '2026-05-22 06:02:23', '2026-06-03 09:56:29'),
-(5, 'ODP 4', 1, 4, 'odc', -6.96573045, 109.64529304, '[[-6.96573045,109.64529304],[-6.96575496780773,109.64549928903583],[-6.965733668518177,109.64574471116067],[-6.9656924011419505,109.6460182964802],[-6.965632496879667,109.64619532227518],[-6.965625175247077,109.64636564254761],[-6.96562321624204,109.64648806795151],[-6.96620894,109.64642968]]', 'gembong', 8, 8, '', '2026-05-22 06:04:08', '2026-06-03 09:52:58'),
-(7, 'ODP 5', 1, 5, 'odc', -6.96658435, 109.64505886, '[[-6.96658435,109.64505886],[-6.966674829951625,109.64550733566286],[-6.966782657378539,109.64626237750056],[-6.966787982189105,109.64637100696565],[-6.9666788235604695,109.64637771248819],[-6.96620894,109.64642968]]', 'gembong', 8, 5, '', '2026-05-22 06:06:06', '2026-06-14 01:01:46'),
-(10, 'odp10', 11, 1, 'odc', -6.96169112, 109.64694212, '[[-6.96169112,109.64694212],[-6.961724045182384,109.64688164653437],[-6.9617394372669255,109.64675127784328],[-6.961776386792686,109.64643832077925],[-6.961843869548597,109.64586675167084],[-6.962016927683166,109.6450835466385],[-6.9621220764552225,109.64492484103795],[-6.96222726,109.64476839]]', 'lampu merah podo', 8, 8, '', '2026-06-06 09:42:47', '2026-06-06 10:05:04');
+(11, 'ODP 1', 12, 1, 'odc', -6.96172170, 109.64689819, NULL, 'lampu merah podo', 8, 8, '', '2026-06-14 12:50:00', '2026-06-14 12:50:28'),
+(13, 'ODP 2', 12, 2, 'odc', -6.96177997, 109.64624079, NULL, 'podo', 8, 8, '', '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(14, 'ODP 3', 12, 3, 'odc', -6.96204417, 109.64466725, '[[-6.96204417,109.64466725],[-6.961813763648869,109.6459971646048],[-6.96172473,109.64688526]]', '', 8, 8, '', '2026-06-14 12:51:43', '2026-06-14 12:55:35'),
+(15, 'ODP 4', 12, 4, 'odc', -6.96339526, 109.64353172, '[[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.961824560574975,109.64597521453842],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', 'test', 8, 8, '', '2026-06-14 12:52:06', '2026-06-15 04:13:12'),
+(16, 'ODP 5', 12, 5, 'odc', -6.96528741, 109.64236491, '[[-6.96528741,109.64236491],[-6.964405123421234,109.64286804199219],[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', 'test', 8, 8, '', '2026-06-14 12:52:22', '2026-06-15 04:13:31'),
+(18, 'ODP6', 12, 6, 'odc', -6.96819148, 109.64149213, '[[-6.96819148,109.64149213],[-6.966290112139906,109.64237451553346],[-6.96528741,109.64236491],[-6.9643192048063645,109.64292450740139],[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.961803274211552,109.64610199325647],[-6.96172473,109.64688526]]', '', 8, 7, 'test', '2026-06-14 12:52:49', '2026-06-16 04:48:30'),
+(19, 'ODP 7', 12, 7, 'odc', -6.96153298, 109.64101453, '[[-6.96153298,109.64101453],[-6.961618177081426,109.64102822852142],[-6.961756214318074,109.64197226880643],[-6.961965112950755,109.64335795552861],[-6.962080211635297,109.64428460385963],[-6.96204417,109.64466725],[-6.961813763648869,109.6459971646048],[-6.96172473,109.64688526]]', '', 8, 8, 'test', '2026-06-14 12:54:29', '2026-06-15 04:13:45'),
+(20, 'ODP 8', 12, 8, 'odc', -6.95970081, 109.64134963, '[[-6.95970081,109.64134963],[-6.961618177081426,109.64102822852142],[-6.962080211635297,109.64428460385963],[-6.96204417,109.64466725],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', '', 8, 8, 'test', '2026-06-14 12:54:46', '2026-06-15 04:13:51');
 
 -- --------------------------------------------------------
 
@@ -197,16 +250,6 @@ CREATE TABLE `odp_photos` (
   `is_primary` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data untuk tabel `odp_photos`
---
-
-INSERT INTO `odp_photos` (`id`, `odp_id`, `filename`, `original_name`, `file_size`, `is_primary`, `created_at`) VALUES
-(2, 7, 'odp_7_1779450295_9b7c73633784af36.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 0, '2026-05-22 11:44:55'),
-(3, 3, 'odp_3_1780023201_90b7ae95fd1f6cdd.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 0, '2026-05-29 02:53:21'),
-(4, 3, 'odp_3_1780023411_e777c0c15179551a.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 0, '2026-05-29 02:56:51'),
-(5, 7, 'odp_7_1780907470_1eb9739db5717b0e.jpg', 'photo_2026-06-08_15-26-05.jpg', 183017, 0, '2026-06-08 08:31:10');
 
 -- --------------------------------------------------------
 
@@ -238,54 +281,70 @@ CREATE TABLE `odp_ports` (
 --
 
 INSERT INTO `odp_ports` (`id`, `odp_id`, `port_number`, `status`, `target`, `connection_type`, `target_port`, `lat`, `lng`, `onu_number`, `modem_type`, `description`, `has_photo`, `path_coordinates`, `created_at`, `updated_at`) VALUES
-(17, 2, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(18, 2, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(19, 2, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(20, 2, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(21, 2, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(22, 2, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(23, 2, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(24, 2, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 05:56:34', '2026-05-22 05:56:34'),
-(25, 3, 1, 'used', 'pelanggan 1', 'drop', NULL, -6.96735073, 109.64789987, '', '', '', 0, '[[-6.96695389,109.64733756],[-6.96735073,109.64789987]]', '2026-05-22 06:01:10', '2026-06-14 02:19:42'),
-(26, 3, 2, 'used', 'pelanggan 2', 'drop', NULL, -6.96667944, 109.64783549, '', '', '', 1, NULL, '2026-05-22 06:01:10', '2026-06-14 03:12:52'),
-(27, 3, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(28, 3, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(29, 3, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(30, 3, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(31, 3, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(32, 3, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:01:10', '2026-05-22 06:01:10'),
-(33, 4, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '[[-6.96536361,109.64782544],[-6.96441603,109.64830756]]', '2026-05-22 06:02:23', '2026-06-03 06:23:15'),
-(34, 4, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(35, 4, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(36, 4, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(37, 4, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(38, 4, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(39, 4, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(40, 4, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:02:23', '2026-05-22 06:02:23'),
-(41, 5, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(42, 5, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(43, 5, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(44, 5, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(45, 5, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(46, 5, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(47, 5, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(48, 5, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:04:08', '2026-05-22 06:04:08'),
-(57, 7, 1, 'used', 'andi', 'drop', NULL, -6.96622734, 109.64520766, '', '', 'splittan', 0, '[[-6.96658435,109.64505886],[-6.9664951175182965,109.64472681283952],[-6.96648446789046,109.64454039931297],[-6.966061144987948,109.64455649256709],[-6.965723018873051,109.64456990361215],[-6.965497502940939,109.64460611343384],[-6.965696394759166,109.64496284723283],[-6.96573045,109.64529304],[-6.966204915073178,109.6452981233597],[-6.96622734,109.64520766]]', '2026-05-22 06:06:06', '2026-06-06 09:53:19'),
-(58, 7, 2, 'used', 'aris', 'drop', NULL, -6.96643357, 109.64457124, '', '', '', 1, '[[-6.96658435,109.64505886],[-6.966499297271254,109.64474236631227],[-6.96648446789046,109.64454039931297],[-6.96643357,109.64457124]]', '2026-05-22 06:06:06', '2026-06-07 04:36:17'),
-(59, 7, 3, 'used', 'pelangan 2', 'drop', NULL, -6.96713186, 109.64505136, '', '', '', 1, '[[-6.96658435,109.64505886],[-6.966623771557928,109.64525425807481],[-6.96713186,109.64505136]]', '2026-05-22 06:06:06', '2026-06-14 01:42:45'),
-(60, 7, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '[[-6.96658435,109.64505886],[-6.96643418,109.6441716]]', '2026-05-22 06:06:06', '2026-06-03 06:14:19'),
-(61, 7, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '[[-6.96658435,109.64505886],[-6.966530727209636,109.64488539844753],[-6.966502439137299,109.64470569044352],[-6.966488461500933,109.64416690170765],[-6.966456512616225,109.64403480291368],[-6.9661785,109.64405358]]', '2026-05-22 06:06:06', '2026-06-03 05:27:13'),
-(62, 7, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '[[-6.96658435,109.64505886],[-6.966674829951625,109.64550733566286],[-6.96670676,109.64574337]]', '2026-05-22 06:06:06', '2026-06-03 05:25:50'),
-(63, 7, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:06:06', '2026-05-22 06:06:06'),
-(64, 7, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-05-22 06:06:06', '2026-05-22 06:06:06'),
-(81, 10, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(82, 10, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(83, 10, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(84, 10, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(85, 10, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(86, 10, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(87, 10, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47'),
-(88, 10, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-06 09:42:47', '2026-06-06 09:42:47');
+(89, 11, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(90, 11, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(91, 11, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(92, 11, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(93, 11, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(94, 11, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(95, 11, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(96, 11, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:50:00', '2026-06-14 12:50:00'),
+(105, 13, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(106, 13, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(107, 13, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(108, 13, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(109, 13, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(110, 13, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(111, 13, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(112, 13, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:23', '2026-06-14 12:51:23'),
+(113, 14, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(114, 14, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(115, 14, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(116, 14, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(117, 14, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(118, 14, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(119, 14, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(120, 14, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:51:43', '2026-06-14 12:51:43'),
+(121, 15, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(122, 15, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(123, 15, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(124, 15, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(125, 15, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(126, 15, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(127, 15, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(128, 15, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:06', '2026-06-14 12:52:06'),
+(129, 16, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(130, 16, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(131, 16, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(132, 16, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(133, 16, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(134, 16, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(135, 16, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(136, 16, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:22', '2026-06-14 12:52:22'),
+(145, 18, 1, 'used', 'pelanggan 1', 'drop', NULL, -6.96858737, 109.64284122, '', '', '', 0, '[[-6.96819148,109.64149213],[-6.968301557140141,109.64163154363634],[-6.9684772752875235,109.6421290934086],[-6.968589095892482,109.64243084192277],[-6.968730202808276,109.64270040392879],[-6.96858737,109.64284122]]', '2026-06-14 12:52:49', '2026-06-16 04:49:11'),
+(146, 18, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(147, 18, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(148, 18, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(149, 18, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(150, 18, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(151, 18, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(152, 18, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
+(153, 19, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(154, 19, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(155, 19, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(156, 19, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(157, 19, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(158, 19, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(159, 19, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(160, 19, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(161, 20, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(162, 20, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(163, 20, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(164, 20, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(165, 20, 5, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(166, 20, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(167, 20, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46'),
+(168, 20, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:46', '2026-06-14 12:54:46');
 
 -- --------------------------------------------------------
 
@@ -317,7 +376,7 @@ CREATE TABLE `olt` (
 --
 
 INSERT INTO `olt` (`id`, `pop_id`, `name`, `model`, `ip_address`, `management_port`, `total_ports`, `total_pon_ports`, `used_pon_ports`, `lat`, `lng`, `location`, `description`, `created_at`, `updated_at`, `has_photo`) VALUES
-(3, 3, 'olt 1', 'olt 1', '192', 22, 16, 1, 0, NULL, NULL, '', '', '2026-05-23 14:09:58', '2026-05-23 14:44:16', 0);
+(6, 5, 'olt 1', 'hsgq', '192.168.1.100', 80, 4, 1, 0, NULL, NULL, 'pop', '', '2026-06-14 12:47:51', '2026-06-14 12:47:51', 0);
 
 -- --------------------------------------------------------
 
@@ -352,28 +411,6 @@ CREATE TABLE `olt_ports` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data untuk tabel `olt_ports`
---
-
-INSERT INTO `olt_ports` (`id`, `olt_id`, `port_number`, `status`, `target_odc_id`, `description`, `created_at`, `updated_at`) VALUES
-(1, 3, 1, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(2, 3, 2, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(3, 3, 3, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(4, 3, 4, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(5, 3, 5, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(6, 3, 6, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(7, 3, 7, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(8, 3, 8, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(9, 3, 9, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(10, 3, 10, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(11, 3, 11, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(12, 3, 12, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(13, 3, 13, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(14, 3, 14, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(15, 3, 15, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58'),
-(16, 3, 16, 'available', NULL, NULL, '2026-05-23 14:09:58', '2026-05-23 14:09:58');
-
 -- --------------------------------------------------------
 
 --
@@ -397,8 +434,7 @@ CREATE TABLE `pon` (
 --
 
 INSERT INTO `pon` (`id`, `olt_id`, `card_number`, `name`, `port_count`, `status`, `description`, `created_at`, `updated_at`) VALUES
-(3, 3, 2, 'card 2', 8, 'active', '', '2026-05-23 14:44:16', '2026-05-29 15:44:41'),
-(9, 3, 1, 'card 1', 8, 'active', '', '2026-05-29 15:44:53', '2026-05-29 15:44:53');
+(10, 6, 1, 'PON Card 1', 4, 'active', NULL, '2026-06-14 12:47:51', '2026-06-14 12:47:51');
 
 -- --------------------------------------------------------
 
@@ -422,22 +458,10 @@ CREATE TABLE `pon_ports` (
 --
 
 INSERT INTO `pon_ports` (`id`, `pon_id`, `port_number`, `status`, `target_odc_id`, `description`, `created_at`, `updated_at`) VALUES
-(17, 3, 1, 'used', 8, NULL, '2026-05-23 14:44:16', '2026-05-29 09:06:02'),
-(18, 3, 2, 'used', 1, NULL, '2026-05-23 14:44:16', '2026-05-29 02:57:37'),
-(19, 3, 3, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-06-01 10:01:50'),
-(20, 3, 4, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-25 01:28:13'),
-(21, 3, 5, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
-(22, 3, 6, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
-(23, 3, 7, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-23 14:44:16'),
-(24, 3, 8, 'available', NULL, NULL, '2026-05-23 14:44:16', '2026-05-29 09:05:06'),
-(49, 9, 1, 'used', 11, NULL, '2026-05-29 15:44:53', '2026-05-31 11:12:00'),
-(50, 9, 2, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(51, 9, 3, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(52, 9, 4, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(53, 9, 5, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(54, 9, 6, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(55, 9, 7, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53'),
-(56, 9, 8, 'available', NULL, NULL, '2026-05-29 15:44:53', '2026-05-29 15:44:53');
+(57, 10, 1, 'used', 12, NULL, '2026-06-14 12:47:51', '2026-06-14 12:48:50'),
+(58, 10, 2, 'used', 13, NULL, '2026-06-14 12:47:51', '2026-06-16 08:02:16'),
+(59, 10, 3, 'available', NULL, NULL, '2026-06-14 12:47:51', '2026-06-14 12:47:51'),
+(60, 10, 4, 'available', NULL, NULL, '2026-06-14 12:47:51', '2026-06-14 12:47:51');
 
 -- --------------------------------------------------------
 
@@ -464,7 +488,7 @@ CREATE TABLE `pop` (
 --
 
 INSERT INTO `pop` (`id`, `name`, `code`, `lat`, `lng`, `location`, `address`, `description`, `created_at`, `updated_at`, `has_photo`) VALUES
-(3, 'test2', 'test2', -6.96536550, 109.64786202, 'test 2', 'test 2', 'test 2', '2026-05-23 14:09:41', '2026-05-29 05:38:35', 0);
+(5, 'pop kedungwuni ', 'kdw-01', -6.96176930, 109.64694430, 'kedungwuni ', 'kedungwuni ', '', '2026-06-14 12:47:11', '2026-06-14 12:47:11', 0);
 
 -- --------------------------------------------------------
 
@@ -498,17 +522,6 @@ CREATE TABLE `port_photos` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data untuk tabel `port_photos`
---
-
-INSERT INTO `port_photos` (`id`, `port_id`, `filename`, `original_name`, `file_size`, `is_primary`, `created_at`) VALUES
-(1, 58, 'port_58_1780713526_50d3d28ed64ffcaa.jpg', 'ISOLIR & MAINTENANCE (1).jpg', 283317, 1, '2026-06-06 02:38:46'),
-(2, 58, 'port_58_1780714993_2f2e8d962f461632.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 0, '2026-06-06 03:03:13'),
-(3, 58, 'port_58_1780715014_377e1a7ae41147a2.jpg', 'ISOLIR & MAINTENANCE (1).jpg', 283317, 0, '2026-06-06 03:03:34'),
-(4, 59, 'port_59_1781400529_643542af937da222.jpg', 'photo_2026-06-08_15-26-05.jpg', 183017, 1, '2026-06-14 01:28:49'),
-(5, 26, 'port_26_1781406772_547829fe4fb34495.jpg', 'photo_2026-05-10_17-43-33.jpg', 215844, 1, '2026-06-14 03:12:52');
-
 -- --------------------------------------------------------
 
 --
@@ -535,9 +548,9 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `phone`, `email`, `notes`, `role`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', NULL, NULL, NULL, 'admin', 1, '2026-06-14 04:56:02', '2026-04-29 05:17:32', '2026-06-14 04:56:02'),
+(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', NULL, NULL, NULL, 'admin', 1, '2026-06-16 07:43:59', '2026-04-29 05:17:32', '2026-06-16 07:43:59'),
 (2, 'operator', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Operator Lapangan', NULL, NULL, NULL, 'operator', 1, '2026-05-10 06:05:02', '2026-04-29 05:17:32', '2026-05-10 06:05:02'),
-(3, 'viewer', '$2y$10$MGgSxghgkLq14k7q5jnA6u6nDAQ2YKcfdE/DkL/TOrvOvuTRz7S8m', 'Viewer Only', NULL, NULL, NULL, 'viewer', 1, '2026-06-14 03:06:47', '2026-04-29 05:17:32', '2026-06-14 03:06:47'),
+(3, 'viewer', '$2y$10$MGgSxghgkLq14k7q5jnA6u6nDAQ2YKcfdE/DkL/TOrvOvuTRz7S8m', 'Viewer Only', NULL, NULL, NULL, 'viewer', 1, '2026-06-16 08:05:32', '2026-04-29 05:17:32', '2026-06-16 08:05:32'),
 (4, 'fadil', '$2y$10$bYKbB0u6c5WcTi7Vu12cauf0FxEtLpfhA03HFQf1RNf02N1IMplPm', 'fadilmubarok', '085878532124', 'ffadil2208@gmail.com', 'test', 'admin', 1, '2026-06-06 09:40:18', '2026-05-10 06:07:44', '2026-06-06 09:40:18');
 
 --
@@ -669,31 +682,31 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `login_logs`
 --
 ALTER TABLE `login_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT untuk tabel `odc`
 --
 ALTER TABLE `odc`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT untuk tabel `odc_odp_connections`
 --
 ALTER TABLE `odc_odp_connections`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT untuk tabel `odc_photos`
 --
 ALTER TABLE `odc_photos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT untuk tabel `odp`
 --
 ALTER TABLE `odp`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT untuk tabel `odp_photos`
@@ -705,13 +718,13 @@ ALTER TABLE `odp_photos`
 -- AUTO_INCREMENT untuk tabel `odp_ports`
 --
 ALTER TABLE `odp_ports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=169;
 
 --
 -- AUTO_INCREMENT untuk tabel `olt`
 --
 ALTER TABLE `olt`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT untuk tabel `olt_photos`
@@ -729,19 +742,19 @@ ALTER TABLE `olt_ports`
 -- AUTO_INCREMENT untuk tabel `pon`
 --
 ALTER TABLE `pon`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT untuk tabel `pon_ports`
 --
 ALTER TABLE `pon_ports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT untuk tabel `pop`
 --
 ALTER TABLE `pop`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT untuk tabel `pop_photos`

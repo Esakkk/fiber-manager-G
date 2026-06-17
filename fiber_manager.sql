@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 16 Jun 2026 pada 11.38
+-- Waktu pembuatan: 17 Jun 2026 pada 11.14
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.0.30
 
@@ -111,7 +111,11 @@ INSERT INTO `login_logs` (`id`, `user_id`, `login_time`, `ip_address`, `user_age
 (68, 1, '2026-06-16 06:56:10', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'failed'),
 (69, 1, '2026-06-16 06:56:16', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
 (70, 1, '2026-06-16 07:43:59', '192.168.101.23', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
-(71, 3, '2026-06-16 08:05:32', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success');
+(71, 3, '2026-06-16 08:05:32', '192.168.101.49', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36', 'success'),
+(72, 1, '2026-06-17 03:35:25', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(73, 1, '2026-06-17 03:35:48', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'failed'),
+(74, 1, '2026-06-17 03:35:52', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success'),
+(75, 1, '2026-06-17 06:38:36', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36', 'success');
 
 -- --------------------------------------------------------
 
@@ -232,7 +236,7 @@ INSERT INTO `odp` (`id`, `name`, `source_id`, `port_number_in_odc`, `source_type
 (15, 'ODP 4', 12, 4, 'odc', -6.96339526, 109.64353172, '[[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.961824560574975,109.64597521453842],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', 'test', 8, 8, '', '2026-06-14 12:52:06', '2026-06-15 04:13:12'),
 (16, 'ODP 5', 12, 5, 'odc', -6.96528741, 109.64236491, '[[-6.96528741,109.64236491],[-6.964405123421234,109.64286804199219],[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', 'test', 8, 8, '', '2026-06-14 12:52:22', '2026-06-15 04:13:31'),
 (18, 'ODP6', 12, 6, 'odc', -6.96819148, 109.64149213, '[[-6.96819148,109.64149213],[-6.966290112139906,109.64237451553346],[-6.96528741,109.64236491],[-6.9643192048063645,109.64292450740139],[-6.96339526,109.64353172],[-6.9626708617414925,109.64427054541147],[-6.962412401096489,109.64457291154629],[-6.962212514125016,109.64465583576902],[-6.96204417,109.64466725],[-6.961803274211552,109.64610199325647],[-6.96172473,109.64688526]]', '', 8, 7, 'test', '2026-06-14 12:52:49', '2026-06-16 04:48:30'),
-(19, 'ODP 7', 12, 7, 'odc', -6.96153298, 109.64101453, '[[-6.96153298,109.64101453],[-6.961618177081426,109.64102822852142],[-6.961756214318074,109.64197226880643],[-6.961965112950755,109.64335795552861],[-6.962080211635297,109.64428460385963],[-6.96204417,109.64466725],[-6.961813763648869,109.6459971646048],[-6.96172473,109.64688526]]', '', 8, 8, 'test', '2026-06-14 12:54:29', '2026-06-15 04:13:45'),
+(19, 'ODP 7', 12, 7, 'odc', -6.96153298, 109.64101453, '[[-6.96153298,109.64101453],[-6.961618177081426,109.64102822852142],[-6.961756214318074,109.64197226880643],[-6.961965112950755,109.64335795552861],[-6.962080211635297,109.64428460385963],[-6.96204417,109.64466725],[-6.961813763648869,109.6459971646048],[-6.96172473,109.64688526]]', '', 8, 7, 'test', '2026-06-14 12:54:29', '2026-06-17 07:45:17'),
 (20, 'ODP 8', 12, 8, 'odc', -6.95970081, 109.64134963, '[[-6.95970081,109.64134963],[-6.961618177081426,109.64102822852142],[-6.962080211635297,109.64428460385963],[-6.96204417,109.64466725],[-6.96177997,109.64624079],[-6.96172473,109.64688526]]', '', 8, 8, 'test', '2026-06-14 12:54:46', '2026-06-15 04:13:51');
 
 -- --------------------------------------------------------
@@ -272,23 +276,6 @@ CREATE TABLE `odp_ports` (
   `description` text DEFAULT NULL,
   `has_photo` tinyint(1) DEFAULT 0,
   `path_coordinates` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Struktur dari tabel `pole`
---
-
-CREATE TABLE `pole` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `lat` decimal(10,8) NOT NULL,
-  `lng` decimal(11,8) NOT NULL,
-  `location` varchar(255) NOT NULL,
-  `description` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -346,7 +333,7 @@ INSERT INTO `odp_ports` (`id`, `odp_id`, `port_number`, `status`, `target`, `con
 (150, 18, 6, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
 (151, 18, 7, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
 (152, 18, 8, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:52:49', '2026-06-14 12:52:49'),
-(153, 19, 1, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
+(153, 19, 1, 'used', 'pelanggan1', 'drop', NULL, -6.96056311, 109.63985592, '', '', '', 0, '[[-6.96153298,109.64101453],[-6.96142054,109.63994443],[-6.96056311,109.63985592]]', '2026-06-14 12:54:29', '2026-06-17 07:45:32'),
 (154, 19, 2, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
 (155, 19, 3, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
 (156, 19, 4, 'available', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, '2026-06-14 12:54:29', '2026-06-14 12:54:29'),
@@ -427,6 +414,37 @@ CREATE TABLE `olt_ports` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `pole`
+--
+
+CREATE TABLE `pole` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `lat` decimal(10,8) NOT NULL,
+  `lng` decimal(11,8) NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `jenis_tiang` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `pole`
+--
+
+INSERT INTO `pole` (`id`, `name`, `lat`, `lng`, `location`, `description`, `created_at`, `updated_at`, `jenis_tiang`) VALUES
+(1, 'tiang 001', -6.96096527, 109.63897347, 'test', '', '2026-06-17 07:43:21', '2026-06-17 07:43:21', NULL),
+(2, 'tiang 004', -6.96257338, 109.64205265, 'asdf', '', '2026-06-17 07:43:58', '2026-06-17 08:04:06', ''),
+(3, 'tiang 002', -6.96088539, 109.63749826, 'test', '', '2026-06-17 07:44:36', '2026-06-17 07:44:36', NULL),
+(4, 'tiang 003', -6.96142054, 109.63994443, 'test', '', '2026-06-17 07:44:53', '2026-06-17 07:44:53', NULL),
+(5, 'tiang 005', -6.96131405, 109.63686526, '', '', '2026-06-17 07:54:40', '2026-06-17 07:54:40', '6'),
+(6, 'tiang 007', -6.96142853, 109.64096904, '', '', '2026-06-17 09:13:52', '2026-06-17 09:13:52', ''),
+(7, 'tiang 008', -6.96204089, 109.64467049, '', '', '2026-06-17 09:14:05', '2026-06-17 09:14:05', '');
 
 -- --------------------------------------------------------
 
@@ -565,7 +583,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `phone`, `email`, `notes`, `role`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', NULL, NULL, NULL, 'admin', 1, '2026-06-16 07:43:59', '2026-04-29 05:17:32', '2026-06-16 07:43:59'),
+(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', NULL, NULL, NULL, 'admin', 1, '2026-06-17 06:38:36', '2026-04-29 05:17:32', '2026-06-17 06:38:36'),
 (2, 'operator', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Operator Lapangan', NULL, NULL, NULL, 'operator', 1, '2026-05-10 06:05:02', '2026-04-29 05:17:32', '2026-05-10 06:05:02'),
 (3, 'viewer', '$2y$10$MGgSxghgkLq14k7q5jnA6u6nDAQ2YKcfdE/DkL/TOrvOvuTRz7S8m', 'Viewer Only', NULL, NULL, NULL, 'viewer', 1, '2026-06-16 08:05:32', '2026-04-29 05:17:32', '2026-06-16 08:05:32'),
 (4, 'fadil', '$2y$10$bYKbB0u6c5WcTi7Vu12cauf0FxEtLpfhA03HFQf1RNf02N1IMplPm', 'fadilmubarok', '085878532124', 'ffadil2208@gmail.com', 'test', 'admin', 1, '2026-06-06 09:40:18', '2026-05-10 06:07:44', '2026-06-06 09:40:18');
@@ -648,6 +666,13 @@ ALTER TABLE `olt_ports`
   ADD KEY `target_odc_id` (`target_odc_id`);
 
 --
+-- Indeks untuk tabel `pole`
+--
+ALTER TABLE `pole`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_pole_name` (`name`);
+
+--
 -- Indeks untuk tabel `pon`
 --
 ALTER TABLE `pon`
@@ -684,13 +709,8 @@ ALTER TABLE `port_photos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `port_id` (`port_id`);
 
----- Indeks untuk tabel `pole`
 --
-ALTER TABLE `pole`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_pole_name` (`name`);
-
----- Indeks untuk tabel `users`
+-- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
@@ -704,7 +724,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `login_logs`
 --
 ALTER TABLE `login_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT untuk tabel `odc`
@@ -761,6 +781,12 @@ ALTER TABLE `olt_ports`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
+-- AUTO_INCREMENT untuk tabel `pole`
+--
+ALTER TABLE `pole`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
 -- AUTO_INCREMENT untuk tabel `pon`
 --
 ALTER TABLE `pon`
@@ -790,12 +816,8 @@ ALTER TABLE `pop_photos`
 ALTER TABLE `port_photos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
----- AUTO_INCREMENT untuk tabel `pole`
 --
-ALTER TABLE `pole`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
-
----- AUTO_INCREMENT untuk tabel `users`
+-- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;

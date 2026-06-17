@@ -252,6 +252,7 @@ async function savePole() {
         lat: coords.lat,
         lng: coords.lng,
         location: document.getElementById('poleLocation')?.value,
+        jenis_tiang: document.getElementById('poleType')?.value,
         description: document.getElementById('poleDescription')?.value
     };
 
@@ -1454,12 +1455,14 @@ async function editDevice(id, type) {
         const poleName = document.getElementById('poleName');
         const poleCoordinates = document.getElementById('poleCoordinates');
         const poleLocation = document.getElementById('poleLocation');
+        const poleType = document.getElementById('poleType');
         const poleDescription = document.getElementById('poleDescription');
 
         if (poleId) poleId.value = device.id;
         if (poleName) poleName.value = device.name;
         if (poleCoordinates) poleCoordinates.value = formatCoordinates(device.lat, device.lng);
         if (poleLocation) poleLocation.value = device.location;
+        if (poleType) poleType.value = device.jenis_tiang || '';
         if (poleDescription) poleDescription.value = device.description || '';
 
         const poleModalTitle = document.getElementById('poleModalTitle');

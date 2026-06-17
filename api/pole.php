@@ -68,13 +68,14 @@ function createPole() {
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO pole (name, lat, lng, location, description) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO pole (name, lat, lng, location, description, jenis_tiang) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['name'],
             $data['lat'],
             $data['lng'],
             $data['location'] ?? '',
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            $data['jenis_tiang'] ?? null
         ]);
         $pole_id = $pdo->lastInsertId();
         sendResponse(['id' => $pole_id, 'message' => 'Pole created successfully']);
@@ -95,13 +96,14 @@ function updatePole($id) {
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE pole SET name = ?, lat = ?, lng = ?, location = ?, description = ?, updated_at = NOW() WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE pole SET name = ?, lat = ?, lng = ?, location = ?, description = ?, jenis_tiang = ?, updated_at = NOW() WHERE id = ?");
         $stmt->execute([
             $data['name'],
             $data['lat'],
             $data['lng'],
             $data['location'] ?? '',
             $data['description'] ?? '',
+            $data['jenis_tiang'] ?? null,
             $id
         ]);
         sendResponse(['id' => $id, 'message' => 'Pole updated successfully']);

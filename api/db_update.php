@@ -46,6 +46,12 @@ try {
     $pdo->exec($sql5);
     echo "✓ pop table updated successfully.\n";
 
+    // Update pole table - add jenis_tiang column if not exists
+    $sql_pole = "ALTER TABLE `pole`
+          ADD COLUMN IF NOT EXISTS `jenis_tiang` VARCHAR(50) DEFAULT NULL AFTER `lng`";
+    $pdo->exec($sql_pole);
+    echo "✓ pole table updated successfully (jenis_tiang).\n";
+
     // ==================== 2. CREATE NEW TABLES ====================
 
     // Create port_photos table

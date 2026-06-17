@@ -284,6 +284,8 @@ function addLineHoverHandlers(line) {
 function toggleMapType() {
     const cb = document.getElementById('toggleMapType');
     const isSatellite = cb ? cb.checked : true;
+    // Save setting
+    localStorage.setItem('toggleMapType', isSatellite);
 
     if (baseTileLayer && map) {
         map.removeLayer(baseTileLayer);
@@ -303,12 +305,16 @@ function toggleMapType() {
 function toggleMapClustering() {
     const cb = document.getElementById('toggleClustering');
     isClusteringEnabled = cb ? cb.checked : true;
+    // Save setting
+    localStorage.setItem('toggleClustering', isClusteringEnabled);
     refreshMapMarkers();
 }
 
 function toggleMapLines() {
     const cb = document.getElementById('toggleLines');
     isLinesEnabled = cb ? cb.checked : true;
+    // Save setting
+    localStorage.setItem('toggleLines', isLinesEnabled);
     refreshMapMarkers();
 }
 
@@ -318,13 +324,50 @@ function toggleMapLines() {
 
 // Initialize map
 function initMap() {
-    map = L.map('map', { preferCanvas: true }).setView([-6.966409024897329, 109.6469502011238], 13);
+    // Load saved map view settings
+    const savedCenter = localStorage.getItem('mapCenter');
+    const savedZoom = localStorage.getItem('mapZoom');
+    const defaultCenter = [-6.966409024897329, 109.6469502011238];
+    const defaultZoom = 13;
+    const center = savedCenter ? JSON.parse(savedCenter) : defaultCenter;
+    const zoom = savedZoom ? parseInt(savedZoom) : defaultZoom;
+    map = L.map('map', { preferCanvas: true }).setView(center, zoom);
     // Google Satellite (lyrs=s) atau Mode Standar (lyrs=m)
-    baseTileLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    // Determine map type (satellite or roadmap) from saved setting.
+    // If no setting is saved, default to satellite (true).
+    const storedMapType = localStorage.getItem('toggleMapType');
+    const isSatellite = storedMapType === null ? true : storedMapType === 'true';
+    const url = isSatellite ? 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}' : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+    baseTileLayer = L.tileLayer(url, {
         attribution: '© Google',
         maxZoom: 22,
         maxNativeZoom: 20
     }).addTo(map);
+    baseTileLayer.bringToBack();
+
+    // Restore toggle checkbox states
+    // Restore toggle checkbox states and global flags
+    const cbMapType = document.getElementById('toggleMapType');
+    if (cbMapType) cbMapType.checked = isSatellite;
+    const cbClustering = document.getElementById('toggleClustering');
+    if (cbClustering) {
+        const clusteringChecked = localStorage.getItem('toggleClustering') !== 'false';
+        cbClustering.checked = clusteringChecked;
+        isClusteringEnabled = clusteringChecked;
+    }
+    const cbLines = document.getElementById('toggleLines');
+    if (cbLines) {
+        const linesChecked = localStorage.getItem('toggleLines') !== 'false';
+        cbLines.checked = linesChecked;
+        isLinesEnabled = linesChecked;
+    }
+
+    // Persist map movement (center & zoom)
+    map.on('moveend', function () {
+        const c = map.getCenter();
+        localStorage.setItem('mapCenter', JSON.stringify({ lat: c.lat, lng: c.lng }));
+        localStorage.setItem('mapZoom', map.getZoom());
+    });
 
     markersLayer = L.layerGroup().addTo(map);
 

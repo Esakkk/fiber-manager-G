@@ -120,6 +120,14 @@ function initEventListeners() {
         });
     }
 
+    const poleForm = document.getElementById('poleForm');
+    if (poleForm) {
+        poleForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            savePole();
+        });
+    }
+
     const totalPorts = document.getElementById('odpTotalPorts');
     if (totalPorts) {
         totalPorts.addEventListener('change', function () {
@@ -206,6 +214,74 @@ async function handleMapDeviceDrop(type, latlng) {
         if (coordInput) {
             coordInput.value = coordVal;
         }
+    } else if (type === 'pole') {
+        await showAddPoleDialog();
+        const coordInput = document.getElementById('poleCoordinates');
+        if (coordInput) {
+            coordInput.value = coordVal;
+        }
+    }
+}
+
+async function showAddPoleDialog() {
+    currentEditingDevice = null;
+    const poleModalTitle = document.getElementById('poleModalTitle');
+    if (poleModalTitle) poleModalTitle.textContent = 'Tambah Tiang';
+
+    const poleForm = document.getElementById('poleForm');
+    if (poleForm) poleForm.reset();
+
+    const poleId = document.getElementById('poleId');
+    if (poleId) poleId.value = '';
+
+    const poleModal = document.getElementById('poleModal');
+    if (poleModal) poleModal.classList.add('show');
+}
+
+async function savePole() {
+    const id = document.getElementById('poleId')?.value;
+    const coordString = document.getElementById('poleCoordinates')?.value.trim();
+    const coords = parseCoordinates(coordString);
+    if (!coords) {
+        alert('Format koordinat tidak valid!');
+        return;
+    }
+
+    const data = {
+        name: document.getElementById('poleName')?.value,
+        lat: coords.lat,
+        lng: coords.lng,
+        location: document.getElementById('poleLocation')?.value,
+        description: document.getElementById('poleDescription')?.value
+    };
+
+    if (!data.name) {
+        alert('Nama Tiang harus diisi');
+        return;
+    }
+
+    try {
+        const url = id ? `${API_BASE}/pole.php?id=${id}` : `${API_BASE}/pole.php`;
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetchWithAuth(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+
+        if (!response) return;
+
+        const result = await response.json();
+        if (response.ok) {
+            closeModal('poleModal');
+            await loadDevices();
+            alert('Tiang berhasil disimpan');
+        } else {
+            alert('Gagal menyimpan tiang: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error saving pole:', error);
+        alert('Gagal menyimpan tiang');
     }
 }
 
@@ -1279,7 +1355,8 @@ function closeLightbox() {
 async function editDevice(id, type) {
     const device = type === 'odc' ?
         devices.odc.find(d => d.id == id) :
-        devices.odp.find(d => d.id == id);
+        type === 'odp' ? devices.odp.find(d => d.id == id) :
+        type === 'pole' ? devices.pole.find(d => d.id == id) : null;
 
     if (!device) return;
 
@@ -1372,6 +1449,24 @@ async function editDevice(id, type) {
 
         const odcModal = document.getElementById('odcModal');
         if (odcModal) odcModal.classList.add('show');
+    } else if (type === 'pole') {
+        const poleId = document.getElementById('poleId');
+        const poleName = document.getElementById('poleName');
+        const poleCoordinates = document.getElementById('poleCoordinates');
+        const poleLocation = document.getElementById('poleLocation');
+        const poleDescription = document.getElementById('poleDescription');
+
+        if (poleId) poleId.value = device.id;
+        if (poleName) poleName.value = device.name;
+        if (poleCoordinates) poleCoordinates.value = formatCoordinates(device.lat, device.lng);
+        if (poleLocation) poleLocation.value = device.location;
+        if (poleDescription) poleDescription.value = device.description || '';
+
+        const poleModalTitle = document.getElementById('poleModalTitle');
+        if (poleModalTitle) poleModalTitle.textContent = 'Edit Tiang';
+
+        const poleModal = document.getElementById('poleModal');
+        if (poleModal) poleModal.classList.add('show');
     } else {
         const modalTitle = document.getElementById('modalTitle');
         const odpId = document.getElementById('odpId');
@@ -1427,9 +1522,14 @@ async function deleteDevice(id, type) {
     if (!confirm('Yakin ingin menghapus perangkat ini?')) return;
 
     try {
-        const url = type === 'odc' ?
-            `${API_BASE}/odc.php?id=${id}` :
-            `${API_BASE}/odp.php?id=${id}`;
+        let url = '';
+        if (type === 'odc') {
+            url = `${API_BASE}/odc.php?id=${id}`;
+        } else if (type === 'odp') {
+            url = `${API_BASE}/odp.php?id=${id}`;
+        } else if (type === 'pole') {
+            url = `${API_BASE}/pole.php?id=${id}`;
+        }
 
         const response = await fetchWithAuth(url, { method: 'DELETE' });
 

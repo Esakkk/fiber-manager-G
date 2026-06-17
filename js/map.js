@@ -6,7 +6,7 @@ const API_BASE = window.location.origin + '/fiber-manager/api';
 // Global variables
 let map;
 let markersLayer;
-let devices = { odc: [], odp: [], pop: [], olt: [] };
+let devices = { odc: [], odp: [], pop: [], olt: [], pole: [] };
 let currentEditingDevice = null;
 let currentPortConfig = { deviceId: null, portNumber: null };
 let odpMarkers = {};
@@ -427,7 +427,7 @@ function initDragAndDropSupport() {
     mapContainer.addEventListener('drop', function (e) {
         e.preventDefault();
         const type = e.dataTransfer.getData('text/plain');
-        if (type === 'odp' || type === 'odc') {
+        if (type === 'odp' || type === 'odc' || type === 'pole') {
             // Konversi koordinat drop event ke objek LatLng Leaflet
             const latlng = map.mouseEventToLatLng(e);
             if (latlng && typeof handleMapDeviceDrop === 'function') {
@@ -655,24 +655,27 @@ async function fetchWithAuth(url, options = {}) {
 // Load devices from API - HANYA SATU DEKLARASI
 async function loadDevices() {
     try {
-        const [odcRes, odpRes, popRes, oltRes] = await Promise.all([
+        const [odcRes, odpRes, popRes, oltRes, poleRes] = await Promise.all([
             fetchWithAuth(`${API_BASE}/odc.php`),
             fetchWithAuth(`${API_BASE}/odp.php`),
             fetchWithAuth(`${API_BASE}/pop.php`),
-            fetchWithAuth(`${API_BASE}/olt.php`)
+            fetchWithAuth(`${API_BASE}/olt.php`),
+            fetchWithAuth(`${API_BASE}/pole.php`)
         ]);
 
-        if (!odcRes || !odpRes || !popRes || !oltRes) return;
+        if (!odcRes || !odpRes || !popRes || !oltRes || !poleRes) return;
 
         const odcData = await odcRes.json();
         const odpData = await odpRes.json();
         const popData = await popRes.json();
         const oltData = await oltRes.json();
+        const poleData = await poleRes.json();
 
         devices.odc = Array.isArray(odcData) ? odcData : [];
         devices.odp = Array.isArray(odpData) ? odpData : [];
         devices.pop = Array.isArray(popData) ? popData : [];
         devices.olt = Array.isArray(oltData) ? oltData : [];
+        devices.pole = Array.isArray(poleData) ? poleData : [];
 
         refreshMapMarkers();
         refreshDeviceList();
@@ -802,6 +805,27 @@ function createODPIcon(availablePorts = null, totalPorts = null) {
     });
 }
 
+function createPoleIcon() {
+    return L.divIcon({
+        html: `
+            <div style="position: relative; width: 32px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="36" viewBox="0 0 24 36" style="filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));">
+                    <!-- Pole (vertical line) -->
+                    <rect x="10" y="4" width="4" height="28" fill="#8B7355" stroke="#654321" stroke-width="1"/>
+                    <!-- Crossbar at top -->
+                    <rect x="6" y="6" width="12" height="2" fill="#8B7355" stroke="#654321" stroke-width="1"/>
+                    <!-- Cap/Top -->
+                    <circle cx="12" cy="4" r="3" fill="#CD5C5C" stroke="#9B4444" stroke-width="1"/>
+                </svg>
+            </div>
+        `,
+        className: 'pole-marker-icon',
+        iconSize: [32, 40],
+        iconAnchor: [16, 40],
+        popupAnchor: [0, -40]
+    });
+}
+
 // =============================================
 // REFRESH MAP MARKERS
 // =============================================
@@ -900,7 +924,25 @@ function refreshMapMarkers() {
         }
     });
 
-    // 3. Render ODP Markers & Distribution Lines
+    // 3. Render Pole Markers
+    devices.pole.forEach(pole => {
+        const marker = L.marker([parseFloat(pole.lat), parseFloat(pole.lng)], { icon: createPoleIcon() });
+        marker.bindTooltip(pole.name, {
+            permanent: true,
+            direction: 'top',
+            className: 'marker-tooltip-label',
+            offset: [0, -40]
+        });
+        if (window.markerClusterGroup && isClusteringEnabled) {
+            marker.addTo(window.markerClusterGroup);
+        } else {
+            marker.addTo(markersLayer);
+        }
+        marker.bindPopup(createPopupContent(pole));
+        marker.on('click', () => showDeviceInfo(pole));
+    });
+
+    // 4. Render ODP Markers & Distribution Lines
     devices.odp.forEach(odp => {
         const icon = createODPIcon(odp.available_ports, odp.total_ports);
         const marker = L.marker([parseFloat(odp.lat), parseFloat(odp.lng)], { icon: icon });
@@ -1254,7 +1296,9 @@ function togglePortPathEdit(portKey) {
 
 function createPopupContent(device) {
     const isODC = devices.odc.some(d => d.id === device.id);
-    const type = isODC ? 'ODC' : 'ODP';
+    const isODP = devices.odp.some(d => d.id === device.id);
+    const isPole = devices.pole.some(d => d.id === device.id);
+    const type = isODC ? 'ODC' : isODP ? 'ODP' : isPole ? 'POLE' : 'DEVICE';
     const currentUser = window.currentUser;
     const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
 
@@ -1262,6 +1306,18 @@ function createPopupContent(device) {
 
     if (isODC) {
         content += `<p><strong>Kapasitas:</strong> ${device.capacity} Port</p><p><strong>Terpakai:</strong> ${device.used_ports || 0} Port</p><p><strong>ODP Terhubung:</strong> ${device.connected_odps || 0}</p>`;
+    } else if (isODP) {
+        const available = device.available_ports || 0;
+        const total = device.total_ports || 0;
+        const percentage = total > 0 ? Math.round((available / total) * 100) : 0;
+        let statusText = '', statusColor = '';
+        if (available === 0) { statusText = '⚠️ PENUH'; statusColor = '#e53e3e'; }
+        else if (percentage < 20) { statusText = '🔴 Kritis'; statusColor = '#f565e5'; }
+        else if (percentage <= 50) { statusText = '🟡 Hampir Penuh'; statusColor = '#ecc94b'; }
+        else { statusText = '🟢 Normal'; statusColor = '#48bb78'; }
+        content += `<p><strong>Sumber:</strong> ${device.source_name || 'Tidak ada'}</p><p><strong>Total Port:</strong> ${total}</p><p style="color: ${statusColor}; font-weight: bold;">Status: ${statusText} (${available} tersedia)</p>`;
+    } else if (isPole) {
+        content += `<p><strong>Lokasi:</strong> ${device.location || '-'}</p><p><strong>Keterangan:</strong> ${device.description || '-'}</p>`;
     } else {
         const available = device.available_ports || 0;
         const total = device.total_ports || 0;
@@ -1292,12 +1348,14 @@ async function showDeviceInfo(device) {
     const content = document.getElementById('infoContent');
 
     const isODC = devices.odc.some(d => d.id === device.id);
+    const isODP = devices.odp.some(d => d.id === device.id);
+    const isPole = devices.pole.some(d => d.id === device.id);
     const currentUser = window.currentUser;
     const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
 
     title.textContent = device.name;
 
-    let html = `<div class="device-detail"><p><strong>Tipe:</strong> ${isODC ? 'ODC' : 'ODP'}</p><p><strong>ID:</strong> ${device.id}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
+    let html = `<div class="device-detail"><p><strong>Tipe:</strong> ${isODC ? 'ODC' : isODP ? 'ODP' : isPole ? 'POLE' : 'DEVICE'}</p><p><strong>ID:</strong> ${device.id}</p><p><strong>Lokasi:</strong> ${device.location}</p><p><strong>Koordinat:</strong> ${parseFloat(device.lat).toFixed(8)}, ${parseFloat(device.lng).toFixed(8)}</p>`;
 
     html += `
 <p><strong>Dibuat:</strong> ${device.created_at ? new Date(device.created_at).toLocaleString() : ''}</p>
@@ -1354,6 +1412,9 @@ async function showDeviceInfo(device) {
         }
         html += portsHtml;
         html += renderPhotoGallery(device, 'odc');
+    } else if (isPole) {
+        html += `<p><strong>Lokasi:</strong> ${device.location || '-'}</p><p><strong>Keterangan:</strong> ${device.description || '-'}</p>`;
+        html += renderPhotoGallery(device, 'pole');
     } else {
         const available = device.available_ports || 0;
         const total = device.total_ports || 0;
@@ -1587,7 +1648,8 @@ function refreshDeviceList() {
 
     const allDevices = [
         ...devices.odc.map(d => ({ ...d, type: 'odc' })),
-        ...devices.odp.map(d => ({ ...d, type: 'odp' }))
+        ...devices.odp.map(d => ({ ...d, type: 'odp' })),
+        ...devices.pole.map(d => ({ ...d, type: 'pole' }))
     ];
 
     filteredDevicesList = allDevices.filter(device => {

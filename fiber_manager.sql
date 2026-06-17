@@ -276,6 +276,23 @@ CREATE TABLE `odp_ports` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `pole`
+--
+
+CREATE TABLE `pole` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `lat` decimal(10,8) NOT NULL,
+  `lng` decimal(11,8) NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Dumping data untuk tabel `odp_ports`
 --
@@ -667,8 +684,13 @@ ALTER TABLE `port_photos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `port_id` (`port_id`);
 
+---- Indeks untuk tabel `pole`
 --
--- Indeks untuk tabel `users`
+ALTER TABLE `pole`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_pole_name` (`name`);
+
+---- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
@@ -768,8 +790,12 @@ ALTER TABLE `pop_photos`
 ALTER TABLE `port_photos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
+---- AUTO_INCREMENT untuk tabel `pole`
 --
--- AUTO_INCREMENT untuk tabel `users`
+ALTER TABLE `pole`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+---- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;

@@ -20,37 +20,124 @@ if ($type !== 'kml' && (empty($selected_cols) || !is_array($selected_cols))) {
     exit();
 }
 
-if ($type !== 'kml') {
-    // Konfigurasi header download
-    $filename = "export_" . $type . "_" . date('Ymd_His') . ".csv";
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-    // Tambahkan UTF-8 BOM untuk kompatibilitas Excel
-    echo "\xEF\xBB\xBF";
-    // Tentukan pemisah kolom titik koma agar Excel langsung memformat dengan benar di Windows
-    echo "sep=;\n";
+function getColLetter($colIdx) {
+    $letter = '';
+    while ($colIdx >= 0) {
+        $letter = chr(($colIdx % 26) + 65) . $letter;
+        $colIdx = intval($colIdx / 26) - 1;
+    }
+    return $letter;
 }
 
-// Helper untuk format teks CSV (escape semicolon dan double quote)
-function formatCsvCell($val) {
-    if ($val === null) return '';
-    $val = str_replace('"', '""', $val);
-    if (strpos($val, ';') !== false || strpos($val, '"') !== false || strpos($val, "\n") !== false || strpos($val, "\r") !== false) {
-        return '"' . $val . '"';
+function exportToXlsx($filename, $headers, $dataRows) {
+    $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+    $zip = new ZipArchive();
+    if ($zip->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        throw new Exception("Gagal membuat file temporary XLSX");
     }
-    return $val;
+
+    // 1. [Content_Types].xml
+    $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>';
+    $zip->addFromString('[Content_Types].xml', $contentTypes);
+
+    // 2. _rels/.rels
+    $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>';
+    $zip->addFromString('_rels/.rels', $rels);
+
+    // 3. xl/workbook.xml
+    $workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Sheet1" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>';
+    $zip->addFromString('xl/workbook.xml', $workbook);
+
+    // 4. xl/_rels/workbook.xml.rels
+    $workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>';
+    $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
+
+    // 5. xl/worksheets/sheet1.xml
+    $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>';
+
+    $rowIdx = 1;
+    
+    // Add headers row
+    if (!empty($headers)) {
+        $sheetXml .= '<row r="' . $rowIdx . '">';
+        foreach ($headers as $colIdx => $val) {
+            $cellRef = getColLetter($colIdx) . $rowIdx;
+            $escapedVal = htmlspecialchars($val, ENT_QUOTES, 'UTF-8');
+            $sheetXml .= '<c r="' . $cellRef . '" t="inlineStr"><is><t>' . $escapedVal . '</t></is></c>';
+        }
+        $sheetXml .= '</row>';
+        $rowIdx++;
+    }
+
+    // Add data rows
+    foreach ($dataRows as $rowData) {
+        $sheetXml .= '<row r="' . $rowIdx . '">';
+        $colIdx = 0;
+        foreach ($rowData as $val) {
+            $cellRef = getColLetter($colIdx) . $rowIdx;
+            if (is_numeric($val) && (strpos($val, '0') !== 0 || strlen($val) === 1)) {
+                // Numeric values (exclude leading zeros like phone numbers, ONU codes etc.)
+                $sheetXml .= '<c r="' . $cellRef . '"><v>' . $val . '</v></c>';
+            } else {
+                $escapedVal = htmlspecialchars($val ?? '', ENT_QUOTES, 'UTF-8');
+                // Remove control characters that are invalid in XML
+                $escapedVal = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $escapedVal);
+                $sheetXml .= '<c r="' . $cellRef . '" t="inlineStr"><is><t>' . $escapedVal . '</t></is></c>';
+            }
+            $colIdx++;
+        }
+        $sheetXml .= '</row>';
+        $rowIdx++;
+    }
+
+    $sheetXml .= '  </sheetData>
+</worksheet>';
+    $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+
+    $zip->close();
+
+    // Stream download headers
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($tempFile));
+    header('Cache-Control: max-age=0');
+    
+    readfile($tempFile);
+    unlink($tempFile);
+    exit();
 }
 
 try {
     global $pdo;
+    
+    $headers = [];
+    $dataRows = [];
     
     switch ($type) {
         case 'pelanggan':
             // Setup kolom mapping untuk header & query
             $col_mapping = [
                 'nama' => ['header' => 'Nama Pelanggan', 'select' => 'odp_ports.target AS nama_pelanggan'],
-                'koordinat' => ['header' => 'Koordinat Pelanggan', 'select' => 'odp_ports.lat AS customer_lat, odp_ports.lng AS customer_lng'],
+                'koordinat' => ['header' => 'Koordinat Pelanggan', 'select' => 'CASE WHEN odp_ports.lat IS NOT NULL AND odp_ports.lng IS NOT NULL THEN CONCAT(odp_ports.lat, \', \', odp_ports.lng) ELSE \'\' END AS koordinat'],
                 'odp' => ['header' => 'ODP Terhubung', 'select' => 'odp.name AS odp_name'],
                 'port' => ['header' => 'Port ODP', 'select' => 'odp_ports.port_number'],
                 'onu' => ['header' => 'Nomor ONU / SN', 'select' => 'odp_ports.onu_number'],
@@ -62,16 +149,10 @@ try {
             
             // Build query selects
             $select_fields = [];
-            $headers = [];
             
             foreach ($selected_cols as $col) {
                 if (isset($col_mapping[$col])) {
-                    if ($col === 'koordinat') {
-                        $headers[] = 'Latitude Pelanggan';
-                        $headers[] = 'Longitude Pelanggan';
-                    } else {
-                        $headers[] = $col_mapping[$col]['header'];
-                    }
+                    $headers[] = $col_mapping[$col]['header'];
                     $select_fields[] = $col_mapping[$col]['select'];
                 }
             }
@@ -91,32 +172,30 @@ try {
             $stmt->execute();
             $rows = $stmt->fetchAll();
             
-            // Output headers
-            echo implode(';', array_map('formatCsvCell', $headers)) . "\n";
-            
             // Output data
             foreach ($rows as $row) {
                 $line = [];
                 foreach ($selected_cols as $col) {
                     if ($col === 'nama') $line[] = $row['nama_pelanggan'];
-                    elseif ($col === 'koordinat') {
-                        $line[] = $row['customer_lat'];
-                        $line[] = $row['customer_lng'];
-                    }
+                    elseif ($col === 'koordinat') $line[] = $row['koordinat'];
                     elseif ($col === 'odp') $line[] = $row['odp_name'];
                     elseif ($col === 'port') $line[] = $row['port_number'];
                     elseif ($col === 'onu') $line[] = $row['onu_number'];
                     elseif ($col === 'modem') $line[] = $row['modem_type'];
                     elseif ($col === 'keterangan') $line[] = $row['port_desc'];
+                    elseif ($col === 'created_at') $line[] = $row['created_at'];
+                    elseif ($col === 'updated_at') $line[] = $row['updated_at'];
                 }
-                echo implode(';', array_map('formatCsvCell', $line)) . "\n";
+                $dataRows[] = $line;
             }
+            
+            exportToXlsx("export_pelanggan_" . date('Ymd_His') . ".xlsx", $headers, $dataRows);
             break;
             
         case 'odp':
             $col_mapping = [
                 'nama' => ['header' => 'Nama ODP', 'select' => 'odp.name AS odp_name'],
-                'koordinat' => ['header' => 'Koordinat ODP', 'select' => 'odp.lat, odp.lng'],
+                'koordinat' => ['header' => 'Koordinat ODP', 'select' => 'CASE WHEN odp.lat IS NOT NULL AND odp.lng IS NOT NULL THEN CONCAT(odp.lat, \', \', odp.lng) ELSE \'\' END AS koordinat'],
                 'total_ports' => ['header' => 'Jumlah Port', 'select' => 'odp.total_ports'],
                 'port_terpakai' => ['header' => 'Port Terpakai', 'select' => '(SELECT COUNT(*) FROM odp_ports WHERE odp_ports.odp_id = odp.id AND odp_ports.status = \'used\') AS used_ports'],
                 'port_tersedia' => ['header' => 'Port Tersedia', 'select' => 'odp.available_ports'],
@@ -127,16 +206,10 @@ try {
             ];
             
             $select_fields = [];
-            $headers = [];
             
             foreach ($selected_cols as $col) {
                 if (isset($col_mapping[$col])) {
-                    if ($col === 'koordinat') {
-                        $headers[] = 'Latitude ODP';
-                        $headers[] = 'Longitude ODP';
-                    } else {
-                        $headers[] = $col_mapping[$col]['header'];
-                    }
+                    $headers[] = $col_mapping[$col]['header'];
                     $select_fields[] = $col_mapping[$col]['select'];
                 }
             }
@@ -155,30 +228,29 @@ try {
             $stmt->execute();
             $rows = $stmt->fetchAll();
             
-            echo implode(';', array_map('formatCsvCell', $headers)) . "\n";
-            
             foreach ($rows as $row) {
                 $line = [];
                 foreach ($selected_cols as $col) {
                     if ($col === 'nama') $line[] = $row['odp_name'];
-                    elseif ($col === 'koordinat') {
-                        $line[] = $row['lat'];
-                        $line[] = $row['lng'];
-                    }
+                    elseif ($col === 'koordinat') $line[] = $row['koordinat'];
                     elseif ($col === 'total_ports') $line[] = $row['total_ports'];
                     elseif ($col === 'port_terpakai') $line[] = $row['used_ports'];
                     elseif ($col === 'port_tersedia') $line[] = $row['available_ports'];
                     elseif ($col === 'ms_terhubung') $line[] = $row['ms_name'] ?: 'Tidak Terhubung';
                     elseif ($col === 'keterangan') $line[] = $row['odp_desc'];
+                    elseif ($col === 'created_at') $line[] = $row['created_at'];
+                    elseif ($col === 'updated_at') $line[] = $row['updated_at'];
                 }
-                echo implode(';', array_map('formatCsvCell', $line)) . "\n";
+                $dataRows[] = $line;
             }
+            
+            exportToXlsx("export_odp_" . date('Ymd_His') . ".xlsx", $headers, $dataRows);
             break;
             
         case 'odc':
             $col_mapping = [
                 'nama' => ['header' => 'Nama ODC (MS)', 'select' => 'odc.name AS odc_name'],
-                'koordinat' => ['header' => 'Koordinat ODC', 'select' => 'odc.lat, odc.lng'],
+                'koordinat' => ['header' => 'Koordinat ODC', 'select' => 'CASE WHEN odc.lat IS NOT NULL AND odc.lng IS NOT NULL THEN CONCAT(odc.lat, \', \', odc.lng) ELSE \'\' END AS koordinat'],
                 'location' => ['header' => 'Lokasi', 'select' => 'odc.location'],
                 'capacity' => ['header' => 'Kapasitas Port', 'select' => 'odc.capacity'],
                 'used_ports' => ['header' => 'Port Terpakai', 'select' => 'odc.used_ports'],
@@ -196,16 +268,10 @@ try {
             ];
             
             $select_fields = [];
-            $headers = [];
             
             foreach ($selected_cols as $col) {
                 if (isset($col_mapping[$col])) {
-                    if ($col === 'koordinat') {
-                        $headers[] = 'Latitude ODC';
-                        $headers[] = 'Longitude ODC';
-                    } else {
-                        $headers[] = $col_mapping[$col]['header'];
-                    }
+                    $headers[] = $col_mapping[$col]['header'];
                     $select_fields[] = $col_mapping[$col]['select'];
                 }
             }
@@ -222,32 +288,31 @@ try {
             $stmt->execute();
             $rows = $stmt->fetchAll();
             
-            echo implode(';', array_map('formatCsvCell', $headers)) . "\n";
-            
             foreach ($rows as $row) {
                 $line = [];
                 foreach ($selected_cols as $col) {
                     if ($col === 'nama') $line[] = $row['odc_name'];
-                    elseif ($col === 'koordinat') {
-                        $line[] = $row['lat'];
-                        $line[] = $row['lng'];
-                    }
+                    elseif ($col === 'koordinat') $line[] = $row['koordinat'];
                     elseif ($col === 'location') $line[] = $row['location'];
                     elseif ($col === 'capacity') $line[] = $row['capacity'];
                     elseif ($col === 'used_ports') $line[] = $row['used_ports'];
                     elseif ($col === 'available_ports') $line[] = $row['avail_ports'];
                     elseif ($col === 'sumber') $line[] = $row['source_name'] ?: 'Tidak Ada';
                     elseif ($col === 'keterangan') $line[] = $row['odc_desc'];
+                    elseif ($col === 'created_at') $line[] = $row['created_at'];
+                    elseif ($col === 'updated_at') $line[] = $row['updated_at'];
                 }
-                echo implode(';', array_map('formatCsvCell', $line)) . "\n";
+                $dataRows[] = $line;
             }
+            
+            exportToXlsx("export_odc_" . date('Ymd_His') . ".xlsx", $headers, $dataRows);
             break;
             
         case 'pop':
             $col_mapping = [
                 'nama' => ['header' => 'Nama POP', 'select' => 'pop.name AS pop_name'],
                 'code' => ['header' => 'Kode POP', 'select' => 'pop.code'],
-                'koordinat' => ['header' => 'Koordinat POP', 'select' => 'pop.lat, pop.lng'],
+                'koordinat' => ['header' => 'Koordinat POP', 'select' => 'CASE WHEN pop.lat IS NOT NULL AND pop.lng IS NOT NULL THEN CONCAT(pop.lat, \', \', pop.lng) ELSE \'\' END AS koordinat'],
                 'location' => ['header' => 'Lokasi', 'select' => 'pop.location'],
                 'address' => ['header' => 'Alamat Lengkap', 'select' => 'pop.address'],
                 'keterangan' => ['header' => 'Keterangan POP', 'select' => 'pop.description AS pop_desc'],
@@ -256,16 +321,10 @@ try {
             ];
             
             $select_fields = [];
-            $headers = [];
             
             foreach ($selected_cols as $col) {
                 if (isset($col_mapping[$col])) {
-                    if ($col === 'koordinat') {
-                        $headers[] = 'Latitude POP';
-                        $headers[] = 'Longitude POP';
-                    } else {
-                        $headers[] = $col_mapping[$col]['header'];
-                    }
+                    $headers[] = $col_mapping[$col]['header'];
                     $select_fields[] = $col_mapping[$col]['select'];
                 }
             }
@@ -282,23 +341,22 @@ try {
             $stmt->execute();
             $rows = $stmt->fetchAll();
             
-            echo implode(';', array_map('formatCsvCell', $headers)) . "\n";
-            
             foreach ($rows as $row) {
                 $line = [];
                 foreach ($selected_cols as $col) {
                     if ($col === 'nama') $line[] = $row['pop_name'];
                     elseif ($col === 'code') $line[] = $row['code'];
-                    elseif ($col === 'koordinat') {
-                        $line[] = $row['lat'];
-                        $line[] = $row['lng'];
-                    }
+                    elseif ($col === 'koordinat') $line[] = $row['koordinat'];
                     elseif ($col === 'location') $line[] = $row['location'];
                     elseif ($col === 'address') $line[] = $row['address'];
                     elseif ($col === 'keterangan') $line[] = $row['pop_desc'];
+                    elseif ($col === 'created_at') $line[] = $row['created_at'];
+                    elseif ($col === 'updated_at') $line[] = $row['updated_at'];
                 }
-                echo implode(';', array_map('formatCsvCell', $line)) . "\n";
+                $dataRows[] = $line;
             }
+            
+            exportToXlsx("export_pop_" . date('Ymd_His') . ".xlsx", $headers, $dataRows);
             break;
             
         case 'kml':

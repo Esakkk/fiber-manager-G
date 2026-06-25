@@ -4,46 +4,16 @@
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', async function () {
-    const isAuth = await checkAuthentication();
-    if (!isAuth) {
+    const user = await loadUserInfo();
+    if (!user) {
         window.location.href = 'login.html';
         return;
     }
-
-    await loadUserInfo();
 
     initMap();
     initEventListeners();
     loadDevices();
 });
-
-// Check authentication
-async function checkAuthentication() {
-    try {
-        const response = await fetch(`${API_BASE}/auth.php?action=me`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.user) {
-                console.log('Authenticated as:', data.user.username);
-                return true;
-            }
-        }
-
-        console.log('Not authenticated');
-        return false;
-    } catch (error) {
-        console.error('Auth check failed:', error);
-        return false;
-    }
-}
 
 // Load user info
 async function loadUserInfo() {
@@ -79,12 +49,16 @@ async function loadUserInfo() {
                 if (btnUserManagement && data.user.role === 'admin') {
                     btnUserManagement.style.display = 'inline-block';
                 }
+                return data.user;
             }
         }
+        return null;
     } catch (error) {
         console.error('Failed to load user info:', error);
+        return null;
     }
 }
+
 
 // Logout function
 async function logout() {
@@ -1611,36 +1585,6 @@ function closeModal(modalId) {
     }, 300);
 }
 
-async function fetchWithAuth(url, options = {}) {
-    const defaultOptions = {
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    };
-
-    const mergedOptions = {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...(options.headers || {})
-        }
-    };
-
-    try {
-        const response = await fetch(url, mergedOptions);
-        if (response.status === 401) {
-            window.location.href = 'login.html';
-            return null;
-        }
-        return response;
-    } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-    }
-}
 
 window.onclick = function (event) {
     if (event.target.classList.contains('modal')) {

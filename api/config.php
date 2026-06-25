@@ -69,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // =============================================
 $host = 'localhost';
 $dbname = 'fiber_manager';
-$username = 'qcnet';
-$password = 'Qcnet5758oke';
+$username = 'billing';
+$password = 'billing321';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

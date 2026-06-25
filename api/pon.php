@@ -23,11 +23,7 @@ switch($method) {
         break;
     case 'PUT':
         checkRole(['admin', 'operator']);
-        if ($action === 'port') {
-            updatePONPort();
-        } else {
-            updatePON($id);
-        }
+        updatePON($id);
         break;
     case 'DELETE':
         checkRole(['admin']);
@@ -196,33 +192,6 @@ function updatePON($id) {
     }
 }
 
-function updatePONPort() {
-    global $pdo;
-    $data = getRequestData();
-    
-    if (!isset($data['pon_id']) || !isset($data['port_number'])) {
-        sendResponse(['error' => 'Missing required fields: pon_id, port_number'], 400);
-    }
-    
-    try {
-        $stmt = $pdo->prepare("
-            UPDATE pon_ports 
-            SET status = ?, target_odc_id = ?, description = ?, updated_at = NOW()
-            WHERE pon_id = ? AND port_number = ?
-        ");
-        $stmt->execute([
-            $data['status'] ?? 'available',
-            $data['target_odc_id'] ?? null,
-            $data['description'] ?? null,
-            $data['pon_id'],
-            $data['port_number']
-        ]);
-        
-        sendResponse(['message' => 'Port updated successfully']);
-    } catch(PDOException $e) {
-        sendResponse(['error' => $e->getMessage()], 500);
-    }
-}
 
 function deletePON($id) {
     global $pdo;

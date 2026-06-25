@@ -112,16 +112,19 @@
             <div class="map-view-controls"
                 style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 8px 12px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: bold; color: #2d3748;">
                 <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="toggleMapType" checked onchange="toggleMapType()" style="cursor: pointer; margin: 0;">
-                    <i class="fas fa-satellite" style="width: 16px; text-align: center;"></i> Mode Satelit
+                    <input type="checkbox" id="toggleMapType" checked onchange="toggleMapType()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-satellite" style="width: 16px; text-align: center;"></i>
                 </label>
                 <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="toggleClustering" checked onchange="toggleMapClustering()" style="cursor: pointer; margin: 0;">
-                    <i class="fas fa-layer-group" style="width: 16px; text-align: center;"></i> Cluster Marker
+                    <input type="checkbox" id="toggleClustering" checked onchange="toggleMapClustering()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-layer-group" style="width: 16px; text-align: center;"></i>
                 </label>
                 <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="toggleLines" checked onchange="toggleMapLines()" style="cursor: pointer; margin: 0;">
-                    <i class="fas fa-project-diagram" style="width: 16px; text-align: center;"></i> Tampilkan Kabel
+                    <input type="checkbox" id="toggleLines" checked onchange="toggleMapLines()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-project-diagram" style="width: 16px; text-align: center;"></i>
                 </label>
             </div>
 
@@ -315,10 +318,12 @@
                     <label>Koordinat (latitude, longitude):</label>
                     <input type="text" id="poleCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
                     <div class="coordinate-actions">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('poleCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('poleCoordinates')">
                             <i class="fas fa-map-marker-alt"></i> Klik di Peta
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation('poleCoordinates')">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('poleCoordinates')">
                             <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
                         </button>
                     </div>

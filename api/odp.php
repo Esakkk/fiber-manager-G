@@ -145,6 +145,10 @@ function getODP($id) {
 function createODP() {
     global $pdo;
     $data = getRequestData();
+    // Jika source_id diberikan tetapi source_type tidak, coba deteksi tabel sumbernya
+    if (isset($data['source_id']) && !isset($data['source_type'])) {
+        $data['source_type'] = detectSourceType($data['source_id']);
+    }
     
     if (!isset($data['name']) || !isset($data['lat']) || !isset($data['lng'])) {
         sendResponse(['error' => 'Missing required fields'], 400);
@@ -153,8 +157,13 @@ function createODP() {
     try {
         $pdo->beginTransaction();
         
+        // Jika source_id diberikan tetapi source_type tidak, coba deteksi tabel sumbernya
+        if (isset($data['source_id']) && !isset($data['source_type'])) {
+            $data['source_type'] = detectSourceType($data['source_id']);
+        }
+
         // Validasi port belum terpakai jika source_type = 'odc'
-        if ($data['source_type'] === 'odc' && isset($data['source_id']) && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
+        if (isset($data['source_type']) && $data['source_type'] === 'odc' && isset($data['source_id']) && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
             $stmt = $pdo->prepare("
                 SELECT COUNT(*) as total FROM odc_odp_connections 
                 WHERE odc_id = ? AND port_number = ?
@@ -197,7 +206,7 @@ function createODP() {
         }
         
         // If connected to ODC, create connection
-        if (isset($data['source_id']) && $data['source_type'] === 'odc' && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
+        if (isset($data['source_id']) && isset($data['source_type']) && $data['source_type'] === 'odc' && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
             $stmt = $pdo->prepare("
                 INSERT INTO odc_odp_connections (odc_id, odp_id, port_number)
                 VALUES (?, ?, ?)
@@ -402,5 +411,19 @@ function updateODCUsedPorts($odc_id) {
         WHERE id = ?
     ");
     $stmt->execute([$odc_id, $odc_id]);
+}
+
+// Detect source type by checking existence in odc or odp tables
+function detectSourceType($source_id) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT id FROM odc WHERE id = ?");
+    $stmt->execute([$source_id]);
+    if ($stmt->fetch()) return 'odc';
+
+    $stmt = $pdo->prepare("SELECT id FROM odp WHERE id = ?");
+    $stmt->execute([$source_id]);
+    if ($stmt->fetch()) return 'odp';
+
+    return null;
 }
 ?>

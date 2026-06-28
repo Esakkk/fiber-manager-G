@@ -179,7 +179,7 @@ function getODCPorts($odc_id) {
         $stmt2 = $pdo->prepare("SELECT capacity FROM odc WHERE id = ?");
         $stmt2->execute([$odc_id]);
         $odc = $stmt2->fetch();
-        $capacity = $odc ? $odc['capacity'] : 24;
+        $capacity = $odc ? $odc['capacity'] : 8;
         
         $usedPortMap = [];
         foreach ($usedPorts as $port) {
@@ -313,7 +313,7 @@ function createODC() {
             $data['lat'],
             $data['lng'],
             $data['location'] ?? '',
-            $data['capacity'] ?? 24,
+            $data['capacity'] ?? 8,
             0,
             $data['description'] ?? '',
             'pon',

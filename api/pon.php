@@ -163,29 +163,50 @@ function createPON() {
 function updatePON($id) {
     global $pdo;
     if (!$id) sendResponse(['error' => 'ID is required'], 400);
-    
     $data = getRequestData();
-    
+
     try {
+        // Get existing data to support port_count changes
+        $stmtOld = $pdo->prepare("SELECT * FROM pon WHERE id = ?");
+        $stmtOld->execute([$id]);
+        $oldData = $stmtOld->fetch();
+        if (!$oldData) sendResponse(['error' => 'PON not found'], 404);
+
         $fields = [];
         $values = [];
-        $allowed = ['name', 'status', 'description'];
+        // Allow updating olt_id, card_number, name, port_count, status, description
+        $allowed = ['olt_id', 'card_number', 'name', 'port_count', 'status', 'description'];
         foreach ($allowed as $field) {
             if (isset($data[$field])) {
                 $fields[] = "$field = ?";
                 $values[] = $data[$field];
             }
         }
-        
+
         if (empty($fields)) {
             sendResponse(['error' => 'No fields to update'], 400);
         }
-        
+
         $values[] = $id;
         $sql = "UPDATE pon SET " . implode(', ', $fields) . " WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($values);
-        
+
+        // Handle perubahan jumlah port: tambahkan atau hapus port yang tersedia
+        if (isset($data['port_count'])) {
+            $newTotal = (int)$data['port_count'];
+            $oldTotal = (int)$oldData['port_count'];
+            if ($newTotal > $oldTotal) {
+                $ins = $pdo->prepare("INSERT INTO pon_ports (pon_id, port_number, status) VALUES (?, ?, 'available')");
+                for ($i = $oldTotal + 1; $i <= $newTotal; $i++) {
+                    $ins->execute([$id, $i]);
+                }
+            } elseif ($newTotal < $oldTotal) {
+                $del = $pdo->prepare("DELETE FROM pon_ports WHERE pon_id = ? AND port_number > ? AND status = 'available'");
+                $del->execute([$id, $newTotal]);
+            }
+        }
+
         sendResponse(['message' => 'PON updated successfully']);
     } catch(PDOException $e) {
         sendResponse(['error' => $e->getMessage()], 500);

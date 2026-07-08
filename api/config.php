@@ -1,10 +1,21 @@
 <?php
 // Secure session cookie parameters then start session
 $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+$cookieDomain = '';
+$httpHost = $_SERVER['HTTP_HOST'] ?? '';
+if ($httpHost !== '') {
+    $host = strtolower($httpHost);
+    $host = preg_replace('/:\d+$/', '', $host);
+    if ($host !== '' && $host !== 'localhost' && !filter_var($host, FILTER_VALIDATE_IP)) {
+        $cookieDomain = $host;
+    }
+}
+
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
-    'domain' => $_SERVER['HTTP_HOST'] ?? '',
+    'domain' => $cookieDomain,
     'secure' => $secure,
     'httponly' => true,
     'samesite' => 'Lax'
@@ -19,9 +30,11 @@ if (session_status() === PHP_SESSION_NONE) {
 // Daftar origin yang diizinkan
 $allowed_origins = [
     'http://localhost',
-    'http://localhost:80',
     'http://127.0.0.1',
-    'http://localhost/fiber-manager'
+    'http://103.75.85.159:8991',
+    'https://localhost',
+    'https://127.0.0.1',
+    'https://103.75.85.159:8991'
 ];
 
 // Determine request origin and allow only configured origins
@@ -36,10 +49,18 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
     }
 }
 
-// Allow only origins listed in $allowed_origins or localhost/127.0.0.1 during development
 if ($origin) {
-    if (in_array($origin, $allowed_origins) || strpos($origin, 'localhost') !== false || strpos($origin, '127.0.0.1') !== false) {
-        header("Access-Control-Allow-Origin: $origin");
+    $parsedOrigin = parse_url($origin);
+    if ($parsedOrigin && isset($parsedOrigin['scheme'], $parsedOrigin['host'])) {
+        $originHost = $parsedOrigin['scheme'] . '://' . $parsedOrigin['host'];
+        if (isset($parsedOrigin['port'])) {
+            $originHost .= ':' . $parsedOrigin['port'];
+        }
+
+        $isLocalHost = in_array($parsedOrigin['host'], ['localhost', '127.0.0.1', '::1']);
+        if (in_array($originHost, $allowed_origins) || $isLocalHost) {
+            header("Access-Control-Allow-Origin: $originHost");
+        }
     }
 }
 
@@ -68,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // DATABASE CONNECTION
 // =============================================
 $host = 'localhost';
-$dbname = 'fiber_manager';
+$dbname = 'fiber-manager';
 $username = 'Qcnet';
 $password = 'Qcnet57ok';
 

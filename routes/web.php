@@ -14,6 +14,7 @@ use App\Http\Controllers\PonPortController;
 use App\Http\Controllers\OltPortController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\CustomerController;
 
 // =========================================================================
 // API ROUTES (Supports legacy .php extension and both standard and prefixed URLs)
@@ -33,6 +34,7 @@ $registerApiRoutes = function () {
     Route::any('/olt-port.php', [OltPortController::class, 'handle']);
     Route::any('/upload.php', [UploadController::class, 'handle']);
     Route::any('/export.php', [ExportController::class, 'handle']);
+    Route::any('/customers.php', [CustomerController::class, 'handle']);
 };
 
 Route::prefix('api')->group($registerApiRoutes);

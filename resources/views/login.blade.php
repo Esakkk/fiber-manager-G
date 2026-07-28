@@ -123,7 +123,7 @@
                     body: JSON.stringify({ username, password })
                 });
                 
-                const data = await response.json(); 
+                const data = await response.json();     
                 
                 if (response.ok && data.user) {
                     showError('Login berhasil! Mengalihkan...', 'success');

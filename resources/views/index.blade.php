@@ -76,6 +76,10 @@
                     <button class="btn btn-secondary" onclick="showAddODCDialog()">
                         <i class="fas fa-plus-circle"></i> Tambah ODC
                     </button>
+                    <button class="btn btn-secondary" onclick="showAddCustomerDialog()"
+                        style="background: #3182ce; color: white;">
+                        <i class="fas fa-user-plus"></i> Tambah Pelanggan
+                    </button>
                 </div>
                 <!-- Filter & Pencarian -->
                 <div class="filter-section">
@@ -642,6 +646,95 @@
                     <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Form Customer (ONT / Pelanggan) -->
+    <div class="modal" id="customerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customerModalTitle">Tambah Pelanggan / ONT</h2>
+                <span class="close" onclick="closeModal('customerModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" onsubmit="event.preventDefault(); saveCustomer();">
+                    <input type="hidden" id="customerId">
+                    <div class="form-group">
+                        <label for="customerNameInput">Nama Pelanggan:</label>
+                        <input type="text" id="customerNameInput" required placeholder="Masukkan nama pelanggan">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerCoordinates">Koordinat (lat, lng):</label>
+                        <input type="text" id="customerCoordinates" required placeholder="Contoh: -6.208800, 106.845600">
+                        <div class="coordinate-actions" style="margin-top: 5px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('customerCoordinates')">
+                                <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="customerOnu">Nomor ONU / SN:</label>
+                            <input type="text" id="customerOnu" placeholder="Contoh: ZTEGC1234567">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="customerModem">Jenis Modem / ONT:</label>
+                            <input type="text" id="customerModem" placeholder="Contoh: ZTE F609">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerAddress">Alamat:</label>
+                        <input type="text" id="customerAddress" placeholder="Masukkan alamat lengkap">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">No. Telepon / HP:</label>
+                        <input type="text" id="customerPhone" placeholder="Contoh: 08123456789">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerDesc">Keterangan:</label>
+                        <textarea id="customerDesc" rows="2" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('customerModal')">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hubungkan Pelanggan ke ODP -->
+    <div class="modal" id="connectOdpModal">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h2>Hubungkan Pelanggan ke ODP</h2>
+                <span class="close" onclick="closeModal('connectOdpModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="connectOdpForm" onsubmit="event.preventDefault(); saveConnectionToOdp();">
+                    <input type="hidden" id="connectCustomerId">
+                    <div class="form-group">
+                        <label>Nama Pelanggan:</label>
+                        <input type="text" id="connectCustomerName" readonly style="background: #e2e8f0;">
+                    </div>
+                    <div class="form-group">
+                        <label for="connectOdpSelect">Pilih ODP:</label>
+                        <select id="connectOdpSelect" required onchange="loadOdpAvailablePorts(this.value)">
+                            <option value="">-- Pilih ODP --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="connectPortSelect">Pilih Port ODP:</label>
+                        <select id="connectPortSelect" required>
+                            <option value="">-- Pilih Port --</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('connectOdpModal')">Batal</button>
+                        <button type="submit" class="btn btn-primary">Hubungkan</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

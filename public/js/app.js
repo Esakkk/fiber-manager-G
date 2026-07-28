@@ -1591,3 +1591,273 @@ window.onclick = function (event) {
         event.target.classList.remove('show');
     }
 };
+
+// =============================================
+// CUSTOMER / ONT FUNCTIONS
+// =============================================
+
+function showAddCustomerDialog() {
+    currentEditingDevice = null;
+    const title = document.getElementById('customerModalTitle');
+    if (title) title.textContent = 'Tambah Pelanggan / ONT';
+
+    const form = document.getElementById('customerForm');
+    if (form) form.reset();
+
+    const customerId = document.getElementById('customerId');
+    if (customerId) customerId.value = '';
+
+    const modal = document.getElementById('customerModal');
+    if (modal) modal.classList.add('show');
+}
+
+async function editCustomer(id) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/customers.php?id=${id}`);
+        if (!response) return;
+
+        const customer = await response.json();
+        if (response.ok) {
+            const title = document.getElementById('customerModalTitle');
+            if (title) title.textContent = 'Edit Pelanggan / ONT';
+
+            document.getElementById('customerId').value = customer.id;
+            document.getElementById('customerNameInput').value = customer.name;
+            document.getElementById('customerCoordinates').value = `${customer.lat}, ${customer.lng}`;
+            document.getElementById('customerOnu').value = customer.onu_number || '';
+            document.getElementById('customerModem').value = customer.modem_type || '';
+            document.getElementById('customerAddress').value = customer.address || '';
+            document.getElementById('customerPhone').value = customer.phone || '';
+            document.getElementById('customerDesc').value = customer.description || '';
+
+            const modal = document.getElementById('customerModal');
+            if (modal) modal.classList.add('show');
+        } else {
+            alert('Gagal mengambil data pelanggan: ' + (customer.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error fetching customer:', error);
+        alert('Gagal mengambil data pelanggan');
+    }
+}
+
+async function saveCustomer() {
+    const id = document.getElementById('customerId')?.value;
+    const coordString = document.getElementById('customerCoordinates')?.value.trim();
+    const coords = parseCoordinates(coordString);
+    if (!coords) {
+        alert('Format koordinat tidak valid!');
+        return;
+    }
+
+    const data = {
+        name: document.getElementById('customerNameInput')?.value,
+        lat: coords.lat,
+        lng: coords.lng,
+        onu_number: document.getElementById('customerOnu')?.value,
+        modem_type: document.getElementById('customerModem')?.value,
+        address: document.getElementById('customerAddress')?.value,
+        phone: document.getElementById('customerPhone')?.value,
+        description: document.getElementById('customerDesc')?.value
+    };
+
+    if (!data.name) {
+        alert('Nama Pelanggan harus diisi');
+        return;
+    }
+
+    try {
+        const url = id ? `${API_BASE}/customers.php?id=${id}` : `${API_BASE}/customers.php`;
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetchWithAuth(url, {
+            method: method,
+            body: JSON.stringify(data)
+        });
+
+        if (!response) return;
+
+        const result = await response.json();
+        if (response.ok) {
+            closeModal('customerModal');
+            await loadDevices();
+            alert('Data pelanggan berhasil disimpan');
+            if (id) {
+                if (typeof showStandaloneCustomerInfo !== 'undefined') {
+                    const updatedCustomer = devices.customer.find(c => c.id == id);
+                    if (updatedCustomer) {
+                        if (updatedCustomer.odp_id) {
+                            const odp = devices.odp.find(o => o.id == updatedCustomer.odp_id);
+                            if (odp && odp.ports) {
+                                const port = odp.ports.find(p => p.port_number == updatedCustomer.port_number);
+                                if (port) {
+                                    showCustomerInfo({
+                                        odp: odp,
+                                        port: port,
+                                        distance: 0,
+                                        customerLat: parseFloat(updatedCustomer.lat),
+                                        customerLng: parseFloat(updatedCustomer.lng)
+                                    });
+                                }
+                            }
+                        } else {
+                            showStandaloneCustomerInfo(updatedCustomer);
+                        }
+                    }
+                }
+            }
+        } else {
+            alert('Gagal menyimpan data pelanggan: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error saving customer:', error);
+        alert('Gagal menyimpan data pelanggan');
+    }
+}
+
+async function deleteCustomer(id) {
+    if (!confirm('Apakah Anda yakin ingin menghapus pelanggan ini?')) return;
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/customers.php?id=${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response) return;
+
+        const result = await response.json();
+        if (response.ok) {
+            closeModal('customerModal');
+            hideInfoPanel();
+            await loadDevices();
+            alert('Pelanggan berhasil dihapus');
+        } else {
+            alert('Gagal menghapus pelanggan: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error deleting customer:', error);
+        alert('Gagal menghapus pelanggan');
+    }
+}
+
+// CONNECT FLOW
+async function connectCustomerToOdpDialog(customerId, customerName) {
+    document.getElementById('connectCustomerId').value = customerId;
+    document.getElementById('connectCustomerName').value = customerName;
+
+    const selectOdp = document.getElementById('connectOdpSelect');
+    selectOdp.innerHTML = '<option value="">-- Pilih ODP --</option>';
+
+    if (devices.odp && devices.odp.length > 0) {
+        devices.odp.forEach(odp => {
+            selectOdp.innerHTML += `<option value="${odp.id}">${odp.name} (${odp.location})</option>`;
+        });
+    }
+
+    const selectPort = document.getElementById('connectPortSelect');
+    selectPort.innerHTML = '<option value="">-- Pilih Port --</option>';
+
+    const modal = document.getElementById('connectOdpModal');
+    if (modal) modal.classList.add('show');
+}
+
+async function loadOdpAvailablePorts(odpId) {
+    const selectPort = document.getElementById('connectPortSelect');
+    selectPort.innerHTML = '<option value="">Loading...</option>';
+
+    if (!odpId) {
+        selectPort.innerHTML = '<option value="">-- Pilih Port --</option>';
+        return;
+    }
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/odp.php?id=${odpId}`);
+        if (!response) return;
+
+        const odp = await response.json();
+        if (response.ok) {
+            selectPort.innerHTML = '<option value="">-- Pilih Port --</option>';
+            if (odp.ports && odp.ports.length > 0) {
+                const availablePorts = odp.ports.filter(p => p.status === 'available');
+                if (availablePorts.length === 0) {
+                    selectPort.innerHTML = '<option value="">Tidak ada port kosong</option>';
+                } else {
+                    availablePorts.forEach(port => {
+                        selectPort.innerHTML += `<option value="${port.port_number}">Port ${port.port_number}</option>`;
+                    });
+                }
+            } else {
+                selectPort.innerHTML = '<option value="">Gagal memuat port</option>';
+            }
+        } else {
+            selectPort.innerHTML = '<option value="">Gagal memuat ODP</option>';
+        }
+    } catch (error) {
+        console.error('Error loading ODP ports:', error);
+        selectPort.innerHTML = '<option value="">Error memuat port</option>';
+    }
+}
+
+async function saveConnectionToOdp() {
+    const customerId = document.getElementById('connectCustomerId').value;
+    const odpId = document.getElementById('connectOdpSelect').value;
+    const portNumber = document.getElementById('connectPortSelect').value;
+
+    if (!customerId || !odpId || !portNumber) {
+        alert('Silakan pilih ODP dan Port');
+        return;
+    }
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/customers.php?action=connect`, {
+            method: 'POST',
+            body: JSON.stringify({
+                customer_id: customerId,
+                odp_id: odpId,
+                port_number: portNumber
+            })
+        });
+
+        if (!response) return;
+
+        const result = await response.json();
+        if (response.ok) {
+            closeModal('connectOdpModal');
+            hideInfoPanel();
+            await loadDevices();
+            alert('Pelanggan berhasil dihubungkan ke ODP');
+        } else {
+            alert('Gagal menghubungkan pelanggan: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error connecting customer:', error);
+        alert('Gagal menghubungkan pelanggan');
+    }
+}
+
+async function disconnectCustomer(customerId) {
+    if (!confirm('Apakah Anda yakin ingin memutuskan sambungan pelanggan dari ODP?')) return;
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE}/customers.php?action=disconnect`, {
+            method: 'POST',
+            body: JSON.stringify({
+                customer_id: customerId
+            })
+        });
+
+        if (!response) return;
+
+        const result = await response.json();
+        if (response.ok) {
+            hideInfoPanel();
+            await loadDevices();
+            alert('Sambungan pelanggan berhasil diputuskan');
+        } else {
+            alert('Gagal memutuskan sambungan: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error disconnecting customer:', error);
+        alert('Gagal memutuskan sambungan');
+    }
+}

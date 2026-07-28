@@ -6,7 +6,7 @@ const API_BASE = window.location.origin + '/fiber-manager/api';
 // Global variables
 let map;
 let markersLayer;
-let devices = { odc: [], odp: [], pop: [], olt: [], pole: [] };
+let devices = { odc: [], odp: [], pop: [], olt: [], pole: [], customer: [] };
 let currentEditingDevice = null;
 let currentPortConfig = { deviceId: null, portNumber: null };
 let odpMarkers = {};
@@ -655,27 +655,30 @@ async function fetchWithAuth(url, options = {}) {
 // Load devices from API - HANYA SATU DEKLARASI
 async function loadDevices() {
     try {
-        const [odcRes, odpRes, popRes, oltRes, poleRes] = await Promise.all([
+        const [odcRes, odpRes, popRes, oltRes, poleRes, customerRes] = await Promise.all([
             fetchWithAuth(`${API_BASE}/odc.php`),
             fetchWithAuth(`${API_BASE}/odp.php`),
             fetchWithAuth(`${API_BASE}/pop.php`),
             fetchWithAuth(`${API_BASE}/olt.php`),
-            fetchWithAuth(`${API_BASE}/pole.php`)
+            fetchWithAuth(`${API_BASE}/pole.php`),
+            fetchWithAuth(`${API_BASE}/customers.php`)
         ]);
 
-        if (!odcRes || !odpRes || !popRes || !oltRes || !poleRes) return;
+        if (!odcRes || !odpRes || !popRes || !oltRes || !poleRes || !customerRes) return;
 
         const odcData = await odcRes.json();
         const odpData = await odpRes.json();
         const popData = await popRes.json();
         const oltData = await oltRes.json();
         const poleData = await poleRes.json();
+        const customerData = await customerRes.json();
 
         devices.odc = Array.isArray(odcData) ? odcData : [];
         devices.odp = Array.isArray(odpData) ? odpData : [];
         devices.pop = Array.isArray(popData) ? popData : [];
         devices.olt = Array.isArray(oltData) ? oltData : [];
         devices.pole = Array.isArray(poleData) ? poleData : [];
+        devices.customer = Array.isArray(customerData) ? customerData : [];
 
         refreshMapMarkers();
         refreshDeviceList();
@@ -823,6 +826,20 @@ function createPoleIcon() {
         iconSize: [32, 40],
         iconAnchor: [16, 40],
         popupAnchor: [0, -40]
+    });
+}
+
+function createStandaloneCustomerIcon() {
+    return L.divIcon({
+        html: `
+            <div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; border: 2.5px solid #a0aec0; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.2s ease;">
+                <i class="fas fa-home" style="color: #718096; font-size: 13px;"></i>
+            </div>
+        `,
+        className: 'customer-standalone-icon',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -13]
     });
 }
 
@@ -1069,6 +1086,47 @@ function refreshMapMarkers() {
             });
         }
     });
+
+    // 5. Render Standalone Customers
+    if (devices.customer) {
+        devices.customer.forEach(customer => {
+            if (!customer.odp_id) {
+                const cLat = parseFloat(customer.lat);
+                const cLng = parseFloat(customer.lng);
+                if (!isNaN(cLat) && !isNaN(cLng) && cLat >= -90 && cLat <= 90 && cLng >= -180 && cLng <= 180) {
+                    const marker = L.marker([cLat, cLng], { icon: createStandaloneCustomerIcon() });
+                    marker.bindTooltip(customer.name, {
+                        permanent: true,
+                        direction: 'top',
+                        className: 'marker-tooltip-label',
+                        offset: [0, -15]
+                    });
+                    
+                    if (window.markerClusterGroup && isClusteringEnabled) {
+                        marker.addTo(window.markerClusterGroup);
+                    } else {
+                        marker.addTo(markersLayer);
+                    }
+                    
+                    marker.on('click', () => showStandaloneCustomerInfo(customer));
+                    
+                    const currentUser = window.currentUser;
+                    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+                    const connectBtn = canEdit ? `<button onclick="connectCustomerToOdpDialog(${customer.id}, '${customer.name.replace(/'/g, "\\'")}')" style="width: 100%; margin-top: 10px; padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 13px;"><i class="fas fa-plug"></i> Hubungkan ke ODP</button>` : '';
+                    
+                    marker.bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h4 style="margin: 0 0 10px 0; color: #718096;"><i class="fas fa-user"></i> ${customer.name}</h4>
+                            <p style="margin: 4px 0; color: #e53e3e; font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Belum Terhubung ke ODP</p>
+                            ${customer.onu_number ? `<p style="margin: 4px 0;"><strong>ONU/SN:</strong> ${customer.onu_number}</p>` : ''}
+                            ${customer.modem_type ? `<p style="margin: 4px 0;"><strong>Modem:</strong> ${customer.modem_type}</p>` : ''}
+                            ${connectBtn}
+                        </div>
+                    `);
+                }
+            }
+        });
+    }
 }
 
 function drawConnectionLine(odp, source) {
@@ -1561,6 +1619,8 @@ function showCustomerInfo(customerData) {
         }, 100);
     }
 
+    const customerObj = (devices.customer || []).find(c => c.odp_id == odp.id && c.port_number == port.port_number);
+
     html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">`;
 
     if (canEdit) {
@@ -1574,9 +1634,82 @@ function showCustomerInfo(customerData) {
     </button>`;
 
     if (canEdit) {
-        html += `<button onclick="configurePort(${port.port_number}, ${odp.id})" style="padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; grid-column: span 2;">
-            <i class="fas fa-user-edit"></i> Edit Pelanggan
+        if (customerObj) {
+            html += `<button onclick="editCustomer(${customerObj.id})" style="padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-edit"></i> Edit Pelanggan
+            </button>`;
+            html += `<button onclick="disconnectCustomer(${customerObj.id})" style="padding: 8px; background: #e53e3e; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-unlink"></i> Putus Koneksi
+            </button>`;
+        } else {
+            html += `<button onclick="configurePort(${port.port_number}, ${odp.id})" style="padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; grid-column: span 2;">
+                <i class="fas fa-user-edit"></i> Edit Pelanggan
+            </button>`;
+        }
+    }
+
+    html += `</div></div>`;
+
+    content.innerHTML = html;
+    panel.classList.add('show');
+}
+
+function showStandaloneCustomerInfo(customer) {
+    const panel = document.getElementById('infoPanel');
+    const title = document.getElementById('infoTitle');
+    const content = document.getElementById('infoContent');
+
+    title.textContent = customer.name;
+
+    const currentUser = window.currentUser;
+    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+    const cLat = parseFloat(customer.lat);
+    const cLng = parseFloat(customer.lng);
+
+    let html = `<div class="device-detail">
+        <p style="margin: 0 0 10px 0;"><strong><i class="fas fa-user"></i> Nama Pelanggan:</strong> ${customer.name}</p>
+        <p style="margin: 4px 0;"><strong>Status:</strong> <span style="color: #718096; font-weight: bold;">✕ Belum Terhubung ke ODP</span></p>
+        <hr>
+        <h4 style="margin: 10px 0 8px 0;"><i class="fas fa-map-pin"></i> Informasi Lokasi</h4>
+        <p style="margin: 4px 0;"><strong>Koordinat Pelanggan:</strong></p>
+        <p style="margin: 4px 0; padding: 6px; background: #f7fafc; border-radius: 3px; font-family: monospace; font-size: 12px;">${cLat.toFixed(8)}, ${cLng.toFixed(8)}</p>
+        ${customer.address ? `<p style="margin: 8px 0 4px 0;"><strong>Alamat:</strong> ${customer.address}</p>` : ''}
+        ${customer.phone ? `<p style="margin: 8px 0 4px 0;"><strong>Telepon:</strong> ${customer.phone}</p>` : ''}
+        <hr>`;
+
+    if (customer.onu_number || customer.modem_type) {
+        html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-microchip"></i> Perangkat</h4>`;
+        if (customer.onu_number) {
+            html += `<p style="margin: 4px 0;"><strong>ONU/SN:</strong> ${customer.onu_number}</p>`;
+        }
+        if (customer.modem_type) {
+            html += `<p style="margin: 4px 0;"><strong>Jenis Modem:</strong> ${customer.modem_type}</p>`;
+        }
+        html += `<hr>`;
+    }
+
+    if (customer.description) {
+        html += `<h4 style="margin: 10px 0 8px 0;"><i class="fas fa-sticky-note"></i> Keterangan</h4>
+        <p style="margin: 4px 0; padding: 8px; background: #fffaf0; border-left: 3px solid #ed8936; border-radius: 3px;">${customer.description}</p>
+        <hr>`;
+    }
+
+    html += `<div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px;">`;
+
+    if (canEdit) {
+        html += `<button onclick="connectCustomerToOdpDialog(${customer.id}, '${customer.name.replace(/'/g, "\\'")}')" style="padding: 8px; background: #3182ce; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fas fa-plug"></i> Hubungkan ke ODP
         </button>`;
+
+        html += `<button onclick="editCustomer(${customer.id})" style="padding: 8px; background: #ed8936; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="fas fa-edit"></i> Edit Pelanggan
+        </button>`;
+
+        if (currentUser.role === 'admin') {
+            html += `<button onclick="deleteCustomer(${customer.id})" style="padding: 8px; background: #e53e3e; color: white; border: none; border-radius: 3px; cursor: pointer; transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-trash-alt"></i> Hapus Pelanggan
+            </button>`;
+        }
     }
 
     html += `</div></div>`;

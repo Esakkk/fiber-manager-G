@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola POP, OLT & PON - Fiber Manager</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/icons/icon.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #2d3748;
+        }
+        
+        .header h1 i {
+            color: #9b59b6;
+            margin-right: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary { background: #9b59b6; color: white; }
+        .btn-primary:hover { background: #8e44ad; transform: translateY(-1px); }
+        .btn-secondary { background: #718096; color: white; }
+        .btn-secondary:hover { background: #4a5568; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .btn-warning { background: #ed8936; color: white; }
+        .btn-warning:hover { background: #dd6b20; }
+        .btn-danger { background: #f56565; color: white; }
+        .btn-danger:hover { background: #e53e3e; }
+        .btn-info { background: #4299e1; color: white; }
+        .btn-info:hover { background: #3182ce; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .btn-xs { padding: 3px 8px; font-size: 11px; }
+        
+        /* POP Card */
+        .pops-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 20px;
+        }
+        
+        .pop-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .pop-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+        
+        .pop-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pop-header h3 { font-size: 18px; margin: 0; }
+        .pop-header .pop-code { font-size: 12px; opacity: 0.8; margin-left: 8px; }
+        .pop-header .chevron { transition: transform 0.3s; }
+        
+        .pop-body { padding: 20px; border-top: 1px solid #e2e8f0; }
+        
+        .pop-info {
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pop-info i { width: 18px; color: #9b59b6; }
+        
+        /* OLT Card */
+        .olt-card {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .olt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .olt-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #2d3748;
+        }
+        .olt-name i { color: #e67e22; margin-right: 8px; }
+        
+        .olt-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        
+        .olt-stat {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* PON Card */
+        .pon-card {
+            background: white;
+            border-radius: 8px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .pon-header {
+            background: #edf2f7;
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pon-header h4 {
+            font-size: 14px;
+            color: #2d3748;
+        }
+        .pon-header h4 i { color: #1abc9c; margin-right: 8px; }
+        
+        .pon-body { padding: 15px; }
+        
+        .port-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .port-item {
+            text-align: center;
+            padding: 6px 4px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .port-item:hover { transform: scale(1.05); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .port-item.available { background: #c6f6d5; border: 1px solid #48bb78; color: #276749; }
+        .port-item.used { background: #fed7d7; border: 1px solid #f56565; color: #c53030; }
+        .port-item.maintenance { background: #fefcbf; border: 1px solid #ecc94b; color: #975a16; }
+        
+        .empty-message { text-align: center; padding: 40px; color: #718096; }
+        .loading { text-align: center; padding: 40px; color: #718096; }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-lg { max-width: 700px; }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 20px; color: #2d3748; }
+        
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 13px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #9b59b6;
+            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+        }
+        
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #a0aec0;
+        }
+        .close:hover { color: #4a5568; }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success { background: #f0fff4; color: #2f855a; border-left: 4px solid #48bb78; }
+        .alert-error { background: #fff5f5; color: #c53030; border-left: 4px solid #f56565; }
+        
+        hr { margin: 15px 0; border: none; border-top: 1px solid #e2e8f0; }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            margin: 15px 0 10px 0;
+        }
+        
+        .info-card {
+            background: #ebf8ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4299e1;
+        }
+        .info-card p { margin: 5px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-building"></i> Manajemen POP, OLT & PON</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+                    <i class="fas fa-map-marked-alt"></i> Kembali ke Peta
+                </button>
+                <button class="btn btn-primary" onclick="showAddPOPModal()">
+                    <i class="fas fa-plus-circle"></i> Tambah POP
+                </button>
+            </div>
+        </div>
+        
+        <div id="messageBox"></div>
+        
+        <div id="popsContainer" class="pops-grid">
+            <div class="loading"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>
+        </div>
+    </div>
+    
+    <!-- Modal POP -->
+    <div class="modal" id="popModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="popModalTitle">Tambah POP</h2>
+                <span class="close" onclick="closeModal('popModal')">&times;</span>
+            </div>
+            <form id="popForm">
+                <input type="hidden" id="popId">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nama POP *</label>
+                            <input type="text" id="popName" placeholder="Contoh: POP Cikarang" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode POP</label>
+                            <input type="text" id="popCode" placeholder="Contoh: CK-01">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Latitude *</label>
+                            <input type="number" id="popLat" step="any" placeholder="-6.2088" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Longitude *</label>
+                            <input type="number" id="popLng" step="any" placeholder="106.8456" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Lokasi *</label>
+                        <input type="text" id="popLocation" placeholder="Nama area/kecamatan" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alamat Lengkap</label>
+                        <textarea id="popAddress" rows="2" placeholder="Alamat lengkap POP"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Keterangan</label>
+                        <textarea id="popDescription" rows="2" placeholder="Informasi tambahan..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('popModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan POP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal OLT -->
+    <div class="modal" id="oltModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="oltModalTitle">Tambah OLT</h2>
+                <span class="close" onclick="closeModal('oltModal')">&times;</span>
+            </div>
+            <form id="oltForm">
+                <input type="hidden" id="oltId">
+                <input type="hidden" id="oltPopId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nama OLT *</label>
+                        <input type="text" id="oltName" placeholder="Contoh: OLT-CK-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input type="text" id="oltModel" placeholder="Contoh: Huawei MA5800">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>IP Address</label>
+                            <input type="text" id="oltIpAddress" placeholder="192.168.1.100">
+                        </div>
+                        <div class="form-group">
+                            <label>Management Port</label>
+                            <input type="number" id="oltManagementPort" value="22">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Jumlah Port Total</label>
+                            <input type="number" id="oltTotalPorts" min="1" max="64" value="16" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Jumlah PON Card</label>
+                            <input type="number" id="oltTotalPonPorts" min="1" max="16" value="4" required>
+                            <small>Setiap PON card akan memiliki port sesuai pembagian</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Lokasi</label>
+                        <input type="text" id="oltLocation" placeholder="Lokasi fisik OLT">
+                    </div>
+                    <div class="form-group">
+                        <label>Keterangan</label>
+                        <textarea id="oltDescription" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('oltModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan OLT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal PON -->
+    <div class="modal" id="ponModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="ponModalTitle">Tambah PON Card</h2>
+                <span class="close" onclick="closeModal('ponModal')">&times;</span>
+            </div>
+            <form id="ponForm">
+                <input type="hidden" id="ponId">
+                <input type="hidden" id="ponOltId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Card Number *</label>
+                        <input type="number" id="ponCardNumber" min="1" max="16" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Card</label>
+                        <input type="text" id="ponName" placeholder="Contoh: PON Card 1 (Gedung A)">
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Port</label>
+                        <input type="number" id="ponPortCount" min="1" max="16" value="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="ponStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Keterangan</label>
+                        <textarea id="ponDescription" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('ponModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan PON</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Konfigurasi Port PON -->
+    <div class="modal" id="portConfigModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>Konfigurasi Port PON</h3>
+                <span class="close" onclick="closeModal('portConfigModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="configPonId">
+                <input type="hidden" id="configPortNumber">
+                <div class="info-card">
+                    <p><i class="fas fa-info-circle"></i> <strong>Informasi Port:</strong></p>
+                    <p>PON Card: <span id="configPonName">-</span> | Port: <span id="configPortDisplay">-</span></p>
+                </div>
+                <div class="form-group">
+                    <label>Status Port</label>
+                    <select id="portStatusSelect" class="form-control">
+                        <option value="available">Available (Tersedia)</option>
+                        <option value="used">Used (Terpakai)</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="form-group" id="targetOdcGroup" style="display: none;">
+                    <label>Terhubung ke ODC:</label>
+                    <select id="targetOdcId" class="form-control">
+                        <option value="">Pilih ODC...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan</label>
+                    <textarea id="portDescription" rows="2" placeholder="Informasi port..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('portConfigModal')">Batal</button>
+                <button class="btn btn-primary" onclick="savePortConfig()">Simpan</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.API_BASE = "{{ url('api') }}";
+        const API_BASE = window.API_BASE;
+        
+        // Helper global fetch override for credentials: 'include' and automatic CSRF handling
+        const originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+            init = init || {};
+            init.credentials = 'include';
+            return originalFetch(input, init);
+        };
+        
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/auth.php?action=me`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.user) { window.location.href = 'login.html'; }
+                    return data.user;
+                }
+                window.location.href = 'login.html';
+                return null;
+            } catch (error) {
+                window.location.href = 'login.html';
+                return null;
+            }
+        }
+        
+        // Load all POPs
+        async function loadPOPs() {
+            try {
+                const response = await fetch(`${API_BASE}/pop.php`);
+                if (response.ok) {
+                    const pops = await response.json();
+                    renderPOPs(pops);
+                } else if (response.status === 401) {
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Error loading POPs:', error);
+                document.getElementById('popsContainer').innerHTML = '<div class="empty-message">Gagal memuat data</div>';
+            }
+        }
+        
+        // Render POP cards
+        function renderPOPs(pops) {
+            const container = document.getElementById('popsContainer');
+            if (!pops || pops.length === 0) {
+                container.innerHTML = '<div class="empty-message">Belum ada POP. Klik "Tambah POP" untuk memulai.</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            pops.forEach(pop => {
+                const card = document.createElement('div');
+                card.className = 'pop-card';
+                card.innerHTML = `
+                    <div class="pop-header" onclick="togglePOP(${pop.id})">
+                        <div>
+                            <h3><i class="fas fa-building"></i> ${escapeHtml(pop.name)}</h3>
+                            ${pop.code ? `<span class="pop-code">${escapeHtml(pop.code)}</span>` : ''}
+                        </div>
+                        <div>
+                            <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 12px;">
+                                ${pop.olt_count || 0} OLT
+                            </span>
+                            <i class="fas fa-chevron-down chevron" id="chevron-${pop.id}" style="margin-left: 12px;"></i>
+                        </div>
+                    </div>
+                    <div class="pop-body" id="popBody-${pop.id}" style="display: none;">
+                        <div class="pop-info"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(pop.location || '-')}</div>
+                        <div class="pop-info"><i class="fas fa-coordinates"></i> ${pop.lat}, ${pop.lng}</div>
+                        ${pop.address ? `<div class="pop-info"><i class="fas fa-address-card"></i> ${escapeHtml(pop.address)}</div>` : ''}
+                        ${pop.description ? `<div class="pop-info"><i class="fas fa-info-circle"></i> ${escapeHtml(pop.description)}</div>` : ''}
+                        <div style="display: flex; gap: 10px; margin: 15px 0;">
+                            <button class="btn btn-success btn-sm" onclick="event.stopPropagation(); showAddOLTModal(${pop.id}, '${escapeHtml(pop.name)}')">
+                                <i class="fas fa-plus"></i> Tambah OLT
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); editPOP(${pop.id})">
+                                <i class="fas fa-edit"></i> Edit POP
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deletePOP(${pop.id}, '${escapeHtml(pop.name)}')">
+                                <i class="fas fa-trash"></i> Hapus POP
+                            </button>
+                        </div>
+                        <hr>
+                        <div class="section-title"><i class="fas fa-server"></i> Daftar OLT</div>
+                        <div id="oltList-${pop.id}"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Memuat OLT...</div></div>
+                    </div>
+                `;
+                container.appendChild(card);
+                loadOLTs(pop.id);
+            });
+        }
+        
+        // Load OLTs for a POP
+        async function loadOLTs(popId) {
+            try {
+                const response = await fetch(`${API_BASE}/pop.php?id=${popId}&action=olts`);
+                if (response.ok) {
+                    const olts = await response.json();
+                    renderOLTs(popId, olts);
+                }
+            } catch (error) {
+                console.error('Error loading OLTs:', error);
+                document.getElementById(`oltList-${popId}`).innerHTML = '<div class="empty-message">Gagal memuat OLT</div>';
+            }
+        }
+        
+        // Render OLTs with PON cards
+        function renderOLTs(popId, olts) {
+            const container = document.getElementById(`oltList-${popId}`);
+            if (!olts || olts.length === 0) {
+                container.innerHTML = '<div class="empty-message">Belum ada OLT. Klik "Tambah OLT" untuk menambahkan.</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            olts.forEach(olt => {
+                const oltDiv = document.createElement('div');
+                oltDiv.className = 'olt-card';
+                
+                const portsPerPON = olt.total_ports && olt.total_pon_ports ? Math.ceil(olt.total_ports / olt.total_pon_ports) : 8;
+                
+                oltDiv.innerHTML = `
+                    <div class="olt-header">
+                        <div class="olt-name"><i class="fas fa-server"></i> ${escapeHtml(olt.name)}</div>
+                        <div>
+                            <button class="btn btn-info btn-sm" onclick="event.stopPropagation(); showAddPONModal(${olt.id}, '${escapeHtml(olt.name)}')">
+                                <i class="fas fa-plus"></i> Tambah PON
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); editOLT(${olt.id}, ${popId})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteOLT(${olt.id}, '${escapeHtml(olt.name)}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="olt-stats">
+                        <span class="olt-stat"><i class="fas fa-plug"></i> Total Port: ${olt.total_ports || 16}</span>
+                        <span class="olt-stat"><i class="fas fa-layer-group"></i> PON Card: ${olt.total_pon_ports || 0}</span>
+                        <span class="olt-stat"><i class="fas fa-check-circle"></i> Port/PON: ~${portsPerPON}</span>
+                    </div>
+                    ${olt.model ? `<div class="pop-info"><i class="fas fa-microchip"></i> Model: ${escapeHtml(olt.model)}</div>` : ''}
+                    ${olt.ip_address ? `<div class="pop-info"><i class="fas fa-network-wired"></i> IP: ${escapeHtml(olt.ip_address)}:${olt.management_port || 22}</div>` : ''}
+                    
+                    <div class="section-title" style="margin-top: 15px;">
+                        <i class="fas fa-layer-group"></i> PON Cards
+                    </div>
+                    <div id="ponList-${olt.id}">
+                        <div class="loading"><i class="fas fa-spinner fa-spin"></i> Memuat PON...</div>
+                    </div>
+                `;
+                container.appendChild(oltDiv);
+                loadPONs(olt.id);
+            });
+        }
+        
+        // Load PONs for an OLT
+        async function loadPONs(oltId) {
+            try {
+                const response = await fetch(`${API_BASE}/olt.php?id=${oltId}&action=pons`);
+                if (response.ok) {
+                    const pons = await response.json();
+                    renderPONs(oltId, pons);
+                }
+            } catch (error) {
+                console.error('Error loading PONs:', error);
+                document.getElementById(`ponList-${oltId}`).innerHTML = '<div class="empty-message">Gagal memuat PON</div>';
+            }
+        }
+        
+        // Render PON cards with ports
+        function renderPONs(oltId, pons) {
+            const container = document.getElementById(`ponList-${oltId}`);
+            if (!pons || pons.length === 0) {
+                container.innerHTML = '<div class="empty-message">Belum ada PON Card. Klik "Tambah PON" untuk menambahkan.</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            pons.forEach(pon => {
+                const ponDiv = document.createElement('div');
+                ponDiv.className = 'pon-card';
+                ponDiv.innerHTML = `
+                    <div class="pon-header" onclick="togglePON(${pon.id})">
+                        <div>
+                            <h4><i class="fas fa-layer-group"></i> PON Card ${pon.card_number} - ${pon.name || `Card ${pon.card_number}`}</h4>
+                        </div>
+                        <div>
+                            <span class="badge ${pon.status === 'active' ? 'badge-active' : 'badge-inactive'}" style="background: ${pon.status === 'active' ? '#c6f6d5' : '#fed7d7'}; padding: 2px 8px; border-radius: 12px; font-size: 10px;">
+                                ${pon.status}
+                            </span>
+                            <i class="fas fa-chevron-down chevron-pon" id="chevronPon-${pon.id}" style="margin-left: 10px;"></i>
+                        </div>
+                    </div>
+                    <div class="pon-body" id="ponBody-${pon.id}" style="display: none;">
+                        <div class="olt-stats" style="margin-bottom: 10px;">
+                            <span class="olt-stat"><i class="fas fa-plug"></i> Total Port: ${pon.port_count || 8}</span>
+                            <span class="olt-stat" style="background: #c6f6d5;"><i class="fas fa-check-circle"></i> Tersedia: ${pon.available_ports || 0}</span>
+                            <span class="olt-stat" style="background: #fed7d7;"><i class="fas fa-users"></i> Terpakai: ${pon.used_ports || 0}</span>
+                        </div>
+                        ${pon.description ? `<div class="pop-info"><i class="fas fa-info-circle"></i> ${escapeHtml(pon.description)}</div>` : ''}
+                        <div class="section-title" style="margin-top: 10px;">Status Port</div>
+                        <div class="port-grid" id="portGrid-${pon.id}"></div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-warning btn-xs" onclick="event.stopPropagation(); editPON(${pon.id})">
+                                <i class="fas fa-edit"></i> Edit PON
+                            </button>
+                            <button class="btn btn-danger btn-xs" onclick="event.stopPropagation(); deletePON(${pon.id})">
+                                <i class="fas fa-trash"></i> Hapus PON
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(ponDiv);
+                
+                // Load ports for this PON
+                loadPONPorts(pon.id);
+            });
+        }
+        
+        // Load PON ports
+        async function loadPONPorts(ponId) {
+            try {
+                const response = await fetch(`${API_BASE}/pon.php?id=${ponId}&action=ports`);
+                if (response.ok) {
+                    const ports = await response.json();
+                    renderPorts(ponId, ports);
+                }
+            } catch (error) {
+                console.error('Error loading ports:', error);
+                document.getElementById(`portGrid-${ponId}`).innerHTML = '<div class="empty-message">Gagal memuat port</div>';
+            }
+        }
+        
+        // Render ports grid
+        function renderPorts(ponId, ports) {
+            const container = document.getElementById(`portGrid-${ponId}`);
+            if (!ports || ports.length === 0) {
+                container.innerHTML = '<div class="empty-message">Tidak ada port</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            ports.forEach(port => {
+                const statusClass = port.status === 'available' ? 'available' : (port.status === 'used' ? 'used' : 'maintenance');
+                const title = port.status === 'used' ? `Port ${port.port_number}: Terhubung ke ODC ${port.odc_name || '?'}` : `Port ${port.port_number}: ${port.status}`;
+                
+                const portDiv = document.createElement('div');
+                portDiv.className = `port-item ${statusClass}`;
+                portDiv.title = title;
+                portDiv.innerHTML = `${port.port_number}`;
+                portDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    configurePort(ponId, port.port_number, port.status, port.target_odc_id);
+                };
+                container.appendChild(portDiv);
+            });
+        }
+        
+        // Toggle functions
+        function togglePOP(popId) {
+            const body = document.getElementById(`popBody-${popId}`);
+            const chevron = document.getElementById(`chevron-${popId}`);
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                body.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function togglePON(ponId) {
+            const body = document.getElementById(`ponBody-${ponId}`);
+            const chevron = document.getElementById(`chevronPon-${ponId}`);
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                body.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        // POP CRUD
+        function showAddPOPModal() {
+            document.getElementById('popModalTitle').textContent = 'Tambah POP';
+            document.getElementById('popForm').reset();
+            document.getElementById('popId').value = '';
+            document.getElementById('popModal').classList.add('show');
+        }
+        
+        async function editPOP(popId) {
+            try {
+                const response = await fetch(`${API_BASE}/pop.php?id=${popId}`);
+                if (response.ok) {
+                    const pop = await response.json();
+                    document.getElementById('popModalTitle').textContent = 'Edit POP';
+                    document.getElementById('popId').value = pop.id;
+                    document.getElementById('popName').value = pop.name;
+                    document.getElementById('popCode').value = pop.code || '';
+                    document.getElementById('popLat').value = pop.lat;
+                    document.getElementById('popLng').value = pop.lng;
+                    document.getElementById('popLocation').value = pop.location || '';
+                    document.getElementById('popAddress').value = pop.address || '';
+                    document.getElementById('popDescription').value = pop.description || '';
+                    document.getElementById('popModal').classList.add('show');
+                }
+            } catch (error) {
+                showMessage('Gagal memuat data POP', 'error');
+            }
+        }
+        
+        async function savePOP() {
+            const id = document.getElementById('popId').value;
+            const data = {
+                name: document.getElementById('popName').value,
+                code: document.getElementById('popCode').value,
+                lat: parseFloat(document.getElementById('popLat').value),
+                lng: parseFloat(document.getElementById('popLng').value),
+                location: document.getElementById('popLocation').value,
+                address: document.getElementById('popAddress').value,
+                description: document.getElementById('popDescription').value
+            };
+            
+            if (!data.name || isNaN(data.lat) || isNaN(data.lng) || !data.location) {
+                showMessage('Nama, lokasi, dan koordinat harus diisi', 'error');
+                return;
+            }
+            
+            try {
+                const url = id ? `${API_BASE}/pop.php?id=${id}` : `${API_BASE}/pop.php`;
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    closeModal('popModal');
+                    loadPOPs();
+                    showMessage('POP berhasil disimpan', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menyimpan POP', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menyimpan POP', 'error');
+            }
+        }
+        
+        async function deletePOP(popId, popName) {
+            if (!confirm(`Yakin ingin menghapus POP "${popName}"?\nSemua OLT dan PON di dalamnya juga akan terhapus!`)) return;
+            try {
+                const response = await fetch(`${API_BASE}/pop.php?id=${popId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadPOPs();
+                    showMessage('POP berhasil dihapus', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menghapus POP', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menghapus POP', 'error');
+            }
+        }
+        
+        // OLT CRUD
+        function showAddOLTModal(popId, popName) {
+            document.getElementById('oltModalTitle').textContent = `Tambah OLT di ${popName}`;
+            document.getElementById('oltForm').reset();
+            document.getElementById('oltId').value = '';
+            document.getElementById('oltPopId').value = popId;
+            document.getElementById('oltTotalPorts').value = 16;
+            document.getElementById('oltTotalPonPorts').value = 4;
+            document.getElementById('oltModal').classList.add('show');
+        }
+        
+        async function editOLT(oltId, popId) {
+            try {
+                const response = await fetch(`${API_BASE}/olt.php?id=${oltId}`);
+                if (response.ok) {
+                    const olt = await response.json();
+                    document.getElementById('oltModalTitle').textContent = 'Edit OLT';
+                    document.getElementById('oltId').value = olt.id;
+                    document.getElementById('oltPopId').value = popId;
+                    document.getElementById('oltName').value = olt.name;
+                    document.getElementById('oltModel').value = olt.model || '';
+                    document.getElementById('oltIpAddress').value = olt.ip_address || '';
+                    document.getElementById('oltManagementPort').value = olt.management_port || 22;
+                    document.getElementById('oltTotalPorts').value = olt.total_ports || 16;
+                    document.getElementById('oltTotalPonPorts').value = olt.total_pon_ports || 4;
+                    document.getElementById('oltLocation').value = olt.location || '';
+                    document.getElementById('oltDescription').value = olt.description || '';
+                    document.getElementById('oltModal').classList.add('show');
+                }
+            } catch (error) {
+                showMessage('Gagal memuat data OLT', 'error');
+            }
+        }
+        
+        async function saveOLT() {
+            const id = document.getElementById('oltId').value;
+            const data = {
+                pop_id: document.getElementById('oltPopId').value,
+                name: document.getElementById('oltName').value,
+                model: document.getElementById('oltModel').value,
+                ip_address: document.getElementById('oltIpAddress').value,
+                management_port: parseInt(document.getElementById('oltManagementPort').value),
+                total_ports: parseInt(document.getElementById('oltTotalPorts').value),
+                total_pon_ports: parseInt(document.getElementById('oltTotalPonPorts').value),
+                location: document.getElementById('oltLocation').value,
+                description: document.getElementById('oltDescription').value
+            };
+            
+            if (!data.name) { showMessage('Nama OLT harus diisi', 'error'); return; }
+            
+            try {
+                const url = id ? `${API_BASE}/olt.php?id=${id}` : `${API_BASE}/olt.php`;
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    closeModal('oltModal');
+                    loadPOPs();
+                    showMessage('OLT berhasil disimpan', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menyimpan OLT', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menyimpan OLT', 'error');
+            }
+        }
+        
+        async function deleteOLT(oltId, oltName) {
+            if (!confirm(`Yakin ingin menghapus OLT "${oltName}"?`)) return;
+            try {
+                const response = await fetch(`${API_BASE}/olt.php?id=${oltId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadPOPs();
+                    showMessage('OLT berhasil dihapus', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menghapus OLT', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menghapus OLT', 'error');
+            }
+        }
+        
+        // PON CRUD
+        function showAddPONModal(oltId, oltName) {
+            document.getElementById('ponModalTitle').textContent = `Tambah PON Card di ${oltName}`;
+            document.getElementById('ponForm').reset();
+            document.getElementById('ponId').value = '';
+            document.getElementById('ponOltId').value = oltId;
+            document.getElementById('ponPortCount').value = 8;
+            document.getElementById('ponModal').classList.add('show');
+        }
+        
+        async function editPON(ponId) {
+            try {
+                const response = await fetch(`${API_BASE}/pon.php?id=${ponId}`);
+                if (response.ok) {
+                    const pon = await response.json();
+                    document.getElementById('ponModalTitle').textContent = 'Edit PON Card';
+                    document.getElementById('ponId').value = pon.id;
+                    document.getElementById('ponOltId').value = pon.olt_id;
+                    document.getElementById('ponCardNumber').value = pon.card_number;
+                    document.getElementById('ponName').value = pon.name || '';
+                    document.getElementById('ponPortCount').value = pon.port_count || 8;
+                    document.getElementById('ponStatus').value = pon.status || 'active';
+                    document.getElementById('ponDescription').value = pon.description || '';
+                    document.getElementById('ponModal').classList.add('show');
+                }
+            } catch (error) {
+                showMessage('Gagal memuat data PON', 'error');
+            }
+        }
+        
+        async function savePON() {
+            const id = document.getElementById('ponId').value;
+            const data = {
+                olt_id: document.getElementById('ponOltId').value,
+                card_number: parseInt(document.getElementById('ponCardNumber').value),
+                name: document.getElementById('ponName').value,
+                port_count: parseInt(document.getElementById('ponPortCount').value),
+                status: document.getElementById('ponStatus').value,
+                description: document.getElementById('ponDescription').value
+            };
+            
+            if (!data.olt_id || !data.card_number) {
+                showMessage('Card number harus diisi', 'error');
+                return;
+            }
+            
+            try {
+                const url = id ? `${API_BASE}/pon.php?id=${id}` : `${API_BASE}/pon.php`;
+                const method = id ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    closeModal('ponModal');
+                    loadPOPs();
+                    showMessage('PON Card berhasil disimpan', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menyimpan PON', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menyimpan PON', 'error');
+            }
+        }
+        
+        async function deletePON(ponId) {
+            if (!confirm('Yakin ingin menghapus PON Card ini?\nSemua port di dalamnya juga akan terhapus!')) return;
+            try {
+                const response = await fetch(`${API_BASE}/pon.php?id=${ponId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    loadPOPs();
+                    showMessage('PON Card berhasil dihapus', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menghapus PON', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menghapus PON', 'error');
+            }
+        }
+        
+        // Port Configuration
+        async function configurePort(ponId, portNumber, currentStatus, targetOdcId) {
+            document.getElementById('configPonId').value = ponId;
+            document.getElementById('configPortNumber').value = portNumber;
+            document.getElementById('configPortDisplay').innerHTML = `${portNumber}`;
+            document.getElementById('portStatusSelect').value = currentStatus;
+            document.getElementById('portDescription').value = '';
+            
+            // Load PON name
+            try {
+                const response = await fetch(`${API_BASE}/pon.php?id=${ponId}`);
+                if (response.ok) {
+                    const pon = await response.json();
+                    document.getElementById('configPonName').innerHTML = `PON Card ${pon.card_number} - ${pon.name || ''}`;
+                }
+            } catch (error) {}
+            
+            const targetGroup = document.getElementById('targetOdcGroup');
+            const targetSelect = document.getElementById('targetOdcId');
+            
+            if (currentStatus === 'used') {
+                targetGroup.style.display = 'block';
+                await loadODCsForDropdown(targetSelect, targetOdcId);
+            } else {
+                targetGroup.style.display = 'none';
+            }
+            
+            document.getElementById('portConfigModal').classList.add('show');
+        }
+        
+        document.getElementById('portStatusSelect').addEventListener('change', async function() {
+            const status = this.value;
+            const targetGroup = document.getElementById('targetOdcGroup');
+            const targetSelect = document.getElementById('targetOdcId');
+            
+            if (status === 'used') {
+                targetGroup.style.display = 'block';
+                await loadODCsForDropdown(targetSelect, null);
+            } else {
+                targetGroup.style.display = 'none';
+            }
+        });
+        
+        async function loadODCsForDropdown(selectElement, selectedValue) {
+            try {
+                const response = await fetch(`${API_BASE}/odc.php`);
+                if (response.ok) {
+                    const odcs = await response.json();
+                    selectElement.innerHTML = '<option value="">Pilih ODC...</option>';
+                    odcs.forEach(odc => {
+                        const option = document.createElement('option');
+                        option.value = odc.id;
+                        option.textContent = `${odc.name} (${odc.location || '-'})`;
+                        if (selectedValue && selectedValue == odc.id) option.selected = true;
+                        selectElement.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading ODCs:', error);
+            }
+        }
+        
+        async function savePortConfig() {
+            const ponId = document.getElementById('configPonId').value;
+            const portNumber = document.getElementById('configPortNumber').value;
+            const status = document.getElementById('portStatusSelect').value;
+            const targetOdcId = status === 'used' ? document.getElementById('targetOdcId').value : null;
+            const description = document.getElementById('portDescription').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/pon-port.php`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pon_id: ponId,
+                        port_number: portNumber,
+                        status: status,
+                        target_odc_id: targetOdcId,
+                        description: description
+                    })
+                });
+                
+                if (response.ok) {
+                    closeModal('portConfigModal');
+                    loadPOPs();
+                    showMessage('Port berhasil dikonfigurasi', 'success');
+                } else {
+                    const error = await response.json();
+                    showMessage(error.error || 'Gagal menyimpan konfigurasi', 'error');
+                }
+            } catch (error) {
+                showMessage('Gagal menyimpan konfigurasi', 'error');
+            }
+        }
+        
+        // Helper functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+        
+        function showMessage(message, type = 'info') {
+            const box = document.getElementById('messageBox');
+            box.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => { box.innerHTML = ''; }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Event listeners
+        document.getElementById('popForm')?.addEventListener('submit', (e) => { e.preventDefault(); savePOP(); });
+        document.getElementById('oltForm')?.addEventListener('submit', (e) => { e.preventDefault(); saveOLT(); });
+        document.getElementById('ponForm')?.addEventListener('submit', (e) => { e.preventDefault(); savePON(); });
+        
+        window.onclick = (event) => {
+            if (event.target.classList.contains('modal')) event.target.classList.remove('show');
+        };
+        
+        // Initialize
+        async function init() {
+            const user = await checkAuth();
+            if (user) loadPOPs();
+        }
+        init();
+    </script>
+</body>
+</html>

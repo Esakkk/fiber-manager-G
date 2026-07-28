@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Database ke Excel - Fiber Manager</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/icons/icon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f1f5f9;
+            height: 100vh;
+            overflow-y: auto;
+            color: #334155;
+        }
+
+        .export-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .export-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            overflow: hidden;
+        }
+
+        .export-header {
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .export-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+        }
+
+        .export-header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Tabs styling */
+        .export-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 20px;
+        }
+
+        .tab-btn {
+            padding: 16px 24px;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: #4f46e5;
+        }
+
+        .tab-btn.active {
+            color: #4f46e5;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #4f46e5;
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            padding: 30px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-desc {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #6366f1;
+        }
+
+        .column-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* Checkbox Option Card */
+        .col-option {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .col-option:hover:not(.disabled) {
+            border-color: #cbd5e1;
+            background: #f1f5f9;
+        }
+
+        .col-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #4f46e5;
+        }
+
+        .col-option-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .col-option-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .col-option-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .col-option.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Action bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 24px;
+            margin-top: 10px;
+        }
+
+        .btn-select-all {
+            background: none;
+            border: none;
+            color: #4f46e5;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-select-all:hover {
+            color: #3730a3;
+            text-decoration: underline;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-export:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="export-container">
+        <div class="export-card">
+            <!-- Header -->
+            <div class="export-header">
+                <div>
+                    <h2><i class="fas fa-file-excel"></i> Export Database ke Excel</h2>
+                    <p>Sesuaikan data dan kolom yang ingin Anda export secara kustom</p>
+                </div>
+                <button class="btn-back" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Aplikasi
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="export-tabs">
+                <button class="tab-btn active" onclick="switchTab('pelanggan')">
+                    <i class="fas fa-users"></i> Pelanggan
+                </button>
+                <button class="tab-btn" onclick="switchTab('odp')">
+                    <i class="fas fa-network-wired"></i> ODP
+                </button>
+                <button class="tab-btn" onclick="switchTab('odc')">
+                    <i class="fas fa-server"></i> ODC (MS)
+                </button>
+                <button class="tab-btn" onclick="switchTab('pop')">
+                    <i class="fas fa-building"></i> POP
+                </button>
+                <button class="tab-btn" onclick="switchTab('kml')">
+                    <i class="fas fa-map"></i> Peta KML (My Maps)
+                </button>
+            </div>
+
+            <!-- Pelanggan Tab Content -->
+            <div class="tab-content active" id="content-pelanggan">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport data pelanggan aktif yang terhubung pada port ODP dengan status 'Terpakai' (used).</span>
+                </div>
+                
+                <div class="column-grid">
+                    <label class="col-option disabled">
+                        <input type="checkbox" name="col-pelanggan" value="nama" checked disabled>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Nama Pelanggan</span>
+                            <span class="col-option-desc">Nama pelanggan terdaftar</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="koordinat" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Koordinat Pelanggan</span>
+                            <span class="col-option-desc">Latitude & Longitude lokasi</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="odp" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">ODP Terhubung</span>
+                            <span class="col-option-desc">Nama perangkat ODP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="port" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Port ODP</span>
+                            <span class="col-option-desc">Nomor port ODP terpakai</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="onu">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Nomor ONU / SN</span>
+                            <span class="col-option-desc">Serial number modem pelanggan</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="modem">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Jenis Modem / ONT</span>
+                            <span class="col-option-desc">Merk dan tipe modem ONT</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="keterangan">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Keterangan Port</span>
+                            <span class="col-option-desc">Catatan tambahan port</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="created_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Waktu Dibuat</span>
+                            <span class="col-option-desc">Tanggal pembuatan data pelanggan</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pelanggan" value="updated_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Terakhir Diedit</span>
+                            <span class="col-option-desc">Tanggal terakhir data diperbarui</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleAll('pelanggan')">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExport('pelanggan')">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- ODP Tab Content -->
+            <div class="tab-content" id="content-odp">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport daftar perangkat ODP beserta status port dan MS (ODC) induknya.</span>
+                </div>
+
+                <div class="column-grid">
+                    <label class="col-option disabled">
+                        <input type="checkbox" name="col-odp" value="nama" checked disabled>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Nama ODP</span>
+                            <span class="col-option-desc">Nama identitas ODP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="koordinat" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Koordinat ODP</span>
+                            <span class="col-option-desc">Latitude & Longitude fisik</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="total_ports" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Jumlah Port</span>
+                            <span class="col-option-desc">Kapasitas total port</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="port_terpakai" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Port Terpakai</span>
+                            <span class="col-option-desc">Jumlah port status active</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="port_tersedia" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Port Tersedia</span>
+                            <span class="col-option-desc">Jumlah port kosong</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="ms_terhubung" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">MS yang Terhubung</span>
+                            <span class="col-option-desc">Nama MS / ODC sumber</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="keterangan">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Keterangan ODP</span>
+                            <span class="col-option-desc">Catatan detail ODP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="created_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Waktu Dibuat</span>
+                            <span class="col-option-desc">Tanggal pembuatan ODP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odp" value="updated_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Terakhir Diedit</span>
+                            <span class="col-option-desc">Tanggal terakhir ODP diperbarui</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleAll('odp')">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExport('odp')">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- ODC Tab Content -->
+            <div class="tab-content" id="content-odc">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport data ODC (MS) beserta port dan relasi sumber input.</span>
+                </div>
+
+                <div class="column-grid">
+                    <label class="col-option disabled">
+                        <input type="checkbox" name="col-odc" value="nama" checked disabled>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Nama ODC (MS)</span>
+                            <span class="col-option-desc">Nama identitas ODC</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="koordinat" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Koordinat ODC</span>
+                            <span class="col-option-desc">Latitude & Longitude fisik</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="location" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Lokasi</span>
+                            <span class="col-option-desc">Nama area atau kelurahan</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="capacity" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Kapasitas Port</span>
+                            <span class="col-option-desc">Total port terpasang</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="used_ports" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Port Terpakai</span>
+                            <span class="col-option-desc">Port terhubung ke ODP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="available_ports" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Port Tersedia</span>
+                            <span class="col-option-desc">Port kosong tersisa</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="sumber" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Sumber Input</span>
+                            <span class="col-option-desc">Asal feeder (POP, OLT, atau PON)</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="keterangan">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Keterangan ODC</span>
+                            <span class="col-option-desc">Catatan detail ODC</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="created_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Waktu Dibuat</span>
+                            <span class="col-option-desc">Tanggal pembuatan ODC</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-odc" value="updated_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Terakhir Diedit</span>
+                            <span class="col-option-desc">Tanggal terakhir ODC diperbarui</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleAll('odc')">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExport('odc')">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- POP Tab Content -->
+            <div class="tab-content" id="content-pop">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport data Point of Presence (POP) beserta data lokasi dan detail alamat.</span>
+                </div>
+
+                <div class="column-grid">
+                    <label class="col-option disabled">
+                        <input type="checkbox" name="col-pop" value="nama" checked disabled>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Nama POP</span>
+                            <span class="col-option-desc">Nama identitas POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="code" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Kode POP</span>
+                            <span class="col-option-desc">Kode unik singkatan POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="koordinat" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Koordinat POP</span>
+                            <span class="col-option-desc">Latitude & Longitude fisik</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="location" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Lokasi</span>
+                            <span class="col-option-desc">Wilayah/kecamatan POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="created_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Waktu Dibuat</span>
+                            <span class="col-option-desc">Tanggal pembuatan POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="updated_at">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Terakhir Diedit</span>
+                            <span class="col-option-desc">Tanggal terakhir POP diperbarui</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="address" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Alamat Lengkap</span>
+                            <span class="col-option-desc">Alamat jalan rinci POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="col-pop" value="keterangan">
+                        <div class="col-option-info">
+                            <span class="col-option-title">Keterangan POP</span>
+                            <span class="col-option-desc">Catatan detail POP</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleAll('pop')">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExport('pop')">
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- KML Tab Content -->
+            <div class="tab-content" id="content-kml">
+                <div class="section-desc">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Mengeksport data geografis berupa lokasi perangkat dan jalur kabel (path/polyline) dalam format KML. File ini dapat diimpor langsung ke Google My Maps untuk memvisualisasikan peta jaringan secara instan.</span>
+                </div>
+
+                <div class="column-grid">
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="pop" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Point of Presence (POP)</span>
+                            <span class="col-option-desc">Titik lokasi pusat POP</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="odc" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">ODC (MS) &amp; Kabel Feeder</span>
+                            <span class="col-option-desc">Titik ODC dan penarikan kabel feeder</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="odp" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">ODP &amp; Kabel Distribusi</span>
+                            <span class="col-option-desc">Titik ODP dan penarikan kabel distribusi</span>
+                        </div>
+                    </label>
+                    <label class="col-option" onclick="toggleLabelCheckbox(this)">
+                        <input type="checkbox" name="layer-kml" value="pelanggan" checked>
+                        <div class="col-option-info">
+                            <span class="col-option-title">Pelanggan &amp; Kabel Drop</span>
+                            <span class="col-option-desc">Titik rumah pelanggan dan kabel drop core</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn-select-all" onclick="toggleLayersAll()">
+                        <i class="fas fa-check-square"></i> Pilih Semua
+                    </button>
+                    <button class="btn-export" onclick="doExportKml()">
+                        <i class="fas fa-download"></i> Export KML Map
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.API_BASE = "{{ url('api') }}";
+        const API_BASE = window.API_BASE;
+        
+        // Helper global fetch override for credentials: 'include' and automatic CSRF handling
+        const originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+            init = init || {};
+            init.credentials = 'include';
+            return originalFetch(input, init);
+        };
+
+        // Check auth on load
+        async function init() {
+            const isAuth = await checkAuth();
+            if (!isAuth) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Prevent label click event from double toggling checkbox if checkbox itself was clicked
+            document.querySelectorAll('.col-option input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/auth.php?action=me`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return !!data.user;
+                }
+                return false;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Switch tab
+        function switchTab(type) {
+            // Update tab button classes
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.getAttribute('onclick').includes(`'${type}'`)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Update tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`content-${type}`).classList.add('active');
+        }
+
+        // Toggle checkbox on label click (ignoring if clicking the checkbox input itself to prevent double toggle)
+        function toggleLabelCheckbox(labelElement) {
+            const checkbox = labelElement.querySelector('input[type="checkbox"]');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+            }
+        }
+
+        // Toggle select all
+        function toggleAll(type) {
+            const checkboxes = document.querySelectorAll(`input[name="col-${type}"]:not(:disabled)`);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+        }
+
+        // Toggle select all layers for KML
+        function toggleLayersAll() {
+            const checkboxes = document.querySelectorAll('input[name="layer-kml"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !allChecked;
+            });
+        }
+
+        // Trigger Excel/XLSX download
+        function doExport(type) {
+            // Collect all selected checkboxes (including disabled ones)
+            const checkboxes = document.querySelectorAll(`input[name="col-${type}"]:checked`);
+            if (checkboxes.length === 0) {
+                alert('Pilih minimal satu kolom untuk dieksport!');
+                return;
+            }
+
+            const columns = Array.from(checkboxes).map(cb => cb.value);
+            
+            // Build query params
+            const queryParams = new URLSearchParams();
+            queryParams.append('type', type);
+            columns.forEach(col => {
+                queryParams.append('columns[]', col);
+            });
+
+            // Redirect to backend trigger
+            window.location.href = `${API_BASE}/export.php?${queryParams.toString()}`;
+        }
+
+        // Trigger KML download
+        function doExportKml() {
+            const checkboxes = document.querySelectorAll('input[name="layer-kml"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Pilih minimal satu layer untuk dieksport!');
+                return;
+            }
+
+            const layers = Array.from(checkboxes).map(cb => cb.value);
+            
+            // Build query params
+            const queryParams = new URLSearchParams();
+            queryParams.append('type', 'kml');
+            layers.forEach(l => {
+                queryParams.append('layers[]', l);
+            });
+
+            // Redirect to backend trigger
+            window.location.href = `${API_BASE}/export.php?${queryParams.toString()}`;
+        }
+
+        // Initialize auth check
+        init();
+    </script>
+</body>
+</html>

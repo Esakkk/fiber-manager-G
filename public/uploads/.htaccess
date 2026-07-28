@@ -1,0 +1,11 @@
+Options -Indexes
+
+# Prevent execution of PHP or other scripts
+<FilesMatch "\.(php|phar|phtml|pl|py|jsp|asp|aspx)$">
+    Require all denied
+</FilesMatch>
+
+# Deny access to hidden files
+<Files ".*">
+    Require all denied
+</Files>

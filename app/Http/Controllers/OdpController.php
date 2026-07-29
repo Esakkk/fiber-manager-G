@@ -19,7 +19,11 @@ class OdpController extends Controller
         }
 
         $method = $request->method();
-        $id = $request->query('id') ? (int)$request->query('id') : null;
+        $idStr = $request->query('id');
+        if ($idStr && is_string($idStr)) {
+            $idStr = preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', $idStr);
+        }
+        $id = ($idStr !== null && $idStr !== '') ? (int)$idStr : null;
 
         switch ($method) {
             case 'GET':
@@ -53,18 +57,18 @@ class OdpController extends Controller
 
     protected function getAllODP()
     {
-        $odps = Odp::orderBy('created_at', 'desc')->get()->map(function ($odp) {
-            $sourceName = null;
-            if ($odp->source_type === 'odc') {
-                $odc = Odc::find($odp->source_id);
-                $sourceName = $odc ? $odc->name : null;
-            } elseif ($odp->source_type === 'odp') {
-                $odpSource = Odp::find($odp->source_id);
-                $sourceName = $odpSource ? $odpSource->name : null;
+        $odps = Odp::with([
+            'source',
+            'ports' => function ($q) {
+                $q->orderBy('port_number');
+            },
+            'photos' => function ($q) {
+                $q->orderBy('is_primary', 'desc')->orderBy('created_at', 'asc');
             }
-            $odp->source_name = $sourceName;
+        ])->orderBy('created_at', 'desc')->get()->map(function ($odp) {
+            $odp->source_name = $odp->source ? $odp->source->name : null;
 
-            $ports = $odp->ports()->orderBy('port_number')->get();
+            $ports = $odp->ports;
             $odp->ports = $ports;
 
             $available = 0;
@@ -75,7 +79,7 @@ class OdpController extends Controller
             }
             $odp->available_ports = $available;
 
-            $odp->photos = $odp->photos()->orderBy('is_primary', 'desc')->orderBy('created_at', 'asc')->get()->map(function ($photo) {
+            $odp->photos = $odp->photos->map(function ($photo) {
                 $photo->url = 'uploads/odp/' . $photo->filename;
                 return $photo;
             });
@@ -138,8 +142,9 @@ class OdpController extends Controller
             DB::beginTransaction();
 
             // Validasi port belum terpakai jika source_type = 'odc'
-            if (($data['source_type'] ?? '') === 'odc' && !empty($data['source_id']) && !empty($data['port_number_in_odc'])) {
-                $exists = OdcOdpConnection::where('odc_id', $data['source_id'])
+            $sourceId = isset($data['source_id']) ? $this->cleanId($data['source_id']) : null;
+            if (($data['source_type'] ?? '') === 'odc' && !empty($sourceId) && !empty($data['port_number_in_odc'])) {
+                $exists = OdcOdpConnection::where('odc_id', $sourceId)
                     ->where('port_number', $data['port_number_in_odc'])
                     ->exists();
 
@@ -152,7 +157,7 @@ class OdpController extends Controller
             // Insert ODP
             $odp = Odp::create([
                 'name' => $data['name'],
-                'source_id' => $data['source_id'] ?? null,
+                'source_id' => $sourceId,
                 'source_type' => $data['source_type'] ?? null,
                 'port_number_in_odc' => $data['port_number_in_odc'] ?? null,
                 'lat' => $data['lat'],
@@ -176,13 +181,13 @@ class OdpController extends Controller
             }
 
             // If connected to ODC, create connection
-            if (!empty($data['source_id']) && ($data['source_type'] ?? '') === 'odc' && !empty($data['port_number_in_odc'])) {
+            if (!empty($sourceId) && ($data['source_type'] ?? '') === 'odc' && !empty($data['port_number_in_odc'])) {
                 OdcOdpConnection::create([
-                    'odc_id' => $data['source_id'],
+                    'odc_id' => $sourceId,
                     'odp_id' => $odp->id,
                     'port_number' => $data['port_number_in_odc']
                 ]);
-                $this->updateODCUsedPorts($data['source_id']);
+                $this->updateODCUsedPorts($sourceId);
             }
 
             DB::commit();
@@ -218,13 +223,14 @@ class OdpController extends Controller
             $oldPortNumber = $odp->port_number_in_odc;
             $oldTotalPorts = $odp->total_ports;
 
+            $newSourceId = isset($data['source_id']) ? $this->cleanId($data['source_id']) : null;
             // Validasi port baru jika berubah
             if (isset($data['source_type']) && $data['source_type'] === 'odc' &&
-                isset($data['source_id']) && isset($data['port_number_in_odc']) &&
+                $newSourceId && isset($data['port_number_in_odc']) &&
                 $data['port_number_in_odc'] &&
-                ($oldSourceId != $data['source_id'] || $oldPortNumber != $data['port_number_in_odc'])) {
+                ($oldSourceId != $newSourceId || $oldPortNumber != $data['port_number_in_odc'])) {
 
-                $exists = OdcOdpConnection::where('odc_id', $data['source_id'])
+                $exists = OdcOdpConnection::where('odc_id', $newSourceId)
                     ->where('port_number', $data['port_number_in_odc'])
                     ->where('odp_id', '!=', $id)
                     ->exists();
@@ -238,7 +244,7 @@ class OdpController extends Controller
             // Update fields
             $updateData = [];
             if (isset($data['name'])) $updateData['name'] = $data['name'];
-            if (isset($data['source_id'])) $updateData['source_id'] = $data['source_id'] ?: null;
+            if (isset($data['source_id'])) $updateData['source_id'] = $newSourceId ?: null;
             if (isset($data['source_type'])) $updateData['source_type'] = $data['source_type'] ?: null;
             if (isset($data['port_number_in_odc'])) $updateData['port_number_in_odc'] = $data['port_number_in_odc'] ?: null;
             if (isset($data['lat'])) $updateData['lat'] = $data['lat'];
@@ -279,13 +285,13 @@ class OdpController extends Controller
                 $this->updateODCUsedPorts($oldSourceId);
             }
 
-            if (isset($data['source_id']) && isset($data['source_type']) && $data['source_type'] === 'odc' && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
+            if (isset($data['source_type']) && $data['source_type'] === 'odc' && $newSourceId && isset($data['port_number_in_odc']) && $data['port_number_in_odc']) {
                 OdcOdpConnection::create([
-                    'odc_id' => $data['source_id'],
+                    'odc_id' => $newSourceId,
                     'odp_id' => $id,
                     'port_number' => $data['port_number_in_odc']
                 ]);
-                $this->updateODCUsedPorts($data['source_id']);
+                $this->updateODCUsedPorts($newSourceId);
             }
 
             // Update available_ports
@@ -363,5 +369,13 @@ class OdpController extends Controller
     {
         $count = OdcOdpConnection::where('odc_id', $odc_id)->count();
         Odc::where('id', $odc_id)->update(['used_ports' => $count]);
+    }
+
+    private function cleanId($id)
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        return (int) preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', (string)$id);
     }
 }

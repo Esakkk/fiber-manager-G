@@ -21,7 +21,11 @@ class OdcController extends Controller
         }
 
         $method = $request->method();
-        $id = $request->query('id') ? (int)$request->query('id') : null;
+        $idStr = $request->query('id');
+        if ($idStr && is_string($idStr)) {
+            $idStr = preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', $idStr);
+        }
+        $id = ($idStr !== null && $idStr !== '') ? (int)$idStr : null;
         $action = $request->query('action');
 
         switch ($method) {
@@ -60,13 +64,21 @@ class OdcController extends Controller
 
     protected function getAllODC()
     {
-        $odcs = Odc::orderBy('created_at', 'desc')->get()->map(function ($odc) {
-            $odc->connected_odps = $odc->connections()->count();
+        $odcs = Odc::with([
+            'source',
+            'olt',
+            'pon',
+            'connections',
+            'photos' => function ($q) {
+                $q->orderBy('is_primary', 'desc');
+            }
+        ])->orderBy('created_at', 'desc')->get()->map(function ($odc) {
+            $odc->connected_odps = $odc->connections->count();
             
             // Resolve source names
-            $pop = Pop::find($odc->source_id);
-            $olt = Olt::find($odc->olt_id);
-            $pon = Pon::find($odc->pon_id);
+            $pop = ($odc->source_type === 'pop') ? $odc->source : null;
+            $olt = $odc->olt;
+            $pon = $odc->pon;
             
             $odc->source_pop_name = $pop ? $pop->name : null;
             $odc->source_olt_name = $olt ? $olt->name : null;
@@ -81,7 +93,7 @@ class OdcController extends Controller
             if ($odc->pon_port_number) $pathParts[] = "Port " . $odc->pon_port_number;
 
             $odc->source_path = implode(' → ', $pathParts);
-            $odc->photos = $odc->photos()->orderBy('is_primary', 'desc')->get()->map(function ($photo) {
+            $odc->photos = $odc->photos->map(function ($photo) {
                 $photo->url = 'uploads/odc/' . $photo->filename;
                 return $photo;
             });
@@ -402,5 +414,13 @@ class OdcController extends Controller
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function cleanId($id)
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        return (int) preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', (string)$id);
     }
 }

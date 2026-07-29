@@ -15,7 +15,11 @@ class PoleController extends Controller
         }
 
         $method = $request->method();
-        $id = $request->query('id') ? (int)$request->query('id') : null;
+        $idStr = $request->query('id');
+        if ($idStr && is_string($idStr)) {
+            $idStr = preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', $idStr);
+        }
+        $id = ($idStr !== null && $idStr !== '') ? (int)$idStr : null;
 
         switch ($method) {
             case 'GET':
@@ -140,5 +144,13 @@ class PoleController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function cleanId($id)
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        return (int) preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', (string)$id);
     }
 }

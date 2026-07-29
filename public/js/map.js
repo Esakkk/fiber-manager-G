@@ -3,6 +3,11 @@
 // =============================================
 const API_BASE = window.location.origin + '/fiber-manager/api';
 
+function cleanId(id) {
+    if (!id) return id;
+    return id.toString().replace(/^(ODC_|ODP_|POLE_)/, '');
+}
+
 // Global variables
 let map;
 let markersLayer;
@@ -673,12 +678,40 @@ async function loadDevices() {
         const poleData = await poleRes.json();
         const customerData = await customerRes.json();
 
-        devices.odc = Array.isArray(odcData) ? odcData : [];
-        devices.odp = Array.isArray(odpData) ? odpData : [];
+        devices.odc = (Array.isArray(odcData) ? odcData : []).map(d => ({
+            ...d,
+            id: `ODC_${d.id}`,
+            type: 'odc'
+        }));
+        devices.odp = (Array.isArray(odpData) ? odpData : []).map(d => {
+            const mapped = {
+                ...d,
+                id: `ODP_${d.id}`,
+                type: 'odp'
+            };
+            if (d.source_id) {
+                if (d.source_type === 'odc') {
+                    mapped.source_id = `ODC_${d.source_id}`;
+                } else if (d.source_type === 'odp') {
+                    mapped.source_id = `ODP_${d.source_id}`;
+                }
+            }
+            return mapped;
+        });
         devices.pop = Array.isArray(popData) ? popData : [];
         devices.olt = Array.isArray(oltData) ? oltData : [];
-        devices.pole = Array.isArray(poleData) ? poleData : [];
-        devices.customer = Array.isArray(customerData) ? customerData : [];
+        devices.pole = (Array.isArray(poleData) ? poleData : []).map(d => ({
+            ...d,
+            id: `POLE_${d.id}`,
+            type: 'pole'
+        }));
+        devices.customer = (Array.isArray(customerData) ? customerData : []).map(c => {
+            const mapped = { ...c };
+            if (c.odp_id) {
+                mapped.odp_id = `ODP_${c.odp_id}`;
+            }
+            return mapped;
+        });
 
         refreshMapMarkers();
         refreshDeviceList();
@@ -1174,7 +1207,7 @@ function togglePathEdit(odpId) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
 
-        fetchWithAuth(`${API_BASE}/odp.php?id=${odpId}`, {
+        fetchWithAuth(`${API_BASE}/odp.php?id=${cleanId(odpId)}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
@@ -1234,7 +1267,7 @@ function toggleODCPathEdit(odcId) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
 
-        fetchWithAuth(`${API_BASE}/odc.php?id=${odcId}`, {
+        fetchWithAuth(`${API_BASE}/odc.php?id=${cleanId(odcId)}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
@@ -1294,7 +1327,7 @@ function togglePortPathEdit(portKey) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
         btn.disabled = true;
 
-        fetchWithAuth(`${API_BASE}/ports.php?odp_id=${line.odpId}&port=${line.portNumber}`, {
+        fetchWithAuth(`${API_BASE}/ports.php?odp_id=${cleanId(line.odpId)}&port=${line.portNumber}`, {
             method: 'PUT',
             body: JSON.stringify({ path_coordinates: pathJson })
         })
@@ -1353,9 +1386,9 @@ function togglePortPathEdit(portKey) {
 }
 
 function createPopupContent(device) {
-    const isODC = devices.odc.some(d => d.id === device.id);
-    const isODP = devices.odp.some(d => d.id === device.id);
-    const isPole = devices.pole.some(d => d.id === device.id);
+    const isODC = device.type === 'odc' || devices.odc.some(d => d.id === device.id);
+    const isODP = device.type === 'odp' || devices.odp.some(d => d.id === device.id);
+    const isPole = device.type === 'pole' || devices.pole.some(d => d.id === device.id);
     const type = isODC ? 'ODC' : isODP ? 'ODP' : isPole ? 'POLE' : 'DEVICE';
     const currentUser = window.currentUser;
     const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
@@ -1435,7 +1468,7 @@ async function showDeviceInfo(device) {
 
         let portDetails = [];
         try {
-            const portRes = await fetch(`${API_BASE}/odc.php?id=${device.id}&ports=true`, { credentials: 'include' });
+            const portRes = await fetch(`${API_BASE}/odc.php?id=${cleanId(device.id)}&ports=true`, { credentials: 'include' });
             if (portRes.ok) {
                 portDetails = await portRes.json();
             }
@@ -1449,7 +1482,7 @@ async function showDeviceInfo(device) {
             if (portDetail) {
                 status = portDetail.status;
                 odpName = portDetail.odp_name || '';
-                odpId = portDetail.odp_id;
+                odpId = portDetail.odp_id ? `ODP_${portDetail.odp_id}` : null;
             }
             let bgColor = '#c6f6d5';
             let titleAttr = `Port ${i}: Tersedia`;
@@ -1457,7 +1490,7 @@ async function showDeviceInfo(device) {
             if (status === 'used') {
                 bgColor = '#fed7d7';
                 titleAttr = `Port ${i}: Digunakan oleh ${odpName}`;
-                if (odpId) onclickAttr = `onclick="highlightODP(${odpId})"`;
+                if (odpId) onclickAttr = `onclick="highlightODP('${odpId}')"`;
             } else if (status === 'maintenance') {
                 bgColor = '#fefcbf';
                 titleAttr = `Port ${i}: Maintenance`;

@@ -18,7 +18,11 @@ class CustomerController extends Controller
         }
 
         $method = $request->method();
-        $id = $request->query('id') ? (int)$request->query('id') : null;
+        $idStr = $request->query('id');
+        if ($idStr && is_string($idStr)) {
+            $idStr = preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', $idStr);
+        }
+        $id = ($idStr !== null && $idStr !== '') ? (int)$idStr : null;
         $action = $request->query('action');
 
         switch ($method) {
@@ -63,19 +67,14 @@ class CustomerController extends Controller
 
     protected function getAllCustomers(Request $request)
     {
-        $query = Customer::orderBy('created_at', 'desc');
+        $query = Customer::with('odp')->orderBy('created_at', 'desc');
 
         if ($request->query('status') === 'unconnected') {
             $query->whereNull('odp_id');
         }
 
         $customers = $query->get()->map(function ($c) {
-            if ($c->odp_id) {
-                $odp = Odp::find($c->odp_id);
-                $c->odp_name = $odp ? $odp->name : null;
-            } else {
-                $c->odp_name = null;
-            }
+            $c->odp_name = $c->odp ? $c->odp->name : null;
             return $c;
         });
 
@@ -84,6 +83,7 @@ class CustomerController extends Controller
 
     protected function getCustomer($id)
     {
+        $id = $this->cleanId($id);
         $customer = Customer::find($id);
 
         if ($customer) {
@@ -136,6 +136,7 @@ class CustomerController extends Controller
             return response()->json(['error' => 'ID Pelanggan diperlukan'], 400);
         }
 
+        $id = $this->cleanId($id);
         $customer = Customer::find($id);
         if (!$customer) {
             return response()->json(['error' => 'Pelanggan tidak ditemukan'], 404);
@@ -201,6 +202,9 @@ class CustomerController extends Controller
         $customerId = $id ?: ($data['customer_id'] ?? null);
         $odpId = $data['odp_id'] ?? null;
         $portNumber = $data['port_number'] ?? null;
+
+        $customerId = $this->cleanId($customerId);
+        $odpId = $this->cleanId($odpId);
 
         if (!$customerId || !$odpId || !$portNumber) {
             return response()->json(['error' => 'Customer ID, ODP ID, dan Nomor Port diperlukan'], 400);
@@ -289,6 +293,8 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Customer ID diperlukan'], 400);
         }
 
+        $customerId = $this->cleanId($customerId);
+
         $customer = Customer::find($customerId);
         if (!$customer) {
             return response()->json(['error' => 'Pelanggan tidak ditemukan'], 404);
@@ -344,6 +350,7 @@ class CustomerController extends Controller
             return response()->json(['error' => 'ID Pelanggan diperlukan'], 400);
         }
 
+        $id = $this->cleanId($id);
         $customer = Customer::find($id);
         if (!$customer) {
             return response()->json(['error' => 'Pelanggan tidak ditemukan'], 404);
@@ -386,5 +393,13 @@ class CustomerController extends Controller
     {
         $availableCount = OdpPort::where('odp_id', $odpId)->where('status', 'available')->count();
         Odp::where('id', $odpId)->update(['available_ports' => $availableCount]);
+    }
+
+    private function cleanId($id)
+    {
+        if ($id === null || $id === '') {
+            return null;
+        }
+        return (int) preg_replace('/^(CUSTOMER_|ODP_|ODC_|POLE_)/', '', (string)$id);
     }
 }

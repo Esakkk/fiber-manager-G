@@ -2,6 +2,11 @@
 // APP.JS - VERSI LENGKAP DAN STABIL
 // =============================================
 
+function cleanId(id) {
+    if (!id) return id;
+    return id.toString().replace(/^(ODC_|ODP_|POLE_)/, '');
+}
+
 // Initialize application
 document.addEventListener('DOMContentLoaded', async function () {
     const user = await loadUserInfo();
@@ -236,7 +241,7 @@ async function savePole() {
     }
 
     try {
-        const url = id ? `${API_BASE}/pole.php?id=${id}` : `${API_BASE}/pole.php`;
+        const url = id ? `${API_BASE}/pole.php?id=${cleanId(id)}` : `${API_BASE}/pole.php`;
         const method = id ? 'PUT' : 'POST';
 
         const response = await fetchWithAuth(url, {
@@ -408,7 +413,7 @@ async function loadODCPortsForEdit(odcId, selectedPort = null) {
     if (portSelect) portSelect.innerHTML = '<option value="">Loading port...</option>';
 
     try {
-        const response = await fetch(`${API_BASE}/odc.php?id=${odcId}&ports=true`, {
+        const response = await fetch(`${API_BASE}/odc.php?id=${cleanId(odcId)}&ports=true`, {
             credentials: 'include'
         });
 
@@ -641,7 +646,7 @@ function updateAvailablePortsCount() {
 }
 
 async function saveODP() {
-    const id = document.getElementById('odpId')?.value;
+    const id = cleanId(document.getElementById('odpId')?.value);
     const sourceSelect = document.getElementById('odpSource');
     const selectedOption = sourceSelect?.selectedOptions[0];
     const portInODC = document.getElementById('odpPortInODC')?.value;
@@ -655,7 +660,7 @@ async function saveODP() {
 
     const data = {
         name: document.getElementById('odpName')?.value,
-        source_id: sourceSelect?.value || null,
+        source_id: cleanId(sourceSelect?.value) || null,
         source_type: selectedOption ? selectedOption.dataset.type : null,
         port_number_in_odc: portInODC || null,
         lat: coords.lat,
@@ -964,7 +969,7 @@ async function showAddODCDialog() {
 }
 
 async function saveODC() {
-    const id = document.getElementById('odcId')?.value;
+    const id = cleanId(document.getElementById('odcId')?.value);
     const coordString = document.getElementById('odcCoordinates')?.value.trim();
     const isEdit = !!id;
 
@@ -1501,11 +1506,11 @@ async function deleteDevice(id, type) {
     try {
         let url = '';
         if (type === 'odc') {
-            url = `${API_BASE}/odc.php?id=${id}`;
+            url = `${API_BASE}/odc.php?id=${cleanId(id)}`;
         } else if (type === 'odp') {
-            url = `${API_BASE}/odp.php?id=${id}`;
+            url = `${API_BASE}/odp.php?id=${cleanId(id)}`;
         } else if (type === 'pole') {
-            url = `${API_BASE}/pole.php?id=${id}`;
+            url = `${API_BASE}/pole.php?id=${cleanId(id)}`;
         }
 
         const response = await fetchWithAuth(url, { method: 'DELETE' });
@@ -1771,7 +1776,7 @@ async function loadOdpAvailablePorts(odpId) {
     }
 
     try {
-        const response = await fetchWithAuth(`${API_BASE}/odp.php?id=${odpId}`);
+        const response = await fetchWithAuth(`${API_BASE}/odp.php?id=${cleanId(odpId)}`);
         if (!response) return;
 
         const odp = await response.json();
@@ -1812,8 +1817,8 @@ async function saveConnectionToOdp() {
         const response = await fetchWithAuth(`${API_BASE}/customers.php?action=connect`, {
             method: 'POST',
             body: JSON.stringify({
-                customer_id: customerId,
-                odp_id: odpId,
+                customer_id: cleanId(customerId),
+                odp_id: cleanId(odpId),
                 port_number: portNumber
             })
         });
@@ -1842,7 +1847,7 @@ async function disconnectCustomer(customerId) {
         const response = await fetchWithAuth(`${API_BASE}/customers.php?action=disconnect`, {
             method: 'POST',
             body: JSON.stringify({
-                customer_id: customerId
+                customer_id: cleanId(customerId)
             })
         });
 

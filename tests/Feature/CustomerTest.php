@@ -158,4 +158,69 @@ class CustomerTest extends TestCase
 
         $this->assertEquals(8, Odp::find($odp->id)->available_ports);
     }
+
+    public function test_customer_connect_with_prefixed_ids(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        // Create ODP
+        $odp = Odp::create([
+            'name' => 'ODP-SIRIH-02',
+            'lat' => -6.2,
+            'lng' => 106.8,
+            'location' => 'Sirih St.',
+            'total_ports' => 8,
+            'available_ports' => 8
+        ]);
+
+        // Create ODP ports
+        for ($i = 1; $i <= 8; $i++) {
+            OdpPort::create([
+                'odp_id' => $odp->id,
+                'port_number' => $i,
+                'status' => 'available'
+            ]);
+        }
+
+        // Create Customer
+        $customer = Customer::create([
+            'name' => 'Budi Prefixed',
+            'lat' => -6.2088,
+            'lng' => 106.8456,
+            'onu_number' => 'ZTEGC1111111',
+            'modem_type' => 'ZTE F609',
+        ]);
+
+        // Connect Customer to ODP Port 4 using prefixed IDs
+        $connectResponse = $this->postJson('/api/customers.php?action=connect', [
+            'customer_id' => "CUSTOMER_{$customer->id}",
+            'odp_id' => "ODP_{$odp->id}",
+            'port_number' => 4
+        ]);
+
+        $connectResponse->assertStatus(200)
+                       ->assertJsonPath('message', 'Pelanggan berhasil disambungkan ke ODP');
+
+        // Verify database state
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'odp_id' => $odp->id,
+            'port_number' => 4
+        ]);
+
+        $this->assertDatabaseHas('odp_ports', [
+            'odp_id' => $odp->id,
+            'port_number' => 4,
+            'status' => 'used',
+            'target' => 'Budi Prefixed'
+        ]);
+
+        // Disconnect using prefixed ID
+        $disconnectResponse = $this->postJson('/api/customers.php?action=disconnect', [
+            'customer_id' => "CUSTOMER_{$customer->id}"
+        ]);
+
+        $disconnectResponse->assertStatus(200)
+                          ->assertJsonPath('message', 'Koneksi pelanggan berhasil diputuskan');
+    }
 }

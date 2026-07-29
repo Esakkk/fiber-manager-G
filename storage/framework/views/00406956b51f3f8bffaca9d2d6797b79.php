@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen ODP & ODC - GIS Fiber Optik</title>
+
+    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('assets/icons/icon.png')); ?>">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Geoman -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+
+    <!-- Leaflet MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="<?php echo e(asset('css/style.css')); ?>">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- ✅ Toggle Sidebar Button (Mobile) -->
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- ✅ Overlay untuk mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- ✅ SIDEBAR - PASTIKAN id="sidebar" ADA -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-network-wired"></i> Fiber Manager</h2>
+                <!-- ✅ Tombol close untuk mobile -->
+                <button class="sidebar-close" onclick="closeSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="user-info">
+                    <span id="userDisplayName">Loading...</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button id="btnUserManagement" class="btn-logout" onclick="window.location.href='users.html'"
+                            style="display: none;" title="Manajemen User">
+                            <i class="fas fa-users-cog"></i>
+                        </button>
+                        <button id="btnExportDatabase" class="btn-logout" onclick="window.location.href='export.html'"
+                            title="Export Data ke Excel">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                        <button class="btn-logout" onclick="logout()" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Tombol Tambah -->
+                <div class="action-buttons" id="actionButtons">
+                    <button class="btn btn-primary" onclick="window.location.href='pop-management.html'"
+                        style="background: #9b59b6;">
+                        <i class="fas fa-building"></i> Kelola POP
+                    </button>
+                    <button class="btn btn-primary" onclick="showAddODPDialog()">
+                        <i class="fas fa-plus-circle"></i> Tambah ODP
+                    </button>
+                    <button class="btn btn-secondary" onclick="showAddODCDialog()">
+                        <i class="fas fa-plus-circle"></i> Tambah ODC
+                    </button>
+                    <button class="btn btn-secondary" onclick="showAddCustomerDialog()"
+                        style="background: #3182ce; color: white;">
+                        <i class="fas fa-user-plus"></i> Tambah Pelanggan
+                    </button>
+                </div>
+                <!-- Filter & Pencarian -->
+                <div class="filter-section">
+                    <input type="text" id="searchInput" placeholder="Cari ODP/ODC..." class="search-input">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">Semua</button>
+                        <button class="filter-btn" data-filter="odc">ODC</button>
+                        <button class="filter-btn" data-filter="odp">ODP</button>
+                        <button class="filter-btn" data-filter="pole">Tiang</button>
+                    </div>
+                </div>
+
+                <!-- Pencarian Pelanggan -->
+                <div class="customer-search-section">
+                    <h4><i class="fas fa-users"></i> Cari Pelanggan</h4>
+                    <div class="search-box">
+                        <input type="text" id="customerSearchInput" placeholder="Nama pelanggan...">
+                        <button id="customerSearchBtn" onclick="searchCustomer()"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="customerSearchResults" class="customer-results"></div>
+                </div>
+
+                <!-- Daftar Perangkat -->
+                <div class="device-list" id="deviceList"></div>
+            </div>
+        </div>
+        <!-- ✅ END SIDEBAR -->
+
+        <!-- Map Container -->
+        <div class="map-container">
+            <div id="map"></div>
+
+            <!-- Map View Controls -->
+            <div class="map-view-controls"
+                style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 8px 12px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: bold; color: #2d3748;">
+                <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="toggleMapType" checked onchange="toggleMapType()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-satellite" style="width: 16px; text-align: center;"></i>
+                </label>
+                <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="toggleClustering" checked onchange="toggleMapClustering()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-layer-group" style="width: 16px; text-align: center;"></i>
+                </label>
+                <label style="cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="toggleLines" checked onchange="toggleMapLines()"
+                        style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-project-diagram" style="width: 16px; text-align: center;"></i>
+                </label>
+            </div>
+
+
+            <!-- Info Panel -->
+            <div class="info-panel" id="infoPanel">
+                <div class="info-header">
+                    <h3 id="infoTitle">Informasi Perangkat</h3>
+                    <button class="close-btn" onclick="hideInfoPanel()">&times;</button>
+                </div>
+                <div class="info-content" id="infoContent">
+                    Pilih perangkat di peta atau daftar
+                </div>
+            </div>
+
+            <!-- Pencarian Koordinat -->
+            <div class="coordinate-search">
+                <input type="text" id="searchCoordinate" placeholder="Cari koordinat... (-6.2088, 106.8456)">
+                <button onclick="searchAndZoom()"><i class="fas fa-search"></i></button>
+            </div>
+
+            <!-- Drag & Drop Quick Add Widget -->
+            <div class="map-drag-widget" id="mapDragWidget">
+                <div class="drag-widget-title">
+                    <i class="fas fa-hand-rock"></i> <!-- <span>Seret Objek</span> -->
+                </div>
+                <div class="drag-items">
+                    <div class="drag-item" draggable="true" data-type="odp" title="Seret ODP ke peta untuk menambah">
+                        <div class="drag-icon-wrapper odp-drag">
+                            <img src="<?php echo e(asset('assets/icons/odp-icon.png')); ?>" alt="ODP">
+                        </div>
+                        <span class="drag-label">ODP</span>
+                    </div>
+                    <div class="drag-item" draggable="true" data-type="odc" title="Seret ODC ke peta untuk menambah">
+                        <div class="drag-icon-wrapper odc-drag">
+                            <img src="<?php echo e(asset('assets/icons/odc-icon.png')); ?>" alt="ODC">
+                        </div>
+                        <span class="drag-label">ODC</span>
+                    </div>
+                    <div class="drag-item" draggable="true" data-type="pole" title="Seret Tiang ke peta untuk menambah">
+                        <div class="drag-icon-wrapper pole-drag">
+                            <i class="fas fa-broadcast-tower" style="font-size: 18px; color: #38b2ac;"></i>
+                        </div>
+                        <span class="drag-label">TIANG</span>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Coordinate Picker Modal -->
+    <div class="modal" id="coordinatePickerModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Pilih Lokasi di Peta</h2>
+                <span class="close" onclick="closeCoordinatePicker()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="coordinatePickerMap" class="coordinate-picker-map"></div>
+                <div class="coordinate-picker-footer"
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="useCurrentLocation(coordinatePickerTargetId)">
+                        <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="closeCoordinatePicker()">
+                        Tutup
+                    </button>
+                </div>
+                <p style="margin-top: 10px; color: #4a5568;">Klik pada peta untuk memilih lokasi. Koordinat akan
+                    otomatis diisi ke kolom formulir.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form ODP -->
+    <div class="modal" id="odpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah ODP</h2>
+                <span class="close" onclick="closeModal('odpModal')">&times;</span>
+            </div>
+            <form id="odpForm">
+                <input type="hidden" id="odpId">
+
+                <div class="form-group">
+                    <label>Nama ODP:</label>
+                    <input type="text" id="odpName" placeholder="Contoh: ODP-FT-001" required>
+                </div>
+
+                <!-- Form ODP - update bagian ini -->
+                <div class="form-group">
+                    <label>Berasal dari (ODC):</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="odpSource" onchange="onODCSourceChange()">
+                            <option value="">Pilih ODC sumber...</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableSelectODCOnMap()"
+                            title="Pilih ODC langsung dari peta">
+                            <i class="fas fa-map-pin"></i> Pilih ODC di Peta
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="odpOdcPortGroup" style="display: none;">
+                    <label>Pilih Port di ODC:</label>
+                    <select id="odpPortInODC">
+                        <option value="">Pilih port...</option>
+                    </select>
+                    <small id="odpPortInfoText">Pilih port ODC yang akan dihubungkan ke ODP ini</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Koordinat (latitude, longitude):</label>
+                    <input type="text" id="odpCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('odpCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('odpCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                    <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Alamat Lokasi:</label>
+                    <input type="text" id="odpLocation" placeholder="Contoh: Jl. Raya Cikarang No. 123" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Jumlah Port:</label>
+                    <input type="number" id="odpTotalPorts" min="1" max="48" value="8" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Port Tersedia:</label>
+                    <input type="number" id="odpAvailablePorts" min="0" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Status Port:</label>
+                    <div class="port-management" id="odpPortStatus"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="odpDescription" rows="3" placeholder="Tambahkan keterangan..."></textarea>
+                </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="odpPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewODPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('odpPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="odpPhotoPreview" class="photo-preview"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('odpModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form Pole -->
+    <div class="modal" id="poleModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="poleModalTitle">Tambah Tiang</h2>
+                <span class="close" onclick="closeModal('poleModal')">&times;</span>
+            </div>
+            <form id="poleForm">
+                <input type="hidden" id="poleId">
+                <div class="form-group">
+                    <label>Nama Tiang:</label>
+                    <input type="text" id="poleName" placeholder="Contoh: Tiang-001" required>
+                </div>
+                <div class="form-group">
+                    <label>Koordinat (latitude, longitude):</label>
+                    <input type="text" id="poleCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('poleCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('poleCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                    <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
+                </div>
+                <div class="form-group">
+                    <label>Jenis Tiang:</label>
+                    <select id="poleType">
+                        <option value="">Pilih jenis tiang...</option>
+                        <option value="6">Tiang 6 meter</option>
+                        <option value="7">Tiang 7 meter</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Lokasi:</label>
+                    <input type="text" id="poleLocation" placeholder="Contoh: Jl. Sudirman">
+                </div>
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="poleDescription" rows="3" placeholder="Keterangan tambahan..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('poleModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal POP -->
+    <div class="modal" id="popModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2 id="popModalTitle">Tambah POP</h2>
+                <span class="close" onclick="closeModal('popModal')">&times;</span>
+            </div>
+            <form id="popForm">
+                <input type="hidden" id="popId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama POP:</label>
+                        <input type="text" id="popName" placeholder="Contoh: POP Cikarang" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kode POP:</label>
+                        <input type="text" id="popCode" placeholder="Contoh: CK-01">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Koordinat (latitude, longitude):</label>
+                    <input type="text" id="popCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('popCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('popCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Lokasi:</label>
+                    <input type="text" id="popLocation" placeholder="Nama area/kecamatan" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Alamat Lengkap:</label>
+                    <textarea id="popAddress" rows="2" placeholder="Alamat lengkap POP"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="popDescription" rows="2" placeholder="Informasi tambahan..."></textarea>
+                </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="popPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewPOPPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('popPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <div id="popPhotoPreview" class="photo-preview"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('popModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan POP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal OLT -->
+    <div class="modal" id="oltModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2 id="oltModalTitle">Tambah OLT</h2>
+                <span class="close" onclick="closeModal('oltModal')">&times;</span>
+            </div>
+            <form id="oltForm">
+                <input type="hidden" id="oltId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Pilih POP:</label>
+                        <select id="oltPopId" required>
+                            <option value="">Pilih POP...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama OLT:</label>
+                        <input type="text" id="oltName" placeholder="Contoh: OLT-CK-01" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Model:</label>
+                        <input type="text" id="oltModel" placeholder="Contoh: Huawei MA5800">
+                    </div>
+                    <div class="form-group">
+                        <label>IP Address:</label>
+                        <input type="text" id="oltIpAddress" placeholder="192.168.1.100">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Management Port:</label>
+                        <input type="number" id="oltManagementPort" value="22">
+                    </div>
+                    <div class="form-group">
+                        <label>Total PON Ports:</label>
+                        <input type="number" id="oltTotalPonPorts" min="1" max="64" value="16">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Koordinat (Optional):</label>
+                    <input type="text" id="oltCoordinates" placeholder="Contoh: -6.208800, 106.845600">
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('oltCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('oltCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Lokasi:</label>
+                    <input type="text" id="oltLocation" placeholder="Lokasi fisik OLT">
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="oltDescription" rows="2"></textarea>
+                </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="oltPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewOLTPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('oltPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <div id="oltPhotoPreview" class="photo-preview"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('oltModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan OLT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal PON (untuk edit) -->
+    <div class="modal" id="ponModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Edit PON</h3>
+                <span class="close" onclick="closeModal('ponModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ponId">
+                <div class="form-group">
+                    <label>Nama PON:</label>
+                    <input type="text" id="ponName" placeholder="Contoh: PON-1 (Rumah Sakit)">
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="ponStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="ponDescription" rows="2"></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="savePON()">Simpan</button>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Form ODC -->
+    <div class="modal" id="odcModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah ODC</h2>
+                <span class="close" onclick="closeModal('odcModal')">&times;</span>
+            </div>
+            <form id="odcForm">
+                <input type="hidden" id="odcId">
+
+                <div class="form-group">
+                    <label>Nama ODC:</label>
+                    <input type="text" id="odcName" placeholder="Contoh: ODC-CKR-001" required>
+                </div>
+                <!-- Di modal ODC, pastikan ID nya seperti ini -->
+                <div class="form-group">
+                    <label>Sumber / Berasal dari POP:</label>
+                    <select id="odcSourcePop">
+                        <option value="">Pilih POP...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="odcOltGroup" style="display: none;">
+                    <label>Pilih OLT:</label>
+                    <select id="odcSourceOlt">
+                        <option value="">Pilih OLT...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="odcPonGroup" style="display: none;">
+                    <label>Pilih PON Card:</label>
+                    <select id="odcSourcePon" onchange="loadPortByPON()">
+                        <option value="">Pilih PON Card...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="odcPortGroup" style="display: none;">
+                    <label>Pilih Port PON:</label>
+                    <select id="odcPonPort">
+                        <option value="">Pilih port...</option>
+                    </select>
+                    <small>Pilih port PON yang tersedia</small>
+                </div>
+
+                <div class="info-card" id="selectedPortInfo"
+                    style="display: none; background: #ebf8ff; padding: 10px; border-radius: 8px; margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> <span id="portInfoText"></span>
+                </div>
+                <div class="form-group">
+                    <label>Koordinat (latitude, longitude):</label>
+                    <input type="text" id="odcCoordinates" placeholder="Contoh: -6.208800, 106.845600" required>
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('odcCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('odcCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                    <small>Format: latitude, longitude (contoh: -6.963707888562949, 109.64706473647041)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Alamat Lokasi:</label>
+                    <input type="text" id="odcLocation" placeholder="Contoh: Jl. Raya Cikarang No. 123" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Kapasitas Port:</label>
+                    <input type="number" id="odcCapacity" min="1" max="288" value="24" required>
+                </div>
+                <div class="form-group">
+                    <label>Daftar ODP Terhubung:</label>
+                    <div class="connected-list" id="connectedODPList"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan:</label>
+                    <textarea id="odcDescription" rows="3" placeholder="Tambahkan keterangan..."></textarea>
+                </div>
+
+                <!-- Upload Foto -->
+                <div class="form-group">
+                    <label>Foto (Maksimal 5):</label>
+                    <input type="file" id="odcPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewODCPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('odcPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="odcPhotoPreview" class="photo-preview"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('odcModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form Customer (ONT / Pelanggan) -->
+    <div class="modal" id="customerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customerModalTitle">Tambah Pelanggan / ONT</h2>
+                <span class="close" onclick="closeModal('customerModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" onsubmit="event.preventDefault(); saveCustomer();">
+                    <input type="hidden" id="customerId">
+                    <div class="form-group">
+                        <label for="customerNameInput">Nama Pelanggan:</label>
+                        <input type="text" id="customerNameInput" required placeholder="Masukkan nama pelanggan">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerCoordinates">Koordinat (lat, lng):</label>
+                        <input type="text" id="customerCoordinates" required placeholder="Contoh: -6.208800, 106.845600">
+                        <div class="coordinate-actions" style="margin-top: 5px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="startCoordinatePicker('customerCoordinates')">
+                                <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="customerOnu">Nomor ONU / SN:</label>
+                            <input type="text" id="customerOnu" placeholder="Contoh: ZTEGC1234567">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="customerModem">Jenis Modem / ONT:</label>
+                            <input type="text" id="customerModem" placeholder="Contoh: ZTE F609">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerAddress">Alamat:</label>
+                        <input type="text" id="customerAddress" placeholder="Masukkan alamat lengkap">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">No. Telepon / HP:</label>
+                        <input type="text" id="customerPhone" placeholder="Contoh: 08123456789">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerDesc">Keterangan:</label>
+                        <textarea id="customerDesc" rows="2" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('customerModal')">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hubungkan Pelanggan ke ODP -->
+    <div class="modal" id="connectOdpModal">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h2>Hubungkan Pelanggan ke ODP</h2>
+                <span class="close" onclick="closeModal('connectOdpModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="connectOdpForm" onsubmit="event.preventDefault(); saveConnectionToOdp();">
+                    <input type="hidden" id="connectCustomerId">
+                    <div class="form-group">
+                        <label>Nama Pelanggan:</label>
+                        <input type="text" id="connectCustomerName" readonly style="background: #e2e8f0;">
+                    </div>
+                    <div class="form-group">
+                        <label for="connectOdpSelect">Pilih ODP:</label>
+                        <select id="connectOdpSelect" required onchange="loadOdpAvailablePorts(this.value)">
+                            <option value="">-- Pilih ODP --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="connectPortSelect">Pilih Port ODP:</label>
+                        <select id="connectPortSelect" required>
+                            <option value="">-- Pilih Port --</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('connectOdpModal')">Batal</button>
+                        <button type="submit" class="btn btn-primary">Hubungkan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfigurasi Port (hanya untuk pelanggan) -->
+    <div class="modal" id="portDirectionModal">
+        <div class="modal-content modal-md">
+            <div class="modal-header">
+                <h3>Konfigurasi Port untuk Pelanggan</h3>
+                <span class="close" onclick="closeModal('portDirectionModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="portDbId">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Nomor Port:</label>
+                        <input type="text" id="displayPortNumber" readonly>
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label>Nama Pelanggan:</label>
+                        <input type="text" id="customerName" placeholder="Masukkan nama pelanggan" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Koordinat Pelanggan (lat, lng):</label>
+                    <input type="text" id="portCoordinates" placeholder="Contoh: -6.208800, 106.845600">
+                    <div class="coordinate-actions">
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="startCoordinatePicker('portCoordinates')">
+                            <i class="fas fa-map-marker-alt"></i> Klik di Peta
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="useCurrentLocation('portCoordinates')">
+                            <i class="fas fa-location-arrow"></i> Gunakan Lokasi Saat Ini
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nomor ONU / SN:</label>
+                        <input type="text" id="portOnuNumber" placeholder="Contoh: ZTEGC1234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Modem / ONT:</label>
+                        <input type="text" id="portModemType" placeholder="Contoh: ZTE F609">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Keterangan Tambahan:</label>
+                    <textarea id="portDescription" rows="2" placeholder="Catatan tambahan..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Foto Instalasi (Maksimal 5):</label>
+                    <input type="file" id="portPhotos" accept="image/*" multiple style="display: none;"
+                        onchange="previewPortPhotos()">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="document.getElementById('portPhotos').click()">
+                        <i class="fas fa-camera"></i> Pilih Foto
+                    </button>
+                    <small style="display: block; margin-top: 5px;">Format: JPG, PNG, GIF, WEBP (Max 5MB/foto)</small>
+                    <div id="portPhotoPreview" class="photo-preview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="portStatus">
+                        <option value="active">Active (Terpakai)</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="clearPort()">Kosongkan Port</button>
+                    <button class="btn btn-primary" onclick="savePortCustomer()">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+        <img src="" alt="Foto" id="lightboxImg">
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // API Base URL - dynamic injection from Laravel
+        window.API_BASE = "<?php echo e(url('api')); ?>";
+        
+        // Helper global fetch override for credentials: 'include' and automatic CSRF handling
+        const originalFetch = window.fetch;
+        window.fetch = function (input, init) {
+            init = init || {};
+            init.credentials = 'include';
+            return originalFetch(input, init);
+        };
+    </script>
+    <script src="<?php echo e(asset('js/map.js')); ?>"></script>
+    <script src="<?php echo e(asset('js/app.js')); ?>"></script>
+</body>
+
+</html>
+<?php /**PATH D:\Ngoding\RepoGithub\fiber-manager-G\resources\views/index.blade.php ENDPATH**/ ?>
